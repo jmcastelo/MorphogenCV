@@ -39,7 +39,8 @@ class Rotation: public ImageOperation
 {
 public:
     double angle, scale;
-    Rotation(double a, double s): angle(a), scale(s){}
+    int flags;
+    Rotation(double a, double s, int f): angle(a), scale(s), flags(f){}
     cv::Mat applyOperation(cv::Mat src);
 };
 

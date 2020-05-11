@@ -28,7 +28,9 @@ HEADERS += \
 
 INCLUDEPATH += /usr/include/opencv4
 
-LIBS += -lopencv_core -lopencv_imgproc
+LIBS += -lopencv_core -lopencv_imgproc -lopencv_imgcodecs
+
+QMAKE_CXXFLAGS_RELEASE += -O3
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
