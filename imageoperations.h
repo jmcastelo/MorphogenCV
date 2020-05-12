@@ -19,45 +19,172 @@
 #define IMAGEOPERATIONS_H
 
 #include <opencv2/imgproc.hpp>
+#include <QWidget>
+#include <QString>
+#include <QLabel>
+#include <QLineEdit>
+#include <QIntValidator>
+#include <QDoubleValidator>
+#include <QVBoxLayout>
+
+// A custom QLineEdit that signals focus out
+
+class CustomLineEdit: public QLineEdit
+{
+    Q_OBJECT
+
+public:
+    CustomLineEdit(QWidget *parent = nullptr): QLineEdit(parent){}
+
+protected:
+    void focusOutEvent(QFocusEvent *event)
+    {
+        QLineEdit::focusOutEvent(event);
+        emit focusOut();
+    }
+
+signals:
+    void focusOut();
+};
+
+// Base image operation class
 
 class ImageOperation
 {
 public:
+    virtual QString getName() = 0;
+    virtual QWidget* getParametersWidget() = 0;
     virtual cv::Mat applyOperation(cv::Mat src) = 0;
+    virtual ~ImageOperation() = 0;
 };
 
-class ConvertTo: public ImageOperation
+// Convert to
+
+class ConvertTo: public QWidget, public ImageOperation
 {
-public:
+    static QString name;
+
     double alpha, beta;
-    ConvertTo(double a, double b): alpha(a), beta(b){}
+
+    CustomLineEdit *alphaLineEdit;
+    CustomLineEdit *betaLineEdit;
+    QWidget *mainWidget;
+
+public:
+    ConvertTo(double a, double b);
+    ~ConvertTo();
+
+    QString getName(){ return name; };
+    QWidget *getParametersWidget();
     cv::Mat applyOperation(cv::Mat src);
 };
 
-class GaussianBlur: public ImageOperation
+// Dilate
+
+class Dilate: public QWidget, public ImageOperation
 {
+    static QString name;
+
+    int ksize;
+
+    CustomLineEdit *ksizeLineEdit;
+    QWidget *mainWidget;
+
 public:
+    Dilate(int k);
+    ~Dilate();
+
+    QString getName(){ return name; };
+    QWidget *getParametersWidget();
+    cv::Mat applyOperation(cv::Mat src);
+};
+
+// Erode
+
+class Erode: public QWidget, public ImageOperation
+{
+    static QString name;
+
+    int ksize;
+
+    CustomLineEdit *ksizeLineEdit;
+    QWidget *mainWidget;
+
+public:
+    Erode(int k);
+    ~Erode();
+
+    QString getName(){ return name; };
+    QWidget *getParametersWidget();
+    cv::Mat applyOperation(cv::Mat src);
+};
+
+// Gaussian blur
+
+class GaussianBlur: public QWidget, public ImageOperation
+{
+    static QString name;
+
     int ksize;
     double sigmaX, sigmaY;
-    GaussianBlur(int k, double sx, double sy): ksize(k), sigmaX(sx), sigmaY(sy){}
+
+    CustomLineEdit *ksizeLineEdit;
+    CustomLineEdit *sigmaXLineEdit;
+    CustomLineEdit *sigmaYLineEdit;
+    QWidget *mainWidget;
+
+public:
+    GaussianBlur(int k, double sx, double sy);
+    ~GaussianBlur();
+
+    QString getName(){ return name; };
+    QWidget *getParametersWidget();
     cv::Mat applyOperation(cv::Mat src);
 };
 
-class Laplacian: public ImageOperation
+// Laplacian
+
+class Laplacian: public QWidget, public ImageOperation
 {
-public:
+    static QString name;
+
     int ksize;
     double scale, delta;
-    Laplacian(int k, double s, double d): ksize(k), scale(s), delta(d){}
+
+    CustomLineEdit *ksizeLineEdit;
+    CustomLineEdit *scaleLineEdit;
+    CustomLineEdit *deltaLineEdit;
+    QWidget *mainWidget;
+
+public:
+    Laplacian(int k, double s, double d);
+    ~Laplacian();
+
+    QString getName(){ return name; };
+    QWidget *getParametersWidget();
     cv::Mat applyOperation(cv::Mat src);
 };
 
-class Rotation: public ImageOperation
+// Rotation
+
+class Rotation: public QWidget, public ImageOperation
 {
-public:
+    static QString name;
+
     double angle, scale;
     int flags;
-    Rotation(double a, double s, int f): angle(a), scale(s), flags(f){}
+
+    CustomLineEdit *angleLineEdit;
+    CustomLineEdit *scaleLineEdit;
+    CustomLineEdit *flagsLineEdit;
+    QWidget *mainWidget;
+
+public:
+    Rotation(double a, double s, int f);
+    ~Rotation();
+
+    QString getName(){ return name; };
+    QWidget *getParametersWidget();
     cv::Mat applyOperation(cv::Mat src);
 };
 

@@ -34,16 +34,24 @@
 #include <QPushButton>
 #include <QLineEdit>
 #include <QIntValidator>
+#include <QDoubleValidator>
 #include <QString>
 #include <QFileDialog>
 #include <QGroupBox>
 #include <QCheckBox>
 #include <QDir>
 #include <QChar>
+#include <QComboBox>
+#include <QListWidget>
+#include <QListWidgetItem>
+#include <QModelIndex>
+#include <QTabWidget>
 
 class MainWidget : public QWidget
 {
     Q_OBJECT
+
+    std::vector<QString> availableImageOperations;
 
     cv::Mat mask;
 
@@ -51,6 +59,7 @@ class MainWidget : public QWidget
     std::vector<std::vector<ImageOperation*>> imageOperations;
 
     cv::Mat blendedImage;
+    double blendFactor;
 
     QPushButton *initPushButton;
     QPushButton *pauseResumePushButton;
@@ -61,6 +70,8 @@ class MainWidget : public QWidget
 
     QTimer *timer;
     int timerInterval;
+
+    int currentImageIndex;
 
     int imageSize;
 
@@ -75,6 +86,19 @@ class MainWidget : public QWidget
     bool takeScreenshotSeries;
     unsigned int screenshotIndex;
 
+    QLineEdit *blendFactorLineEdit;
+
+    QComboBox *imageSelectComboBox;
+
+    QComboBox *newImageOperationComboBox;
+    QPushButton *insertImageOperationPushButton;
+    QPushButton *removeImageOperationPushButton;
+
+    QListWidget *imageOperationsListWidget;
+    std::vector<int> currentImageOperationIndex;
+
+    QVBoxLayout *parametersLayout;
+
     void initSystem();
     void pauseResumeSystem(bool checked);
     void setTimerInterval();
@@ -88,6 +112,16 @@ class MainWidget : public QWidget
     void takeScreenshot();
     void takeScreenshotSeriesElement();
 
+    void setBlendFactor();
+
+    void initNewImageOperationComboBox();
+    void initImageOperationsListWidget(int imageIndex);
+
+    void onImageOperationsListWidgetCurrentRowChanged(int currentRow);
+    void onRowsMoved(QModelIndex parent, int start, int end, QModelIndex destination, int row);
+
+    void insertImageOperation();
+    void removeImageOperation();
 
     void initImageOperations();
     void applyImageOperations();

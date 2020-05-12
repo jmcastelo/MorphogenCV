@@ -22,23 +22,29 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     // Images + Operations
 
     cv::Mat img;
-    images.push_back(img);
-    images.push_back(img);
+    images = {img, img};
 
     std::vector<ImageOperation*> ops;
-    imageOperations.push_back(ops);
-    imageOperations.push_back(ops);
+    imageOperations = {ops, ops};
 
     initImageOperations();
 
     // Init variables
 
+    availableImageOperations = {"Convert to", "Dilate", "Erode", "Gaussian blur", "Laplacian", "Rotation"};
+
     timerInterval = 25;
     imageSize = 700;
+
     screenshotPath = "";
     screenshotFilename = "screenshot";
     takeScreenshotSeries = false;
     screenshotIndex = 1;
+
+    blendFactor = 0.4;
+
+    currentImageIndex = 0;
+    currentImageOperationIndex = {0, 0};
 
     // OpenCV
 
@@ -104,6 +110,69 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     generalControlsVBoxLayout->addWidget(imageSizeLineEdit);
     generalControlsVBoxLayout->addWidget(screenshotGroupBox);
 
+    QWidget *generalControlsWidget = new QWidget;
+    generalControlsWidget->setLayout(generalControlsVBoxLayout);
+
+    // Image manipulation controls
+
+    QLabel *blendFactorLabel = new QLabel("Blend factor");
+
+    blendFactorLineEdit = new QLineEdit;
+    QDoubleValidator *blendFactorDoubleValidator = new QDoubleValidator(0.0, 1.0, 10, blendFactorLineEdit);
+    blendFactorDoubleValidator->setLocale(QLocale::English);
+    blendFactorLineEdit->setValidator(blendFactorDoubleValidator);
+    blendFactorLineEdit->setText(QString::number(blendFactor));
+
+    QLabel *imageSelectLabel = new QLabel("Select image");
+
+    imageSelectComboBox = new QComboBox;
+    imageSelectComboBox->addItem("Image 1");
+    imageSelectComboBox->addItem("Image 2");
+    imageSelectComboBox->setCurrentIndex(0);
+
+    QLabel *newImageOperationLabel = new QLabel("New operation");
+
+    newImageOperationComboBox = new QComboBox;
+    initNewImageOperationComboBox();
+
+    insertImageOperationPushButton = new QPushButton("Insert");
+
+    removeImageOperationPushButton = new QPushButton("Remove");
+
+    QHBoxLayout *insertRemoveHBoxLayout = new QHBoxLayout;
+    insertRemoveHBoxLayout->addWidget(insertImageOperationPushButton);
+    insertRemoveHBoxLayout->addWidget(removeImageOperationPushButton);
+
+    imageOperationsListWidget = new QListWidget;
+    imageOperationsListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+    imageOperationsListWidget->setDragDropMode(QAbstractItemView::InternalMove);
+
+    parametersLayout = new QVBoxLayout;
+
+    QGroupBox *parametersGroupBox = new QGroupBox("Parameters");
+    parametersGroupBox->setLayout(parametersLayout);
+
+    QVBoxLayout *imageManipulationVBoxLayout = new QVBoxLayout;
+    imageManipulationVBoxLayout->setAlignment(Qt::AlignTop);
+    imageManipulationVBoxLayout->addWidget(blendFactorLabel);
+    imageManipulationVBoxLayout->addWidget(blendFactorLineEdit);
+    imageManipulationVBoxLayout->addWidget(imageSelectLabel);
+    imageManipulationVBoxLayout->addWidget(imageSelectComboBox);
+    imageManipulationVBoxLayout->addWidget(newImageOperationLabel);
+    imageManipulationVBoxLayout->addWidget(newImageOperationComboBox);
+    imageManipulationVBoxLayout->addLayout(insertRemoveHBoxLayout);
+    imageManipulationVBoxLayout->addWidget(imageOperationsListWidget);
+    imageManipulationVBoxLayout->addWidget(parametersGroupBox);
+
+    QWidget *imageManipulationWidget = new QWidget;
+    imageManipulationWidget->setLayout(imageManipulationVBoxLayout);
+
+    // Main tabs
+
+    QTabWidget *mainTabWidget = new QTabWidget;
+    mainTabWidget->addTab(generalControlsWidget, "General controls");
+    mainTabWidget->addTab(imageManipulationWidget, "Image operations");
+
     // Main layout
 
     QHBoxLayout *mainHBoxLayout = new QHBoxLayout;
@@ -112,8 +181,8 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     imageLabel->setFixedSize(imageSize, imageSize);
 
     mainHBoxLayout->setAlignment(Qt::AlignTop);
-    mainHBoxLayout->addLayout(generalControlsVBoxLayout, 0);
-    mainHBoxLayout->addWidget(imageLabel, 1);
+    mainHBoxLayout->addWidget(mainTabWidget, 1);
+    mainHBoxLayout->addWidget(imageLabel, 0);
 
     setLayout(mainHBoxLayout);
 
@@ -127,8 +196,18 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     connect(screenshotFilenameLineEdit, &QLineEdit::textChanged, this, &MainWidget::setScreenshotFilename);
     connect(screenshotSeriesCheckBox, &QCheckBox::stateChanged, this, &MainWidget::setTakeScreenshotSeries);
     connect(screenshotPushButton, &QPushButton::clicked, this, &MainWidget::takeScreenshot);
+    connect(blendFactorLineEdit, &QLineEdit::returnPressed, this, &MainWidget::setBlendFactor);
+    connect(imageSelectComboBox, QOverload<int>::of(&QComboBox::activated), [=](int imageIndex){ initImageOperationsListWidget(imageIndex); });
+    connect(imageSelectComboBox, QOverload<int>::of(&QComboBox::activated), [=](int imageIndex){ currentImageIndex = imageIndex; });
+    connect(imageOperationsListWidget, &QListWidget::currentRowChanged, this, &MainWidget::onImageOperationsListWidgetCurrentRowChanged);
+    connect(imageOperationsListWidget->model(), &QAbstractItemModel::rowsMoved, this, &MainWidget::onRowsMoved);
+    connect(insertImageOperationPushButton, &QPushButton::clicked, this, &MainWidget::insertImageOperation);
+    connect(removeImageOperationPushButton, &QPushButton::clicked, this, &MainWidget::removeImageOperation);
     connect(timer, &QTimer::timeout, this, &MainWidget::iterationLoop);
 
+    // Init widgets
+
+    initImageOperationsListWidget(0);
     timer->start(timerInterval);
 }
 
@@ -252,18 +331,170 @@ void MainWidget::takeScreenshotSeriesElement()
 
         screenshotIndex++;
     }
+}
 
+void MainWidget::setBlendFactor()
+{
+    blendFactor = blendFactorLineEdit->text().toDouble();
 }
 
 void MainWidget::initImageOperations()
 {
     imageOperations[0].clear();
-    imageOperations[0].push_back(new ConvertTo(1.5, 0.0));
+    //imageOperations[0].push_back(new ConvertTo(1.2, 0.0));
     imageOperations[0].push_back(new GaussianBlur(9, 0.9, 0.9));
     imageOperations[0].push_back(new Laplacian(3, 1.0, 0.0));
 
     imageOperations[1].clear();
     imageOperations[1].push_back(new Rotation(45.0, 1.08, cv::INTER_NEAREST | cv::WARP_FILL_OUTLIERS));
+}
+
+void MainWidget::initNewImageOperationComboBox()
+{
+    for (auto op: availableImageOperations)
+    {
+        newImageOperationComboBox->addItem(op);
+    }
+}
+
+void MainWidget::initImageOperationsListWidget(int imageIndex)
+{
+    imageOperationsListWidget->clear();
+
+    for (size_t i = 0; i < imageOperations[imageIndex].size(); i++)
+    {
+        QListWidgetItem *newOperation = new QListWidgetItem;
+        newOperation->setText(imageOperations[imageIndex][i]->getName());
+        imageOperationsListWidget->insertItem(i, newOperation);
+    }
+
+    if (imageOperations[imageIndex].empty())
+    {
+        currentImageOperationIndex[imageIndex] = -1;
+        removeImageOperationPushButton->setEnabled(false);
+    }
+    else
+    {
+        QListWidgetItem *operation = imageOperationsListWidget->item(currentImageOperationIndex[imageIndex]);
+        imageOperationsListWidget->setCurrentItem(operation);
+
+        if (!parametersLayout->isEmpty())
+        {
+            parametersLayout->removeWidget(imageOperations[currentImageIndex][currentImageOperationIndex[currentImageIndex]]->getParametersWidget());
+            imageOperations[currentImageIndex][currentImageOperationIndex[currentImageIndex]]->getParametersWidget()->hide();
+        }
+        parametersLayout->addWidget(imageOperations[imageIndex][currentImageOperationIndex[imageIndex]]->getParametersWidget());
+        imageOperations[imageIndex][currentImageOperationIndex[imageIndex]]->getParametersWidget()->show();
+
+        removeImageOperationPushButton->setEnabled(true);
+    }
+}
+
+void MainWidget::onImageOperationsListWidgetCurrentRowChanged(int currentRow)
+{
+    if (currentRow >= 0)
+    {
+        int imageIndex = imageSelectComboBox->currentIndex();
+
+        if (!parametersLayout->isEmpty())
+        {
+            parametersLayout->removeWidget(imageOperations[imageIndex][currentImageOperationIndex[imageIndex]]->getParametersWidget());
+            imageOperations[imageIndex][currentImageOperationIndex[imageIndex]]->getParametersWidget()->hide();
+        }
+        parametersLayout->addWidget(imageOperations[imageIndex][currentRow]->getParametersWidget());
+        imageOperations[imageIndex][currentRow]->getParametersWidget()->show();
+
+        currentImageOperationIndex[imageIndex] = currentRow;
+
+        removeImageOperationPushButton->setEnabled(true);
+    }
+}
+
+void MainWidget::onRowsMoved(QModelIndex parent, int start, int end, QModelIndex destination, int row)
+{
+    Q_UNUSED(parent)
+    Q_UNUSED(destination)
+    Q_UNUSED(end)
+
+    int imageIndex = imageSelectComboBox->currentIndex();
+
+    if (row >= static_cast<int>(imageOperations[imageIndex].size()))
+    {
+        row--;
+    }
+
+    ImageOperation *operation = imageOperations[imageIndex][start];
+    imageOperations[imageIndex][start] = imageOperations[imageIndex][row];
+    imageOperations[imageIndex][row] = operation;
+
+    currentImageOperationIndex[imageIndex] = row;
+}
+
+void MainWidget::insertImageOperation()
+{
+    int imageIndex = imageSelectComboBox->currentIndex();
+    int newOperationIndex = newImageOperationComboBox->currentIndex();
+    int currentOperationIndex = imageOperationsListWidget->currentRow();
+
+    std::vector<ImageOperation*>::iterator it = imageOperations[imageIndex].begin();
+
+    if (newOperationIndex == 0)
+    {
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new ConvertTo(1.0, 0.0));
+    }
+    else if (newOperationIndex == 1)
+    {
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Dilate(3));
+    }
+    else if (newOperationIndex == 2)
+    {
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Erode(3));
+    }
+    else if (newOperationIndex == 3)
+    {
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new GaussianBlur(3, 0.0, 0.0));
+    }
+    else if (newOperationIndex == 4)
+    {
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Laplacian(3, 1.0, 0.0));
+    }
+    else if (newOperationIndex == 5)
+    {
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Rotation(0.0, 1.0, cv::INTER_NEAREST | cv::WARP_FILL_OUTLIERS));
+    }
+
+    QListWidgetItem *newOperation = new QListWidgetItem;
+    newOperation->setText(imageOperations[imageIndex][currentOperationIndex + 1]->getName());
+    imageOperationsListWidget->insertItem(currentOperationIndex + 1, newOperation);
+    imageOperationsListWidget->setCurrentItem(newOperation);
+
+    // Update parameters layout
+
+    if (!parametersLayout->isEmpty())
+    {
+        parametersLayout->removeWidget(imageOperations[imageIndex][currentImageOperationIndex[imageIndex]]->getParametersWidget());
+        imageOperations[imageIndex][currentImageOperationIndex[imageIndex]]->getParametersWidget()->hide();
+    }
+
+    parametersLayout->addWidget(imageOperations[imageIndex][currentOperationIndex + 1]->getParametersWidget());
+    imageOperations[imageIndex][currentOperationIndex + 1]->getParametersWidget()->show();
+
+    currentImageOperationIndex[imageIndex] = currentOperationIndex + 1;
+}
+
+void MainWidget::removeImageOperation()
+{
+    int imageIndex = imageSelectComboBox->currentIndex();
+    int operationIndex = imageOperationsListWidget->currentRow();
+
+    parametersLayout->removeWidget(imageOperations[imageIndex][operationIndex]->getParametersWidget());
+    imageOperations[imageIndex][operationIndex]->getParametersWidget()->hide();
+
+    std::vector<ImageOperation*>::iterator it = imageOperations[imageIndex].begin();
+
+    imageOperations[imageIndex].erase(it + operationIndex);
+
+    imageOperationsListWidget->takeItem(operationIndex);
 }
 
 void MainWidget::applyImageOperations()
@@ -286,7 +517,7 @@ void MainWidget::iterationLoop()
 {
     applyImageOperations();
 
-    cv::addWeighted(images[0], 0.5, images[1], 0.5, 0.0, blendedImage);
+    cv::addWeighted(images[0], blendFactor, images[1], 1.0 - blendFactor, 0.0, blendedImage);
 
     for (size_t i = 0; i < images.size(); i++)
     {
