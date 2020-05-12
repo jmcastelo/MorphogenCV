@@ -19,6 +19,92 @@
 
 ImageOperation::~ImageOperation(){}
 
+// Canny
+
+QString Canny::name = "Canny";
+
+Canny::Canny(double th1, double th2, int s, bool g): threshold1(th1), threshold2(th2), apertureSize(s), L2gradient(g)
+{
+    QLabel *threshold1Label = new QLabel("Threshold 1");
+    QLabel *threshold2Label = new QLabel("Threshold 2");
+    QLabel *apertureSizeLabel = new QLabel("Aperture size");
+
+    threshold1LineEdit = new CustomLineEdit();
+    threshold2LineEdit = new CustomLineEdit();
+    apertureSizeLineEdit = new CustomLineEdit();
+
+    QDoubleValidator *threshold1Validator = new QDoubleValidator(0.0, 300.0, 10, threshold1LineEdit);
+    threshold1Validator->setLocale(QLocale::English);
+    threshold1LineEdit->setValidator(threshold1Validator);
+    threshold1LineEdit->setText(QString::number(threshold1));
+
+    QDoubleValidator *threshold2Validator = new QDoubleValidator(0.0, 300.0, 10, threshold2LineEdit);
+    threshold2Validator->setLocale(QLocale::English);
+    threshold2LineEdit->setValidator(threshold2Validator);
+    threshold2LineEdit->setText(QString::number(threshold2));
+
+    QIntValidator *apertureSizeValidator = new QIntValidator(3, 7, apertureSizeLineEdit);
+    apertureSizeLineEdit->setValidator(apertureSizeValidator);
+    apertureSizeLineEdit->setText(QString::number(apertureSize));
+
+    L2gradientCheckBox = new QCheckBox("L2 gradient");
+    L2gradientCheckBox->setChecked(false);
+
+    QVBoxLayout *vBoxLayout = new QVBoxLayout;
+    vBoxLayout->addWidget(threshold1Label);
+    vBoxLayout->addWidget(threshold1LineEdit);
+    vBoxLayout->addWidget(threshold2Label);
+    vBoxLayout->addWidget(threshold2LineEdit);
+    vBoxLayout->addWidget(apertureSizeLabel);
+    vBoxLayout->addWidget(apertureSizeLineEdit);
+    vBoxLayout->addWidget(L2gradientCheckBox);
+
+    mainWidget = new QWidget(this);
+    mainWidget->setLayout(vBoxLayout);
+
+    connect(apertureSizeLineEdit, &CustomLineEdit::returnPressed, [=](){
+        int size = apertureSizeLineEdit->text().toInt();
+        if (size > 0 && size % 2 == 0) size--;
+        apertureSize = size;
+        apertureSizeLineEdit->setText(QString::number(size));
+    });
+    connect(threshold1LineEdit, &CustomLineEdit::returnPressed, [=](){ threshold1 = threshold1LineEdit->text().toDouble(); });
+    connect(threshold2LineEdit, &CustomLineEdit::returnPressed, [=](){ threshold2 = threshold2LineEdit->text().toDouble(); });
+    connect(apertureSizeLineEdit, &CustomLineEdit::focusOut, [=](){ apertureSizeLineEdit->setText(QString::number(apertureSize)); });
+    connect(threshold1LineEdit, &CustomLineEdit::focusOut, [=](){ threshold1LineEdit->setText(QString::number(threshold1)); });
+    connect(threshold2LineEdit, &CustomLineEdit::focusOut, [=](){ threshold2LineEdit->setText(QString::number(threshold2)); });
+    connect(L2gradientCheckBox, &QCheckBox::stateChanged, [=](int state){ L2gradient = (state == Qt::Checked); });
+}
+
+Canny::~Canny()
+{
+    threshold1LineEdit->disconnect();
+    threshold2LineEdit->disconnect();
+    apertureSizeLineEdit->disconnect();
+    L2gradientCheckBox->disconnect();
+
+    QLayoutItem *child;
+    while ((child = mainWidget->layout()->takeAt(0)) != 0)
+    {
+        delete child;
+    }
+
+    delete mainWidget->layout();
+    delete mainWidget;
+}
+
+QWidget* Canny::getParametersWidget()
+{
+    return mainWidget;
+}
+
+cv::Mat Canny::applyOperation(cv::Mat src)
+{
+    cv::Mat dst;
+    cv::Canny(src, dst, threshold1, threshold2, apertureSize, L2gradient);
+    return dst;
+}
+
 // Convert to
 
 QString ConvertTo::name = "Convert to";
@@ -420,15 +506,14 @@ cv::Mat MorphologyEx::applyOperation(cv::Mat src)
 
 QString Rotation::name = "Rotation";
 
-Rotation::Rotation(double a, double s, int f): angle(a), scale(s), flags(f)
+Rotation::Rotation(double a, double s, cv::InterpolationFlags f): angle(a), scale(s), flag(f)
 {
     QLabel *angleLabel = new QLabel("Angle");
     QLabel *scaleLabel = new QLabel("Scale");
-    QLabel *flagsLabel = new QLabel("Flags");
+    QLabel *flagLabel = new QLabel("Interpolation");
 
     angleLineEdit = new CustomLineEdit();
     scaleLineEdit = new CustomLineEdit();
-    flagsLineEdit = new CustomLineEdit();
 
     QDoubleValidator *angleValidator = new QDoubleValidator(-360.0, 360.0, 10, angleLineEdit);
     angleValidator->setLocale(QLocale::English);
@@ -440,32 +525,45 @@ Rotation::Rotation(double a, double s, int f): angle(a), scale(s), flags(f)
     scaleLineEdit->setValidator(scaleValidator);
     scaleLineEdit->setText(QString::number(scale));
 
-    flagsLineEdit->setText(QString::number(flags));
+    flagCombobox = new QComboBox;
+    flagCombobox->addItem("Nearest neighbor");
+    flagCombobox->addItem("Bilinear");
+    flagCombobox->addItem("Bicubic");
+    flagCombobox->addItem("Area");
+    flagCombobox->addItem("Lanczos 8x8");
+    //flagCombobox->addItem("Bit exact biliniar");
+    flagCombobox->setCurrentIndex(0);
+
+    flags[0] = cv::INTER_NEAREST;
+    flags[1] = cv::INTER_LINEAR;
+    flags[2] = cv::INTER_CUBIC;
+    flags[3] = cv::INTER_AREA;
+    flags[4] = cv::INTER_LANCZOS4;
+    //flags[5] = cv::INTER_LINEAR_EXACT;
 
     QVBoxLayout *vBoxLayout = new QVBoxLayout;
     vBoxLayout->addWidget(angleLabel);
     vBoxLayout->addWidget(angleLineEdit);
     vBoxLayout->addWidget(scaleLabel);
     vBoxLayout->addWidget(scaleLineEdit);
-    vBoxLayout->addWidget(flagsLabel);
-    vBoxLayout->addWidget(flagsLineEdit);
+    vBoxLayout->addWidget(flagLabel);
+    vBoxLayout->addWidget(flagCombobox);
 
     mainWidget = new QWidget(this);
     mainWidget->setLayout(vBoxLayout);
 
     connect(angleLineEdit, &CustomLineEdit::returnPressed, [=](){ angle = angleLineEdit->text().toDouble(); });
     connect(scaleLineEdit, &CustomLineEdit::returnPressed, [=](){ scale = scaleLineEdit->text().toDouble(); });
-    connect(flagsLineEdit, &CustomLineEdit::returnPressed, [=](){ flags = angleLineEdit->text().toInt(); });
     connect(angleLineEdit, &CustomLineEdit::focusOut, [=](){ angleLineEdit->setText(QString::number(angle)); });
     connect(scaleLineEdit, &CustomLineEdit::focusOut, [=](){ scaleLineEdit->setText(QString::number(scale)); });
-    connect(flagsLineEdit, &CustomLineEdit::focusOut, [=](){ flagsLineEdit->setText(QString::number(flags)); });
+    connect(flagCombobox, QOverload<int>::of(&QComboBox::activated), [=](int flagIndex){ flag = flags[flagIndex]; });
 }
 
 Rotation::~Rotation()
 {
     angleLineEdit->disconnect();
     scaleLineEdit->disconnect();
-    flagsLineEdit->disconnect();
+    flagCombobox->disconnect();
 
     QLayoutItem *child;
     while ((child = mainWidget->layout()->takeAt(0)) != 0)
@@ -487,6 +585,6 @@ cv::Mat Rotation::applyOperation(cv::Mat src)
     cv::Point center = cv::Point(src.cols / 2, src.rows / 2);
     cv::Mat rotationMat = cv::getRotationMatrix2D(center, angle, scale);
     cv::Mat dst;
-    cv::warpAffine(src, dst, rotationMat, src.size(), flags, cv::BORDER_TRANSPARENT);
+    cv::warpAffine(src, dst, rotationMat, src.size(), flag, cv::BORDER_TRANSPARENT);
     return dst;
 }

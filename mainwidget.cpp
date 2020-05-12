@@ -31,7 +31,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
     // Init variables
 
-    availableImageOperations = {"Convert to", "Dilate", "Erode", "Gaussian blur", "Laplacian", "Morphology operations", "Rotation"};
+    availableImageOperations = {"Canny", "Convert to", "Dilate", "Erode", "Gaussian blur", "Laplacian", "Morphology operations", "Rotation"};
 
     timerInterval = 25;
     imageSize = 700;
@@ -344,7 +344,7 @@ void MainWidget::initImageOperations()
     imageOperations[0].clear();
 
     imageOperations[1].clear();
-    imageOperations[1].push_back(new Rotation(45.0, 1.0, cv::INTER_NEAREST | cv::WARP_FILL_OUTLIERS));
+    imageOperations[1].push_back(new Rotation(45.0, 1.0, cv::INTER_NEAREST));
 }
 
 void MainWidget::initNewImageOperationComboBox()
@@ -424,8 +424,9 @@ void MainWidget::onRowsMoved(QModelIndex parent, int start, int end, QModelIndex
     }
 
     ImageOperation *operation = imageOperations[imageIndex][start];
-    imageOperations[imageIndex][start] = imageOperations[imageIndex][row];
-    imageOperations[imageIndex][row] = operation;
+    std::vector<ImageOperation*>::iterator it = imageOperations[imageIndex].begin();
+    imageOperations[imageIndex].erase(it + start);
+    imageOperations[imageIndex].insert(it + row, operation);
 
     currentImageOperationIndex[imageIndex] = row;
 }
@@ -440,31 +441,35 @@ void MainWidget::insertImageOperation()
 
     if (newOperationIndex == 0)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new ConvertTo(1.0, 0.0));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Canny(100, 300, 3, false));
     }
     else if (newOperationIndex == 1)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Dilate(3));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new ConvertTo(1.0, 0.0));
     }
     else if (newOperationIndex == 2)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Erode(3));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Dilate(3));
     }
     else if (newOperationIndex == 3)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new GaussianBlur(3, 0.0, 0.0));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Erode(3));
     }
     else if (newOperationIndex == 4)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Laplacian(3, 1.0, 0.0));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new GaussianBlur(3, 0.0, 0.0));
     }
     else if (newOperationIndex == 5)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new MorphologyEx(3));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Laplacian(3, 1.0, 0.0));
     }
     else if (newOperationIndex == 6)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Rotation(0.0, 1.0, cv::INTER_NEAREST | cv::WARP_FILL_OUTLIERS));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new MorphologyEx(3));
+    }
+    else if (newOperationIndex == 7)
+    {
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Rotation(0.0, 1.0, cv::INTER_NEAREST));
     }
 
     QListWidgetItem *newOperation = new QListWidgetItem;

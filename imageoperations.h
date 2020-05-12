@@ -25,6 +25,8 @@
 #include <QLineEdit>
 #include <QIntValidator>
 #include <QDoubleValidator>
+#include <QComboBox>
+#include <QCheckBox>
 #include <QVBoxLayout>
 
 // A custom QLineEdit that signals focus out
@@ -56,6 +58,31 @@ public:
     virtual QWidget* getParametersWidget() = 0;
     virtual cv::Mat applyOperation(cv::Mat src) = 0;
     virtual ~ImageOperation() = 0;
+};
+
+// Canny
+
+class Canny: public QWidget, public ImageOperation
+{
+    static QString name;
+
+    double threshold1, threshold2;
+    int apertureSize;
+    bool L2gradient;
+
+    CustomLineEdit *threshold1LineEdit;
+    CustomLineEdit *threshold2LineEdit;
+    CustomLineEdit *apertureSizeLineEdit;
+    QCheckBox *L2gradientCheckBox;
+    QWidget *mainWidget;
+
+public:
+    Canny(double th1, double th2, int s, bool g);
+    ~Canny();
+
+    QString getName(){ return name; };
+    QWidget *getParametersWidget();
+    cv::Mat applyOperation(cv::Mat src);
 };
 
 // Convert to
@@ -193,15 +220,15 @@ class Rotation: public QWidget, public ImageOperation
     static QString name;
 
     double angle, scale;
-    int flags;
+    cv::InterpolationFlags flag, flags[5];
 
     CustomLineEdit *angleLineEdit;
     CustomLineEdit *scaleLineEdit;
-    CustomLineEdit *flagsLineEdit;
+    QComboBox *flagCombobox;
     QWidget *mainWidget;
 
 public:
-    Rotation(double a, double s, int f);
+    Rotation(double a, double s, cv::InterpolationFlags f);
     ~Rotation();
 
     QString getName(){ return name; };
