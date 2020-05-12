@@ -93,7 +93,7 @@ Dilate::Dilate(int k): ksize(k)
 
     ksizeLineEdit = new CustomLineEdit();
 
-    QIntValidator *ksizeValidator = new QIntValidator(0, 25, ksizeLineEdit);
+    QIntValidator *ksizeValidator = new QIntValidator(1, 25, ksizeLineEdit);
     ksizeLineEdit->setValidator(ksizeValidator);
     ksizeLineEdit->setText(QString::number(ksize));
 
@@ -150,7 +150,7 @@ Erode::Erode(int k): ksize(k)
 
     ksizeLineEdit = new CustomLineEdit();
 
-    QIntValidator *ksizeValidator = new QIntValidator(0, 25, ksizeLineEdit);
+    QIntValidator *ksizeValidator = new QIntValidator(1, 25, ksizeLineEdit);
     ksizeLineEdit->setValidator(ksizeValidator);
     ksizeLineEdit->setText(QString::number(ksize));
 
@@ -356,6 +356,63 @@ cv::Mat Laplacian::applyOperation(cv::Mat src)
     cv::Laplacian(src, tmp, CV_16S, ksize, scale, delta, cv::BORDER_DEFAULT);
     cv::Mat dst;
     cv::convertScaleAbs(tmp, dst);
+    return dst;
+}
+
+// Morphological operations
+
+QString MorphologyEx::name = "Morphology operation";
+
+MorphologyEx::MorphologyEx(int k): ksize(k)
+{
+    QLabel *ksizeLabel = new QLabel("Kernel size");
+
+    ksizeLineEdit = new CustomLineEdit();
+
+    QIntValidator *ksizeValidator = new QIntValidator(1, 25, ksizeLineEdit);
+    ksizeLineEdit->setValidator(ksizeValidator);
+    ksizeLineEdit->setText(QString::number(ksize));
+
+    QVBoxLayout *vBoxLayout = new QVBoxLayout;
+    vBoxLayout->addWidget(ksizeLabel);
+    vBoxLayout->addWidget(ksizeLineEdit);
+
+    mainWidget = new QWidget(this);
+    mainWidget->setLayout(vBoxLayout);
+
+    connect(ksizeLineEdit, &CustomLineEdit::returnPressed, [=](){
+        int size = ksizeLineEdit->text().toInt();
+        if (size > 0 && size % 2 == 0) size--;
+        ksize = size;
+        ksizeLineEdit->setText(QString::number(size));
+    });
+    connect(ksizeLineEdit, &CustomLineEdit::focusOut, [=](){ ksizeLineEdit->setText(QString::number(ksize)); });
+}
+
+MorphologyEx::~MorphologyEx()
+{
+    ksizeLineEdit->disconnect();
+
+    QLayoutItem *child;
+    while ((child = mainWidget->layout()->takeAt(0)) != 0)
+    {
+        delete child;
+    }
+
+    delete mainWidget->layout();
+    delete mainWidget;
+}
+
+QWidget* MorphologyEx::getParametersWidget()
+{
+    return mainWidget;
+}
+
+cv::Mat MorphologyEx::applyOperation(cv::Mat src)
+{
+    cv::Mat element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(ksize, ksize));
+    cv::Mat dst;
+    cv::morphologyEx(src, dst, cv::MORPH_GRADIENT, element);
     return dst;
 }
 

@@ -165,6 +165,27 @@ public:
     cv::Mat applyOperation(cv::Mat src);
 };
 
+
+// Morphological transformations
+
+class MorphologyEx: public QWidget, public ImageOperation
+{
+    static QString name;
+
+    int ksize;
+
+    CustomLineEdit *ksizeLineEdit;
+    QWidget *mainWidget;
+
+public:
+    MorphologyEx(int k);
+    ~MorphologyEx();
+
+    QString getName(){ return name; };
+    QWidget *getParametersWidget();
+    cv::Mat applyOperation(cv::Mat src);
+};
+
 // Rotation
 
 class Rotation: public QWidget, public ImageOperation

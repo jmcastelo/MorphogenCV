@@ -31,7 +31,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
     // Init variables
 
-    availableImageOperations = {"Convert to", "Dilate", "Erode", "Gaussian blur", "Laplacian", "Rotation"};
+    availableImageOperations = {"Convert to", "Dilate", "Erode", "Gaussian blur", "Laplacian", "Morphology operations", "Rotation"};
 
     timerInterval = 25;
     imageSize = 700;
@@ -41,7 +41,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     takeScreenshotSeries = false;
     screenshotIndex = 1;
 
-    blendFactor = 0.4;
+    blendFactor = 0.5;
 
     currentImageIndex = 0;
     currentImageOperationIndex = {0, 0};
@@ -213,6 +213,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
 MainWidget::~MainWidget()
 {
+
 }
 
 void MainWidget::initSystem()
@@ -341,12 +342,9 @@ void MainWidget::setBlendFactor()
 void MainWidget::initImageOperations()
 {
     imageOperations[0].clear();
-    //imageOperations[0].push_back(new ConvertTo(1.2, 0.0));
-    imageOperations[0].push_back(new GaussianBlur(9, 0.9, 0.9));
-    imageOperations[0].push_back(new Laplacian(3, 1.0, 0.0));
 
     imageOperations[1].clear();
-    imageOperations[1].push_back(new Rotation(45.0, 1.08, cv::INTER_NEAREST | cv::WARP_FILL_OUTLIERS));
+    imageOperations[1].push_back(new Rotation(45.0, 1.0, cv::INTER_NEAREST | cv::WARP_FILL_OUTLIERS));
 }
 
 void MainWidget::initNewImageOperationComboBox()
@@ -371,20 +369,20 @@ void MainWidget::initImageOperationsListWidget(int imageIndex)
     if (imageOperations[imageIndex].empty())
     {
         currentImageOperationIndex[imageIndex] = -1;
+
         removeImageOperationPushButton->setEnabled(false);
+
+        if (!parametersLayout->isEmpty())
+        {
+            QWidget *widget = parametersLayout->itemAt(0)->widget();
+            parametersLayout->removeWidget(widget);
+            widget->hide();
+        }
     }
     else
     {
         QListWidgetItem *operation = imageOperationsListWidget->item(currentImageOperationIndex[imageIndex]);
         imageOperationsListWidget->setCurrentItem(operation);
-
-        if (!parametersLayout->isEmpty())
-        {
-            parametersLayout->removeWidget(imageOperations[currentImageIndex][currentImageOperationIndex[currentImageIndex]]->getParametersWidget());
-            imageOperations[currentImageIndex][currentImageOperationIndex[currentImageIndex]]->getParametersWidget()->hide();
-        }
-        parametersLayout->addWidget(imageOperations[imageIndex][currentImageOperationIndex[imageIndex]]->getParametersWidget());
-        imageOperations[imageIndex][currentImageOperationIndex[imageIndex]]->getParametersWidget()->show();
 
         removeImageOperationPushButton->setEnabled(true);
     }
@@ -398,9 +396,11 @@ void MainWidget::onImageOperationsListWidgetCurrentRowChanged(int currentRow)
 
         if (!parametersLayout->isEmpty())
         {
-            parametersLayout->removeWidget(imageOperations[imageIndex][currentImageOperationIndex[imageIndex]]->getParametersWidget());
-            imageOperations[imageIndex][currentImageOperationIndex[imageIndex]]->getParametersWidget()->hide();
+            QWidget *widget = parametersLayout->itemAt(0)->widget();
+            parametersLayout->removeWidget(widget);
+            widget->hide();
         }
+
         parametersLayout->addWidget(imageOperations[imageIndex][currentRow]->getParametersWidget());
         imageOperations[imageIndex][currentRow]->getParametersWidget()->show();
 
@@ -460,6 +460,10 @@ void MainWidget::insertImageOperation()
     }
     else if (newOperationIndex == 5)
     {
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new MorphologyEx(3));
+    }
+    else if (newOperationIndex == 6)
+    {
         imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Rotation(0.0, 1.0, cv::INTER_NEAREST | cv::WARP_FILL_OUTLIERS));
     }
 
@@ -467,19 +471,6 @@ void MainWidget::insertImageOperation()
     newOperation->setText(imageOperations[imageIndex][currentOperationIndex + 1]->getName());
     imageOperationsListWidget->insertItem(currentOperationIndex + 1, newOperation);
     imageOperationsListWidget->setCurrentItem(newOperation);
-
-    // Update parameters layout
-
-    if (!parametersLayout->isEmpty())
-    {
-        parametersLayout->removeWidget(imageOperations[imageIndex][currentImageOperationIndex[imageIndex]]->getParametersWidget());
-        imageOperations[imageIndex][currentImageOperationIndex[imageIndex]]->getParametersWidget()->hide();
-    }
-
-    parametersLayout->addWidget(imageOperations[imageIndex][currentOperationIndex + 1]->getParametersWidget());
-    imageOperations[imageIndex][currentOperationIndex + 1]->getParametersWidget()->show();
-
-    currentImageOperationIndex[imageIndex] = currentOperationIndex + 1;
 }
 
 void MainWidget::removeImageOperation()
