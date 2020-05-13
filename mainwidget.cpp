@@ -31,7 +31,16 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
     // Init variables
 
-    availableImageOperations = {"Canny", "Convert to", "Dilate", "Erode", "Gaussian blur", "Laplacian", "Morphology operations", "Rotation"};
+    availableImageOperations = {
+        Canny::name,
+        ConvertTo::name,
+        GaussianBlur::name,
+        Laplacian::name,
+        MixChannels::name,
+        MorphologyEx::name,
+        Rotation::name,
+        Sharpen::name
+    };
 
     timerInterval = 25;
     imageSize = 700;
@@ -46,11 +55,6 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     currentImageIndex = 0;
     currentImageOperationIndex = {0, 0};
 
-    // OpenCV
-
-    setMask();
-    initSystem();
-
     // Qt
 
     // General controls
@@ -63,6 +67,17 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     QHBoxLayout *hBoxLayout = new QHBoxLayout;
     hBoxLayout->addWidget(initPushButton);
     hBoxLayout->addWidget(pauseResumePushButton);
+
+    coloredSeedCheckBox = new QCheckBox("Color");
+    coloredSeedCheckBox->setChecked(false);
+
+    bwSeedCheckBox = new QCheckBox("Grays");
+    bwSeedCheckBox->setChecked(true);
+
+    QButtonGroup *seedButtonGroup = new QButtonGroup;
+    seedButtonGroup->setExclusive(true);
+    seedButtonGroup->addButton(coloredSeedCheckBox, 0);
+    seedButtonGroup->addButton(bwSeedCheckBox, 1);
 
     QLabel *timerIntervalLabel = new QLabel("Time interval (ms)");
 
@@ -104,6 +119,8 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     QVBoxLayout *generalControlsVBoxLayout = new QVBoxLayout;
     generalControlsVBoxLayout->setAlignment(Qt::AlignTop);
     generalControlsVBoxLayout->addLayout(hBoxLayout);
+    generalControlsVBoxLayout->addWidget(coloredSeedCheckBox);
+    generalControlsVBoxLayout->addWidget(bwSeedCheckBox);
     generalControlsVBoxLayout->addWidget(timerIntervalLabel);
     generalControlsVBoxLayout->addWidget(timerIntervalLineEdit);
     generalControlsVBoxLayout->addWidget(imageSizeLabel);
@@ -205,6 +222,11 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     connect(removeImageOperationPushButton, &QPushButton::clicked, this, &MainWidget::removeImageOperation);
     connect(timer, &QTimer::timeout, this, &MainWidget::iterationLoop);
 
+    // OpenCV
+
+    setMask();
+    initSystem();
+
     // Init widgets
 
     initImageOperationsListWidget(0);
@@ -218,8 +240,13 @@ MainWidget::~MainWidget()
 
 void MainWidget::initSystem()
 {
-    cv::Mat seedImage = cv::Mat(imageSize, imageSize, CV_8U);
+    cv::Mat seedImage = cv::Mat(imageSize, imageSize, CV_8UC3);
     cv::randu(seedImage, cv::Scalar::all(0), cv::Scalar::all(255));
+
+    if (bwSeedCheckBox->isChecked())
+    {
+        cv::cvtColor(seedImage, seedImage, cv::COLOR_BGR2GRAY);
+    }
 
     for (size_t i = 0; i < images.size(); i++)
     {
@@ -342,9 +369,7 @@ void MainWidget::setBlendFactor()
 void MainWidget::initImageOperations()
 {
     imageOperations[0].clear();
-
     imageOperations[1].clear();
-    imageOperations[1].push_back(new Rotation(45.0, 1.0, cv::INTER_NEAREST));
 }
 
 void MainWidget::initNewImageOperationComboBox()
@@ -390,16 +415,16 @@ void MainWidget::initImageOperationsListWidget(int imageIndex)
 
 void MainWidget::onImageOperationsListWidgetCurrentRowChanged(int currentRow)
 {
+    if (!parametersLayout->isEmpty())
+    {
+        QWidget *widget = parametersLayout->itemAt(0)->widget();
+        parametersLayout->removeWidget(widget);
+        widget->hide();
+    }
+
     if (currentRow >= 0)
     {
         int imageIndex = imageSelectComboBox->currentIndex();
-
-        if (!parametersLayout->isEmpty())
-        {
-            QWidget *widget = parametersLayout->itemAt(0)->widget();
-            parametersLayout->removeWidget(widget);
-            widget->hide();
-        }
 
         parametersLayout->addWidget(imageOperations[imageIndex][currentRow]->getParametersWidget());
         imageOperations[imageIndex][currentRow]->getParametersWidget()->show();
@@ -449,27 +474,27 @@ void MainWidget::insertImageOperation()
     }
     else if (newOperationIndex == 2)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Dilate(3));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new GaussianBlur(3, 0.0, 0.0));
     }
     else if (newOperationIndex == 3)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Erode(3));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Laplacian(3, 1.0, 0.0));
     }
     else if (newOperationIndex == 4)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new GaussianBlur(3, 0.0, 0.0));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new MixChannels(0, 1, 2));
     }
     else if (newOperationIndex == 5)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Laplacian(3, 1.0, 0.0));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new MorphologyEx(3, 1, cv::MORPH_ERODE, cv::MORPH_RECT));
     }
     else if (newOperationIndex == 6)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new MorphologyEx(3));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Rotation(0.0, 1.0, cv::INTER_NEAREST));
     }
     else if (newOperationIndex == 7)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Rotation(0.0, 1.0, cv::INTER_NEAREST));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Sharpen(1.0, 5.0, 1.0));
     }
 
     QListWidgetItem *newOperation = new QListWidgetItem;
@@ -483,14 +508,12 @@ void MainWidget::removeImageOperation()
     int imageIndex = imageSelectComboBox->currentIndex();
     int operationIndex = imageOperationsListWidget->currentRow();
 
-    parametersLayout->removeWidget(imageOperations[imageIndex][operationIndex]->getParametersWidget());
-    imageOperations[imageIndex][operationIndex]->getParametersWidget()->hide();
+    imageOperationsListWidget->takeItem(operationIndex);
 
     std::vector<ImageOperation*>::iterator it = imageOperations[imageIndex].begin();
-
     imageOperations[imageIndex].erase(it + operationIndex);
 
-    imageOperationsListWidget->takeItem(operationIndex);
+    currentImageOperationIndex[imageIndex] = operationIndex;
 }
 
 void MainWidget::applyImageOperations()
@@ -499,9 +522,9 @@ void MainWidget::applyImageOperations()
     {
         cv::Mat src = images[i];
 
-        for (size_t j = 0; j < imageOperations[i].size(); j++)
+        for(auto operation: imageOperations[i])
         {
-            cv::Mat dst = imageOperations[i][j]->applyOperation(src);
+            cv::Mat dst = operation->applyOperation(src);
             dst.copyTo(src, mask);
         }
 
@@ -520,10 +543,9 @@ void MainWidget::iterationLoop()
         blendedImage.copyTo(images[i], mask);
     }
 
-    QImage qImage = Mat2QImage(blendedImage);
-    imageLabel->setPixmap(QPixmap::fromImage(qImage));
+    imageLabel->setPixmap(QPixmap::fromImage(Mat2QImage(blendedImage)));
 
-    if (screenshotPushButton->isChecked() && takeScreenshotSeries)
+    if (takeScreenshotSeries && screenshotPushButton->isChecked())
     {
         takeScreenshotSeriesElement();
     }

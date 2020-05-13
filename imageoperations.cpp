@@ -169,121 +169,7 @@ cv::Mat ConvertTo::applyOperation(cv::Mat src)
     return dst;
 }
 
-// Dilate
-
-QString Dilate::name = "Dilate";
-
-Dilate::Dilate(int k): ksize(k)
-{
-    QLabel *ksizeLabel = new QLabel("Kernel size");
-
-    ksizeLineEdit = new CustomLineEdit();
-
-    QIntValidator *ksizeValidator = new QIntValidator(1, 25, ksizeLineEdit);
-    ksizeLineEdit->setValidator(ksizeValidator);
-    ksizeLineEdit->setText(QString::number(ksize));
-
-    QVBoxLayout *vBoxLayout = new QVBoxLayout;
-    vBoxLayout->addWidget(ksizeLabel);
-    vBoxLayout->addWidget(ksizeLineEdit);
-
-    mainWidget = new QWidget(this);
-    mainWidget->setLayout(vBoxLayout);
-
-    connect(ksizeLineEdit, &CustomLineEdit::returnPressed, [=](){
-        int size = ksizeLineEdit->text().toInt();
-        if (size > 0 && size % 2 == 0) size--;
-        ksize = size;
-        ksizeLineEdit->setText(QString::number(size));
-    });
-    connect(ksizeLineEdit, &CustomLineEdit::focusOut, [=](){ ksizeLineEdit->setText(QString::number(ksize)); });
-}
-
-Dilate::~Dilate()
-{
-    ksizeLineEdit->disconnect();
-
-    QLayoutItem *child;
-    while ((child = mainWidget->layout()->takeAt(0)) != 0)
-    {
-        delete child;
-    }
-
-    delete mainWidget->layout();
-    delete mainWidget;
-}
-
-QWidget* Dilate::getParametersWidget()
-{
-    return mainWidget;
-}
-
-cv::Mat Dilate::applyOperation(cv::Mat src)
-{
-    cv::Mat element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(ksize, ksize));
-    cv::Mat dst;
-    cv::dilate(src, dst, element);
-    return dst;
-}
-
-// Erode
-
-QString Erode::name = "Erode";
-
-Erode::Erode(int k): ksize(k)
-{
-    QLabel *ksizeLabel = new QLabel("Kernel size");
-
-    ksizeLineEdit = new CustomLineEdit();
-
-    QIntValidator *ksizeValidator = new QIntValidator(1, 25, ksizeLineEdit);
-    ksizeLineEdit->setValidator(ksizeValidator);
-    ksizeLineEdit->setText(QString::number(ksize));
-
-    QVBoxLayout *vBoxLayout = new QVBoxLayout;
-    vBoxLayout->addWidget(ksizeLabel);
-    vBoxLayout->addWidget(ksizeLineEdit);
-
-    mainWidget = new QWidget(this);
-    mainWidget->setLayout(vBoxLayout);
-
-    connect(ksizeLineEdit, &CustomLineEdit::returnPressed, [=](){
-        int size = ksizeLineEdit->text().toInt();
-        if (size > 0 && size % 2 == 0) size--;
-        ksize = size;
-        ksizeLineEdit->setText(QString::number(size));
-    });
-    connect(ksizeLineEdit, &CustomLineEdit::focusOut, [=](){ ksizeLineEdit->setText(QString::number(ksize)); });
-}
-
-Erode::~Erode()
-{
-    ksizeLineEdit->disconnect();
-
-    QLayoutItem *child;
-    while ((child = mainWidget->layout()->takeAt(0)) != 0)
-    {
-        delete child;
-    }
-
-    delete mainWidget->layout();
-    delete mainWidget;
-}
-
-QWidget* Erode::getParametersWidget()
-{
-    return mainWidget;
-}
-
-cv::Mat Erode::applyOperation(cv::Mat src)
-{
-    cv::Mat element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(ksize, ksize));
-    cv::Mat dst;
-    cv::erode(src, dst, element);
-    return dst;
-}
-
-// Gaussian blut
+// Gaussian blur
 
 QString GaussianBlur::name = "Gaussian blur";
 
@@ -325,6 +211,7 @@ GaussianBlur::GaussianBlur(int k, double sx, double sy): ksize(k), sigmaX(sx), s
     connect(ksizeLineEdit, &CustomLineEdit::returnPressed, [=](){
         int size = ksizeLineEdit->text().toInt();
         if (size > 0 && size % 2 == 0) size--;
+        if (size == 0 && sigmaX == 0 && sigmaY == 0) size = 3;
         ksize = size;
         ksizeLineEdit->setText(QString::number(size));
     });
@@ -439,9 +326,82 @@ QWidget* Laplacian::getParametersWidget()
 cv::Mat Laplacian::applyOperation(cv::Mat src)
 {
     cv::Mat tmp;
-    cv::Laplacian(src, tmp, CV_16S, ksize, scale, delta, cv::BORDER_DEFAULT);
+    cv::Laplacian(src, tmp, CV_16SC3, ksize, scale, delta, cv::BORDER_DEFAULT);
     cv::Mat dst;
     cv::convertScaleAbs(tmp, dst);
+    return dst;
+}
+
+// Mix channels
+
+QString MixChannels::name = "Mix channels";
+
+MixChannels::MixChannels(int b, int g, int r): blue(b), green(g), red(r)
+{
+    QLabel *blueLabel = new QLabel("Blue");
+    QLabel *greenLabel = new QLabel("Green");
+    QLabel *redLabel = new QLabel("Red");
+
+    blueComboBox = new QComboBox;
+    blueComboBox->addItem("Blue");
+    blueComboBox->addItem("Green");
+    blueComboBox->addItem("Red");
+    blueComboBox->setCurrentIndex(0);
+
+    greenComboBox = new QComboBox;
+    greenComboBox->addItem("Blue");
+    greenComboBox->addItem("Green");
+    greenComboBox->addItem("Red");
+    greenComboBox->setCurrentIndex(1);
+
+    redComboBox = new QComboBox;
+    redComboBox->addItem("Blue");
+    redComboBox->addItem("Green");
+    redComboBox->addItem("Red");
+    redComboBox->setCurrentIndex(2);
+
+    QVBoxLayout *vBoxLayout = new QVBoxLayout;
+    vBoxLayout->addWidget(blueLabel);
+    vBoxLayout->addWidget(blueComboBox);
+    vBoxLayout->addWidget(greenLabel);
+    vBoxLayout->addWidget(greenComboBox);
+    vBoxLayout->addWidget(redLabel);
+    vBoxLayout->addWidget(redComboBox);
+
+    mainWidget = new QWidget(this);
+    mainWidget->setLayout(vBoxLayout);
+
+    connect(blueComboBox, QOverload<int>::of(&QComboBox::activated), [=](int channelIndex){ blue = channelIndex; });
+    connect(greenComboBox, QOverload<int>::of(&QComboBox::activated), [=](int channelIndex){ green = channelIndex; });
+    connect(redComboBox, QOverload<int>::of(&QComboBox::activated), [=](int channelIndex){ red = channelIndex; });
+}
+
+MixChannels::~MixChannels()
+{
+    blueComboBox->disconnect();
+    greenComboBox->disconnect();
+    redComboBox->disconnect();
+
+    QLayoutItem *child;
+    while ((child = mainWidget->layout()->takeAt(0)) != 0)
+    {
+        delete child;
+    }
+
+    delete mainWidget->layout();
+    delete mainWidget;
+}
+
+QWidget* MixChannels::getParametersWidget()
+{
+    return mainWidget;
+}
+
+cv::Mat MixChannels::applyOperation(cv::Mat src)
+{
+    cv::Mat dst(src.rows, src.cols, CV_8UC3);
+    int fromTo[] = {0, blue, 1, green, 2, red};
+    cv::mixChannels(&src, 1, &dst, 1, fromTo, 3);
     return dst;
 }
 
@@ -449,9 +409,30 @@ cv::Mat Laplacian::applyOperation(cv::Mat src)
 
 QString MorphologyEx::name = "Morphology operation";
 
-MorphologyEx::MorphologyEx(int k): ksize(k)
+MorphologyEx::MorphologyEx(int k, int its, cv::MorphTypes t, cv::MorphShapes s): ksize(k), iterations(its), morphType(t), morphShape(s)
 {
+    QLabel *morphTypeLabel = new QLabel("Type");
     QLabel *ksizeLabel = new QLabel("Kernel size");
+    QLabel *morphShapeLabel = new QLabel("Shape");
+    QLabel *iterationsLabel = new QLabel("Iterations");
+
+    morphTypeComboBox = new QComboBox;
+    morphTypeComboBox->addItem("Erode");
+    morphTypeComboBox->addItem("Dilate");
+    morphTypeComboBox->addItem("Opening");
+    morphTypeComboBox->addItem("Closing");
+    morphTypeComboBox->addItem("Gradient");
+    morphTypeComboBox->addItem("Top hat");
+    morphTypeComboBox->addItem("Black hat");
+    morphTypeComboBox->setCurrentIndex(0);
+
+    morphTypes[0] = cv::MORPH_ERODE;
+    morphTypes[1] = cv::MORPH_DILATE;
+    morphTypes[2] = cv::MORPH_OPEN;
+    morphTypes[3] = cv::MORPH_CLOSE;
+    morphTypes[4] = cv::MORPH_GRADIENT;
+    morphTypes[5] = cv::MORPH_TOPHAT;
+    morphTypes[6] = cv::MORPH_BLACKHAT;
 
     ksizeLineEdit = new CustomLineEdit();
 
@@ -459,9 +440,31 @@ MorphologyEx::MorphologyEx(int k): ksize(k)
     ksizeLineEdit->setValidator(ksizeValidator);
     ksizeLineEdit->setText(QString::number(ksize));
 
+    morphShapeComboBox = new QComboBox;
+    morphShapeComboBox->addItem("Rectangle");
+    morphShapeComboBox->addItem("Cross");
+    morphShapeComboBox->addItem("Ellipse");
+    morphShapeComboBox->setCurrentIndex(0);
+
+    morphShapes[0] = cv::MORPH_RECT;
+    morphShapes[1] = cv::MORPH_CROSS;
+    morphShapes[2] = cv::MORPH_ELLIPSE;
+
+    iterationsLineEdit = new CustomLineEdit();
+
+    QIntValidator *iterationsValidator = new QIntValidator(1, 100, ksizeLineEdit);
+    iterationsLineEdit->setValidator(iterationsValidator);
+    iterationsLineEdit->setText(QString::number(iterations));
+
     QVBoxLayout *vBoxLayout = new QVBoxLayout;
+    vBoxLayout->addWidget(morphTypeLabel);
+    vBoxLayout->addWidget(morphTypeComboBox);
     vBoxLayout->addWidget(ksizeLabel);
     vBoxLayout->addWidget(ksizeLineEdit);
+    vBoxLayout->addWidget(morphShapeLabel);
+    vBoxLayout->addWidget(morphShapeComboBox);
+    vBoxLayout->addWidget(iterationsLabel);
+    vBoxLayout->addWidget(iterationsLineEdit);
 
     mainWidget = new QWidget(this);
     mainWidget->setLayout(vBoxLayout);
@@ -472,12 +475,19 @@ MorphologyEx::MorphologyEx(int k): ksize(k)
         ksize = size;
         ksizeLineEdit->setText(QString::number(size));
     });
+    connect(iterationsLineEdit, &CustomLineEdit::returnPressed, [=](){ iterations = iterationsLineEdit->text().toInt(); });
     connect(ksizeLineEdit, &CustomLineEdit::focusOut, [=](){ ksizeLineEdit->setText(QString::number(ksize)); });
+    connect(iterationsLineEdit, &CustomLineEdit::focusOut, [=](){ iterationsLineEdit->setText(QString::number(iterations)); });
+    connect(morphTypeComboBox, QOverload<int>::of(&QComboBox::activated), [=](int typeIndex){ morphType = morphTypes[typeIndex]; });
+    connect(morphShapeComboBox, QOverload<int>::of(&QComboBox::activated), [=](int shapeIndex){ morphShape = morphShapes[shapeIndex]; });
 }
 
 MorphologyEx::~MorphologyEx()
 {
     ksizeLineEdit->disconnect();
+    morphTypeComboBox->disconnect();
+    iterationsLineEdit->disconnect();
+    morphShapeComboBox->disconnect();
 
     QLayoutItem *child;
     while ((child = mainWidget->layout()->takeAt(0)) != 0)
@@ -496,9 +506,9 @@ QWidget* MorphologyEx::getParametersWidget()
 
 cv::Mat MorphologyEx::applyOperation(cv::Mat src)
 {
-    cv::Mat element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(ksize, ksize));
+    cv::Mat element = cv::getStructuringElement(morphShape, cv::Size(ksize, ksize));
     cv::Mat dst;
-    cv::morphologyEx(src, dst, cv::MORPH_GRADIENT, element);
+    cv::morphologyEx(src, dst, morphType, element, cv::Point(-1, -1), iterations);
     return dst;
 }
 
@@ -586,5 +596,84 @@ cv::Mat Rotation::applyOperation(cv::Mat src)
     cv::Mat rotationMat = cv::getRotationMatrix2D(center, angle, scale);
     cv::Mat dst;
     cv::warpAffine(src, dst, rotationMat, src.size(), flag, cv::BORDER_TRANSPARENT);
+    return dst;
+}
+
+// Sharpen
+
+QString Sharpen::name = "Sharpen";
+
+Sharpen::Sharpen(double s, double t, double a): sigma(s), threshold(t), amount(a)
+{
+    QLabel *sigmaLabel = new QLabel("Sigma");
+    QLabel *thresholdLabel = new QLabel("Threshold");
+    QLabel *amountLabel = new QLabel("Amount");
+
+    sigmaLineEdit = new CustomLineEdit();
+    thresholdLineEdit = new CustomLineEdit();
+    amountLineEdit = new CustomLineEdit();
+
+    QDoubleValidator *sigmaValidator = new QDoubleValidator(0.0, 10.0, 10, sigmaLineEdit);
+    sigmaValidator->setLocale(QLocale::English);
+    sigmaLineEdit->setValidator(sigmaValidator);
+    sigmaLineEdit->setText(QString::number(sigma));
+
+    QDoubleValidator *thresholdValidator = new QDoubleValidator(0.0, 100.0, 10, thresholdLineEdit);
+    thresholdValidator->setLocale(QLocale::English);
+    thresholdLineEdit->setValidator(thresholdValidator);
+    thresholdLineEdit->setText(QString::number(threshold));
+
+    QDoubleValidator *amountValidator = new QDoubleValidator(0.0, 10.0, 10, amountLineEdit);
+    amountValidator->setLocale(QLocale::English);
+    amountLineEdit->setValidator(amountValidator);
+    amountLineEdit->setText(QString::number(amount));
+
+    QVBoxLayout *vBoxLayout = new QVBoxLayout;
+    vBoxLayout->addWidget(sigmaLabel);
+    vBoxLayout->addWidget(sigmaLineEdit);
+    vBoxLayout->addWidget(thresholdLabel);
+    vBoxLayout->addWidget(thresholdLineEdit);
+    vBoxLayout->addWidget(amountLabel);
+    vBoxLayout->addWidget(amountLineEdit);
+
+    mainWidget = new QWidget(this);
+    mainWidget->setLayout(vBoxLayout);
+
+    connect(sigmaLineEdit, &CustomLineEdit::returnPressed, [=](){ sigma = sigmaLineEdit->text().toDouble(); });
+    connect(thresholdLineEdit, &CustomLineEdit::returnPressed, [=](){ threshold = thresholdLineEdit->text().toDouble(); });
+    connect(amountLineEdit, &CustomLineEdit::returnPressed, [=](){ amount = amountLineEdit->text().toDouble(); });
+    connect(sigmaLineEdit, &CustomLineEdit::focusOut, [=](){ sigmaLineEdit->setText(QString::number(sigma)); });
+    connect(thresholdLineEdit, &CustomLineEdit::focusOut, [=](){ thresholdLineEdit->setText(QString::number(threshold)); });
+    connect(amountLineEdit, &CustomLineEdit::focusOut, [=](){ amountLineEdit->setText(QString::number(amount)); });
+}
+
+Sharpen::~Sharpen()
+{
+    sigmaLineEdit->disconnect();
+    thresholdLineEdit->disconnect();
+    amountLineEdit->disconnect();
+
+    QLayoutItem *child;
+    while ((child = mainWidget->layout()->takeAt(0)) != 0)
+    {
+        delete child;
+    }
+
+    delete mainWidget->layout();
+    delete mainWidget;
+}
+
+QWidget* Sharpen::getParametersWidget()
+{
+    return mainWidget;
+}
+
+cv::Mat Sharpen::applyOperation(cv::Mat src)
+{
+    cv::Mat blurred;
+    cv::GaussianBlur(src, blurred, cv::Size(), sigma, sigma);
+    cv::Mat lowContrastMask = abs(src - blurred) < threshold;
+    cv::Mat dst = src * (1 + amount) + blurred * (-amount);
+    src.copyTo(dst, lowContrastMask);
     return dst;
 }

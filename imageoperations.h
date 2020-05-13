@@ -64,8 +64,6 @@ public:
 
 class Canny: public QWidget, public ImageOperation
 {
-    static QString name;
-
     double threshold1, threshold2;
     int apertureSize;
     bool L2gradient;
@@ -77,6 +75,8 @@ class Canny: public QWidget, public ImageOperation
     QWidget *mainWidget;
 
 public:
+    static QString name;
+
     Canny(double th1, double th2, int s, bool g);
     ~Canny();
 
@@ -89,8 +89,6 @@ public:
 
 class ConvertTo: public QWidget, public ImageOperation
 {
-    static QString name;
-
     double alpha, beta;
 
     CustomLineEdit *alphaLineEdit;
@@ -98,48 +96,10 @@ class ConvertTo: public QWidget, public ImageOperation
     QWidget *mainWidget;
 
 public:
+    static QString name;
+
     ConvertTo(double a, double b);
     ~ConvertTo();
-
-    QString getName(){ return name; };
-    QWidget *getParametersWidget();
-    cv::Mat applyOperation(cv::Mat src);
-};
-
-// Dilate
-
-class Dilate: public QWidget, public ImageOperation
-{
-    static QString name;
-
-    int ksize;
-
-    CustomLineEdit *ksizeLineEdit;
-    QWidget *mainWidget;
-
-public:
-    Dilate(int k);
-    ~Dilate();
-
-    QString getName(){ return name; };
-    QWidget *getParametersWidget();
-    cv::Mat applyOperation(cv::Mat src);
-};
-
-// Erode
-
-class Erode: public QWidget, public ImageOperation
-{
-    static QString name;
-
-    int ksize;
-
-    CustomLineEdit *ksizeLineEdit;
-    QWidget *mainWidget;
-
-public:
-    Erode(int k);
-    ~Erode();
 
     QString getName(){ return name; };
     QWidget *getParametersWidget();
@@ -150,8 +110,6 @@ public:
 
 class GaussianBlur: public QWidget, public ImageOperation
 {
-    static QString name;
-
     int ksize;
     double sigmaX, sigmaY;
 
@@ -161,6 +119,8 @@ class GaussianBlur: public QWidget, public ImageOperation
     QWidget *mainWidget;
 
 public:
+    static QString name;
+
     GaussianBlur(int k, double sx, double sy);
     ~GaussianBlur();
 
@@ -173,8 +133,6 @@ public:
 
 class Laplacian: public QWidget, public ImageOperation
 {
-    static QString name;
-
     int ksize;
     double scale, delta;
 
@@ -184,6 +142,8 @@ class Laplacian: public QWidget, public ImageOperation
     QWidget *mainWidget;
 
 public:
+    static QString name;
+
     Laplacian(int k, double s, double d);
     ~Laplacian();
 
@@ -192,20 +152,46 @@ public:
     cv::Mat applyOperation(cv::Mat src);
 };
 
+// Mix channels
+
+class MixChannels: public QWidget, public ImageOperation
+{
+    int blue, green, red;
+
+    QComboBox *blueComboBox;
+    QComboBox *greenComboBox;
+    QComboBox *redComboBox;
+    QWidget *mainWidget;
+
+public:
+    static QString name;
+
+    MixChannels(int b, int g, int r);
+    ~MixChannels();
+
+    QString getName(){ return name; };
+    QWidget *getParametersWidget();
+    cv::Mat applyOperation(cv::Mat src);
+};
 
 // Morphological transformations
 
 class MorphologyEx: public QWidget, public ImageOperation
 {
-    static QString name;
-
-    int ksize;
+    int ksize, iterations;
+    cv::MorphTypes morphType, morphTypes[7];
+    cv::MorphShapes morphShape, morphShapes[3];
 
     CustomLineEdit *ksizeLineEdit;
+    CustomLineEdit *iterationsLineEdit;
+    QComboBox *morphTypeComboBox;
+    QComboBox *morphShapeComboBox;
     QWidget *mainWidget;
 
 public:
-    MorphologyEx(int k);
+    static QString name;
+
+    MorphologyEx(int k, int its, cv::MorphTypes t, cv::MorphShapes s);
     ~MorphologyEx();
 
     QString getName(){ return name; };
@@ -217,8 +203,6 @@ public:
 
 class Rotation: public QWidget, public ImageOperation
 {
-    static QString name;
-
     double angle, scale;
     cv::InterpolationFlags flag, flags[5];
 
@@ -228,8 +212,32 @@ class Rotation: public QWidget, public ImageOperation
     QWidget *mainWidget;
 
 public:
+    static QString name;
+
     Rotation(double a, double s, cv::InterpolationFlags f);
     ~Rotation();
+
+    QString getName(){ return name; };
+    QWidget *getParametersWidget();
+    cv::Mat applyOperation(cv::Mat src);
+};
+
+// Sharpen
+
+class Sharpen: public QWidget, public ImageOperation
+{
+    double sigma, threshold, amount;
+
+    CustomLineEdit *sigmaLineEdit;
+    CustomLineEdit *thresholdLineEdit;
+    CustomLineEdit *amountLineEdit;
+    QWidget *mainWidget;
+
+public:
+    static QString name;
+
+    Sharpen(double s, double t, double a);
+    ~Sharpen();
 
     QString getName(){ return name; };
     QWidget *getParametersWidget();

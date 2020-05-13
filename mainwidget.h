@@ -32,6 +32,7 @@
 #include <QPixmap>
 #include <QTimer>
 #include <QPushButton>
+#include <QButtonGroup>
 #include <QLineEdit>
 #include <QIntValidator>
 #include <QDoubleValidator>
@@ -63,6 +64,9 @@ class MainWidget : public QWidget
 
     QPushButton *initPushButton;
     QPushButton *pauseResumePushButton;
+
+    QCheckBox *coloredSeedCheckBox;
+    QCheckBox *bwSeedCheckBox;
 
     QLineEdit *timerIntervalLineEdit;
 
