@@ -157,6 +157,7 @@ public:
 class MixChannels: public QWidget, public ImageOperation
 {
     int blue, green, red;
+    int fromTo[6];
 
     QComboBox *blueComboBox;
     QComboBox *greenComboBox;

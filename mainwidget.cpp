@@ -42,8 +42,10 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
         Sharpen::name
     };
 
-    timerInterval = 25;
+    timerInterval = 30; // ms
     imageSize = 700;
+    colorScaleFactor = 1.0 / (imageSize * imageSize * 255);
+    iteration = 0;
 
     screenshotPath = "";
     screenshotFilename = "screenshot";
@@ -55,14 +57,20 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     currentImageIndex = 0;
     currentImageOperationIndex = {0, 0};
 
+    // Plots
+
+    imageIterationPlot = new ImageIterationPlot();
+
     // Qt
 
     // General controls
 
     initPushButton = new QPushButton("Init");
+    initPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     pauseResumePushButton = new QPushButton("Pause");
     pauseResumePushButton->setCheckable(true);
+    pauseResumePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     QHBoxLayout *hBoxLayout = new QHBoxLayout;
     hBoxLayout->addWidget(initPushButton);
@@ -82,6 +90,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     QLabel *timerIntervalLabel = new QLabel("Time interval (ms)");
 
     timerIntervalLineEdit = new QLineEdit;
+    timerIntervalLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QIntValidator *timeIntervalIntValidator = new QIntValidator(0, 10000, timerIntervalLineEdit);
     timerIntervalLineEdit->setValidator(timeIntervalIntValidator);
     timerIntervalLineEdit->setText(QString::number(timerInterval));
@@ -89,24 +98,29 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     QLabel *imageSizeLabel = new QLabel("Image size (px)");
 
     imageSizeLineEdit = new QLineEdit;
+    imageSizeLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QIntValidator *imageSizeIntValidator = new QIntValidator(1, 4096, imageSizeLineEdit);
     imageSizeLineEdit->setValidator(imageSizeIntValidator);
     imageSizeLineEdit->setText(QString::number(imageSize));
 
     screenshotPushButton = new QPushButton("Take screenshot");
+    screenshotPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     screenshotPushButton->setEnabled(false);
     screenshotPushButton->setCheckable(false);
 
     screenshotSeriesCheckBox = new QCheckBox("Series");
 
     selectScreenshotPathPushButton = new QPushButton("Select directory");
+    selectScreenshotPathPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     QLabel *screenshotFilenameLabel = new QLabel("Filename (no extension)");
 
     screenshotFilenameLineEdit = new QLineEdit;
+    screenshotFilenameLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     screenshotFilenameLineEdit->setText(screenshotFilename);
 
     QVBoxLayout *screenshotVBoxLayout = new QVBoxLayout;
+    screenshotVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     screenshotVBoxLayout->addWidget(screenshotPushButton);
     screenshotVBoxLayout->addWidget(screenshotSeriesCheckBox);
     screenshotVBoxLayout->addWidget(selectScreenshotPathPushButton);
@@ -117,7 +131,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     screenshotGroupBox->setLayout(screenshotVBoxLayout);
 
     QVBoxLayout *generalControlsVBoxLayout = new QVBoxLayout;
-    generalControlsVBoxLayout->setAlignment(Qt::AlignTop);
+    generalControlsVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
     generalControlsVBoxLayout->addLayout(hBoxLayout);
     generalControlsVBoxLayout->addWidget(coloredSeedCheckBox);
     generalControlsVBoxLayout->addWidget(bwSeedCheckBox);
@@ -128,6 +142,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     generalControlsVBoxLayout->addWidget(screenshotGroupBox);
 
     QWidget *generalControlsWidget = new QWidget;
+    generalControlsWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     generalControlsWidget->setLayout(generalControlsVBoxLayout);
 
     // Image manipulation controls
@@ -135,6 +150,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     QLabel *blendFactorLabel = new QLabel("Blend factor");
 
     blendFactorLineEdit = new QLineEdit;
+    blendFactorLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QDoubleValidator *blendFactorDoubleValidator = new QDoubleValidator(0.0, 1.0, 10, blendFactorLineEdit);
     blendFactorDoubleValidator->setLocale(QLocale::English);
     blendFactorLineEdit->setValidator(blendFactorDoubleValidator);
@@ -143,6 +159,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     QLabel *imageSelectLabel = new QLabel("Select image");
 
     imageSelectComboBox = new QComboBox;
+    imageSelectComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     imageSelectComboBox->addItem("Image 1");
     imageSelectComboBox->addItem("Image 2");
     imageSelectComboBox->setCurrentIndex(0);
@@ -150,17 +167,22 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     QLabel *newImageOperationLabel = new QLabel("New operation");
 
     newImageOperationComboBox = new QComboBox;
+    newImageOperationComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
     initNewImageOperationComboBox();
 
     insertImageOperationPushButton = new QPushButton("Insert");
+    insertImageOperationPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     removeImageOperationPushButton = new QPushButton("Remove");
+    removeImageOperationPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     QHBoxLayout *insertRemoveHBoxLayout = new QHBoxLayout;
     insertRemoveHBoxLayout->addWidget(insertImageOperationPushButton);
     insertRemoveHBoxLayout->addWidget(removeImageOperationPushButton);
 
     imageOperationsListWidget = new QListWidget;
+    imageOperationsListWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     imageOperationsListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
     imageOperationsListWidget->setDragDropMode(QAbstractItemView::InternalMove);
 
@@ -170,7 +192,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     parametersGroupBox->setLayout(parametersLayout);
 
     QVBoxLayout *imageManipulationVBoxLayout = new QVBoxLayout;
-    imageManipulationVBoxLayout->setAlignment(Qt::AlignTop);
+    imageManipulationVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
     imageManipulationVBoxLayout->addWidget(blendFactorLabel);
     imageManipulationVBoxLayout->addWidget(blendFactorLineEdit);
     imageManipulationVBoxLayout->addWidget(imageSelectLabel);
@@ -182,13 +204,38 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     imageManipulationVBoxLayout->addWidget(parametersGroupBox);
 
     QWidget *imageManipulationWidget = new QWidget;
+    imageManipulationWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     imageManipulationWidget->setLayout(imageManipulationVBoxLayout);
+
+    // Computations and plots controls
+
+    QLabel *imageIterationLabel = new QLabel("Full image color intensity plot");
+
+    imageIterationPushButton = new QPushButton("Start plotting");
+    imageIterationPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    imageIterationPushButton->setCheckable(true);
+
+    QVBoxLayout *computationVBoxLayout = new QVBoxLayout;
+    computationVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
+    computationVBoxLayout->addWidget(imageIterationLabel);
+    computationVBoxLayout->addWidget(imageIterationPushButton);
+
+    QWidget *computationWidget = new QWidget;
+    computationWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    computationWidget->setLayout(computationVBoxLayout);
 
     // Main tabs
 
     QTabWidget *mainTabWidget = new QTabWidget;
+    mainTabWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     mainTabWidget->addTab(generalControlsWidget, "General controls");
     mainTabWidget->addTab(imageManipulationWidget, "Image operations");
+    mainTabWidget->addTab(computationWidget, "Computation/plots");
+
+    // Plot tabs
+
+    QTabWidget *plotsTabWidget = new QTabWidget;
+    plotsTabWidget->addTab(imageIterationPlot->plot, "Full image color intensity");
 
     // Main layout
 
@@ -196,12 +243,13 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
     imageLabel = new QLabel;
     imageLabel->setFixedSize(imageSize, imageSize);
+    imageLabel->show();
 
-    mainHBoxLayout->setAlignment(Qt::AlignTop);
-    mainHBoxLayout->addWidget(mainTabWidget, 1);
-    mainHBoxLayout->addWidget(imageLabel, 0);
+    mainHBoxLayout->addWidget(mainTabWidget);
+    mainHBoxLayout->addWidget(plotsTabWidget);
 
     setLayout(mainHBoxLayout);
+    resize(1200, 700);
 
     timer = new QTimer(this);
 
@@ -220,6 +268,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     connect(imageOperationsListWidget->model(), &QAbstractItemModel::rowsMoved, this, &MainWidget::onRowsMoved);
     connect(insertImageOperationPushButton, &QPushButton::clicked, this, &MainWidget::insertImageOperation);
     connect(removeImageOperationPushButton, &QPushButton::clicked, this, &MainWidget::removeImageOperation);
+    connect(imageIterationPushButton, &QPushButton::clicked, [=](bool checked){ if (checked) imageIterationPlot->clearGraphsData(); });
     connect(timer, &QTimer::timeout, this, &MainWidget::iterationLoop);
 
     // OpenCV
@@ -235,7 +284,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
 MainWidget::~MainWidget()
 {
-
+    delete imageIterationPlot;
 }
 
 void MainWidget::initSystem()
@@ -246,6 +295,7 @@ void MainWidget::initSystem()
     if (bwSeedCheckBox->isChecked())
     {
         cv::cvtColor(seedImage, seedImage, cv::COLOR_BGR2GRAY);
+        cv::cvtColor(seedImage, seedImage, cv::COLOR_GRAY2BGR);
     }
 
     for (size_t i = 0; i < images.size(); i++)
@@ -277,6 +327,8 @@ void MainWidget::setTimerInterval()
 void MainWidget::setImageSize()
 {
     imageSize = imageSizeLineEdit->text().toInt();
+
+    colorScaleFactor = 1.0 / (imageSize * imageSize * 255);
 
     timer->stop();
 
@@ -522,7 +574,7 @@ void MainWidget::applyImageOperations()
     {
         cv::Mat src = images[i];
 
-        for(auto operation: imageOperations[i])
+        for (auto operation: imageOperations[i])
         {
             cv::Mat dst = operation->applyOperation(src);
             dst.copyTo(src, mask);
@@ -545,8 +597,23 @@ void MainWidget::iterationLoop()
 
     imageLabel->setPixmap(QPixmap::fromImage(Mat2QImage(blendedImage)));
 
+    cv::Scalar bgr = cv::sum(blendedImage);
+
+    if (imageIterationPushButton->isChecked())
+    {
+        imageIterationPlot->addPoint(iteration, bgr[0] * colorScaleFactor, bgr[1] * colorScaleFactor, bgr[2] * colorScaleFactor);
+    }
+
+    iteration++;
+
     if (takeScreenshotSeries && screenshotPushButton->isChecked())
     {
         takeScreenshotSeriesElement();
     }
+}
+
+void MainWidget::closeEvent(QCloseEvent *event)
+{
+    imageLabel->close();
+    event->accept();
 }

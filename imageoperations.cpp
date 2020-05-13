@@ -33,6 +33,10 @@ Canny::Canny(double th1, double th2, int s, bool g): threshold1(th1), threshold2
     threshold2LineEdit = new CustomLineEdit();
     apertureSizeLineEdit = new CustomLineEdit();
 
+    threshold1LineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    threshold2LineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    apertureSizeLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
     QDoubleValidator *threshold1Validator = new QDoubleValidator(0.0, 300.0, 10, threshold1LineEdit);
     threshold1Validator->setLocale(QLocale::English);
     threshold1LineEdit->setValidator(threshold1Validator);
@@ -117,6 +121,9 @@ ConvertTo::ConvertTo(double a, double b): alpha(a), beta(b)
     alphaLineEdit = new CustomLineEdit();
     betaLineEdit = new CustomLineEdit();
 
+    alphaLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    betaLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
     QDoubleValidator *alphaValidator = new QDoubleValidator(-100.0, 100.0, 10, alphaLineEdit);
     alphaValidator->setLocale(QLocale::English);
     alphaLineEdit->setValidator(alphaValidator);
@@ -183,6 +190,10 @@ GaussianBlur::GaussianBlur(int k, double sx, double sy): ksize(k), sigmaX(sx), s
     sigmaXLineEdit = new CustomLineEdit();
     sigmaYLineEdit = new CustomLineEdit();
 
+    ksizeLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    sigmaXLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    sigmaYLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
     QIntValidator *ksizeValidator = new QIntValidator(0, 25, ksizeLineEdit);
     ksizeLineEdit->setValidator(ksizeValidator);
     ksizeLineEdit->setText(QString::number(ksize));
@@ -208,15 +219,43 @@ GaussianBlur::GaussianBlur(int k, double sx, double sy): ksize(k), sigmaX(sx), s
     mainWidget = new QWidget(this);
     mainWidget->setLayout(vBoxLayout);
 
-    connect(ksizeLineEdit, &CustomLineEdit::returnPressed, [=](){
+    connect(ksizeLineEdit, &CustomLineEdit::returnPressed, [=]()
+    {
         int size = ksizeLineEdit->text().toInt();
         if (size > 0 && size % 2 == 0) size--;
-        if (size == 0 && sigmaX == 0 && sigmaY == 0) size = 3;
-        ksize = size;
-        ksizeLineEdit->setText(QString::number(size));
+        if (size == 0 && (sigmaX == 0.0 || sigmaY == 0.0))
+        {
+            ksizeLineEdit->setText(QString::number(ksize));
+        }
+        else
+        {
+            ksize = size;
+        }
     });
-    connect(sigmaXLineEdit, &CustomLineEdit::returnPressed, [=](){ sigmaX = sigmaXLineEdit->text().toDouble(); });
-    connect(sigmaYLineEdit, &CustomLineEdit::returnPressed, [=](){ sigmaY = sigmaYLineEdit->text().toDouble(); });
+    connect(sigmaXLineEdit, &CustomLineEdit::returnPressed, [=]()
+    {
+        double sigma = sigmaXLineEdit->text().toDouble();
+        if (ksize == 0 && sigma == 0.0)
+        {
+            sigmaXLineEdit->setText(QString::number(sigmaX));
+        }
+        else
+        {
+            sigmaX = sigma;
+        }
+    });
+    connect(sigmaYLineEdit, &CustomLineEdit::returnPressed, [=]()
+    {
+        double sigma = sigmaYLineEdit->text().toDouble();
+        if (ksize == 0 && sigma == 0.0)
+        {
+            sigmaYLineEdit->setText(QString::number(sigmaY));
+        }
+        else
+        {
+            sigmaY = sigma;
+        }
+    });
     connect(ksizeLineEdit, &CustomLineEdit::focusOut, [=](){ ksizeLineEdit->setText(QString::number(ksize)); });
     connect(sigmaXLineEdit, &CustomLineEdit::focusOut, [=](){ sigmaXLineEdit->setText(QString::number(sigmaX)); });
     connect(sigmaYLineEdit, &CustomLineEdit::focusOut, [=](){ sigmaYLineEdit->setText(QString::number(sigmaY)); });
@@ -263,6 +302,10 @@ Laplacian::Laplacian(int k, double s, double d): ksize(k), scale(s), delta(d)
     ksizeLineEdit = new CustomLineEdit();
     scaleLineEdit = new CustomLineEdit();
     deltaLineEdit = new CustomLineEdit();
+
+    ksizeLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    scaleLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    deltaLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     QIntValidator *ksizeValidator = new QIntValidator(0, 25, ksizeLineEdit);
     ksizeLineEdit->setValidator(ksizeValidator);
@@ -343,18 +386,21 @@ MixChannels::MixChannels(int b, int g, int r): blue(b), green(g), red(r)
     QLabel *redLabel = new QLabel("Red");
 
     blueComboBox = new QComboBox;
+    blueComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     blueComboBox->addItem("Blue");
     blueComboBox->addItem("Green");
     blueComboBox->addItem("Red");
     blueComboBox->setCurrentIndex(0);
 
     greenComboBox = new QComboBox;
+    greenComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     greenComboBox->addItem("Blue");
     greenComboBox->addItem("Green");
     greenComboBox->addItem("Red");
     greenComboBox->setCurrentIndex(1);
 
     redComboBox = new QComboBox;
+    redComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     redComboBox->addItem("Blue");
     redComboBox->addItem("Green");
     redComboBox->addItem("Red");
@@ -371,9 +417,16 @@ MixChannels::MixChannels(int b, int g, int r): blue(b), green(g), red(r)
     mainWidget = new QWidget(this);
     mainWidget->setLayout(vBoxLayout);
 
-    connect(blueComboBox, QOverload<int>::of(&QComboBox::activated), [=](int channelIndex){ blue = channelIndex; });
-    connect(greenComboBox, QOverload<int>::of(&QComboBox::activated), [=](int channelIndex){ green = channelIndex; });
-    connect(redComboBox, QOverload<int>::of(&QComboBox::activated), [=](int channelIndex){ red = channelIndex; });
+    fromTo[0] = 0;
+    fromTo[1] = blue;
+    fromTo[2] = 1;
+    fromTo[3] = green;
+    fromTo[4] = 2;
+    fromTo[5] = red;
+
+    connect(blueComboBox, QOverload<int>::of(&QComboBox::activated), [=](int channelIndex){ fromTo[1] = channelIndex; });
+    connect(greenComboBox, QOverload<int>::of(&QComboBox::activated), [=](int channelIndex){ fromTo[3] = channelIndex; });
+    connect(redComboBox, QOverload<int>::of(&QComboBox::activated), [=](int channelIndex){ fromTo[5] = channelIndex; });
 }
 
 MixChannels::~MixChannels()
@@ -399,8 +452,7 @@ QWidget* MixChannels::getParametersWidget()
 
 cv::Mat MixChannels::applyOperation(cv::Mat src)
 {
-    cv::Mat dst(src.rows, src.cols, CV_8UC3);
-    int fromTo[] = {0, blue, 1, green, 2, red};
+    cv::Mat dst(src.rows, src.cols, src.type());
     cv::mixChannels(&src, 1, &dst, 1, fromTo, 3);
     return dst;
 }
@@ -417,6 +469,7 @@ MorphologyEx::MorphologyEx(int k, int its, cv::MorphTypes t, cv::MorphShapes s):
     QLabel *iterationsLabel = new QLabel("Iterations");
 
     morphTypeComboBox = new QComboBox;
+    morphTypeComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     morphTypeComboBox->addItem("Erode");
     morphTypeComboBox->addItem("Dilate");
     morphTypeComboBox->addItem("Opening");
@@ -435,12 +488,14 @@ MorphologyEx::MorphologyEx(int k, int its, cv::MorphTypes t, cv::MorphShapes s):
     morphTypes[6] = cv::MORPH_BLACKHAT;
 
     ksizeLineEdit = new CustomLineEdit();
+    ksizeLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     QIntValidator *ksizeValidator = new QIntValidator(1, 25, ksizeLineEdit);
     ksizeLineEdit->setValidator(ksizeValidator);
     ksizeLineEdit->setText(QString::number(ksize));
 
     morphShapeComboBox = new QComboBox;
+    morphShapeComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     morphShapeComboBox->addItem("Rectangle");
     morphShapeComboBox->addItem("Cross");
     morphShapeComboBox->addItem("Ellipse");
@@ -451,6 +506,7 @@ MorphologyEx::MorphologyEx(int k, int its, cv::MorphTypes t, cv::MorphShapes s):
     morphShapes[2] = cv::MORPH_ELLIPSE;
 
     iterationsLineEdit = new CustomLineEdit();
+    iterationsLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     QIntValidator *iterationsValidator = new QIntValidator(1, 100, ksizeLineEdit);
     iterationsLineEdit->setValidator(iterationsValidator);
@@ -525,6 +581,9 @@ Rotation::Rotation(double a, double s, cv::InterpolationFlags f): angle(a), scal
     angleLineEdit = new CustomLineEdit();
     scaleLineEdit = new CustomLineEdit();
 
+    angleLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    scaleLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
     QDoubleValidator *angleValidator = new QDoubleValidator(-360.0, 360.0, 10, angleLineEdit);
     angleValidator->setLocale(QLocale::English);
     angleLineEdit->setValidator(angleValidator);
@@ -536,6 +595,7 @@ Rotation::Rotation(double a, double s, cv::InterpolationFlags f): angle(a), scal
     scaleLineEdit->setText(QString::number(scale));
 
     flagCombobox = new QComboBox;
+    flagCombobox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     flagCombobox->addItem("Nearest neighbor");
     flagCombobox->addItem("Bilinear");
     flagCombobox->addItem("Bicubic");
@@ -612,6 +672,10 @@ Sharpen::Sharpen(double s, double t, double a): sigma(s), threshold(t), amount(a
     sigmaLineEdit = new CustomLineEdit();
     thresholdLineEdit = new CustomLineEdit();
     amountLineEdit = new CustomLineEdit();
+
+    sigmaLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    thresholdLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    amountLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     QDoubleValidator *sigmaValidator = new QDoubleValidator(0.0, 10.0, 10, sigmaLineEdit);
     sigmaValidator->setLocale(QLocale::English);

@@ -19,6 +19,7 @@
 #define MAINWIDGET_H
 
 #include "imageoperations.h"
+#include "imageiterationplot.h"
 #include "mat2qimage.h"
 #include <vector>
 #include <opencv2/core.hpp>
@@ -62,6 +63,8 @@ class MainWidget : public QWidget
     cv::Mat blendedImage;
     double blendFactor;
 
+    ImageIterationPlot *imageIterationPlot;
+
     QPushButton *initPushButton;
     QPushButton *pauseResumePushButton;
 
@@ -75,9 +78,13 @@ class MainWidget : public QWidget
     QTimer *timer;
     int timerInterval;
 
+    int iteration;
+
     int currentImageIndex;
 
     int imageSize;
+
+    double colorScaleFactor;
 
     QLineEdit *imageSizeLineEdit;
 
@@ -102,6 +109,8 @@ class MainWidget : public QWidget
     std::vector<int> currentImageOperationIndex;
 
     QVBoxLayout *parametersLayout;
+
+    QPushButton *imageIterationPushButton;
 
     void initSystem();
     void pauseResumeSystem(bool checked);
@@ -130,6 +139,8 @@ class MainWidget : public QWidget
     void initImageOperations();
     void applyImageOperations();
     void iterationLoop();
+
+    void closeEvent(QCloseEvent *event);
 
 public:
     MainWidget(QWidget *parent = nullptr);
