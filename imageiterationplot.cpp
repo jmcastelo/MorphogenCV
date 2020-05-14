@@ -72,3 +72,46 @@ void ImageIterationPlot::clearGraphsData()
     plot->graph(1)->data()->clear();
     plot->graph(2)->data()->clear();
 }
+
+HistogramPlot::HistogramPlot(QString title): plotTitle(title)
+{
+    plot = new QCustomPlot(this);
+
+    plot->xAxis->setLabel("Intensity");
+    plot->yAxis->setLabel("Count");
+
+    plot->setInteractions(QCP::iRangeZoom | QCP::iRangeDrag);
+
+    plot->axisRect()->setupFullAxesBox(true);
+    plot->axisRect()->setRangeZoom(Qt::Vertical | Qt::Horizontal);
+    plot->axisRect()->setRangeDrag(Qt::Vertical | Qt::Horizontal);
+
+    plot->plotLayout()->insertRow(0);
+    QCPTextElement *text = new QCPTextElement(plot, title);
+    plot->plotLayout()->addElement(0, 0, text);
+
+    plot->addGraph();
+    plot->graph(0)->setPen(QPen(Qt::blue));
+
+    plot->addGraph();
+    plot->graph(1)->setPen(QPen(Qt::green));
+
+    plot->addGraph();
+    plot->graph(2)->setPen(QPen(Qt::red));
+}
+
+void HistogramPlot::setYMax(double yMax)
+{
+    plot->yAxis->setRange(0.0, yMax);
+}
+
+void HistogramPlot::setData(const QVector<double> &bins, const QVector<double> &blue, const QVector<double> &green, const QVector<double> &red)
+{
+    plot->graph(0)->setData(bins, blue, true);
+    plot->graph(1)->setData(bins, green, true);
+    plot->graph(2)->setData(bins, red, true);
+
+    plot->xAxis->setRange(0.0, 255.0);
+
+    plot->replot();
+}

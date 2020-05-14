@@ -56,7 +56,7 @@ class ImageOperation
 public:
     virtual QString getName() = 0;
     virtual QWidget* getParametersWidget() = 0;
-    virtual cv::Mat applyOperation(cv::Mat src) = 0;
+    virtual cv::Mat applyOperation(const cv::Mat &src) = 0;
     virtual ~ImageOperation() = 0;
 };
 
@@ -82,7 +82,7 @@ public:
 
     QString getName(){ return name; };
     QWidget *getParametersWidget();
-    cv::Mat applyOperation(cv::Mat src);
+    cv::Mat applyOperation(const cv::Mat &src);
 };
 
 // Convert to
@@ -103,7 +103,22 @@ public:
 
     QString getName(){ return name; };
     QWidget *getParametersWidget();
-    cv::Mat applyOperation(cv::Mat src);
+    cv::Mat applyOperation(const cv::Mat &src);
+};
+
+class EqualizeHist: public QWidget, public ImageOperation
+{
+    QWidget *mainWidget;
+
+public:
+    static QString name;
+
+    EqualizeHist(){ mainWidget = new QWidget(this); };
+    ~EqualizeHist(){ delete mainWidget; };
+
+    QString getName(){ return name; };
+    QWidget *getParametersWidget();
+    cv::Mat applyOperation(const cv::Mat &src);
 };
 
 // Gaussian blur
@@ -126,7 +141,7 @@ public:
 
     QString getName(){ return name; };
     QWidget *getParametersWidget();
-    cv::Mat applyOperation(cv::Mat src);
+    cv::Mat applyOperation(const cv::Mat &src);
 };
 
 // Laplacian
@@ -149,7 +164,7 @@ public:
 
     QString getName(){ return name; };
     QWidget *getParametersWidget();
-    cv::Mat applyOperation(cv::Mat src);
+    cv::Mat applyOperation(const cv::Mat &src);
 };
 
 // Mix channels
@@ -172,7 +187,7 @@ public:
 
     QString getName(){ return name; };
     QWidget *getParametersWidget();
-    cv::Mat applyOperation(cv::Mat src);
+    cv::Mat applyOperation(const cv::Mat &src);
 };
 
 // Morphological transformations
@@ -197,7 +212,7 @@ public:
 
     QString getName(){ return name; };
     QWidget *getParametersWidget();
-    cv::Mat applyOperation(cv::Mat src);
+    cv::Mat applyOperation(const cv::Mat &src);
 };
 
 // Rotation
@@ -209,7 +224,7 @@ class Rotation: public QWidget, public ImageOperation
 
     CustomLineEdit *angleLineEdit;
     CustomLineEdit *scaleLineEdit;
-    QComboBox *flagCombobox;
+    QComboBox *flagComboBox;
     QWidget *mainWidget;
 
 public:
@@ -220,7 +235,7 @@ public:
 
     QString getName(){ return name; };
     QWidget *getParametersWidget();
-    cv::Mat applyOperation(cv::Mat src);
+    cv::Mat applyOperation(const cv::Mat &src);
 };
 
 // Sharpen
@@ -242,7 +257,7 @@ public:
 
     QString getName(){ return name; };
     QWidget *getParametersWidget();
-    cv::Mat applyOperation(cv::Mat src);
+    cv::Mat applyOperation(const cv::Mat &src);
 };
 
 #endif // IMAGEOPERATIONS_H

@@ -53,6 +53,7 @@ class MainWidget : public QWidget
 
     ImageIterationPlot *imageIterationPlot;
     ImageIterationPlot *pixelIterationPlot;
+    HistogramPlot *histogramPlot;
 
     QPushButton *initPushButton;
     QPushButton *pauseResumePushButton;
@@ -93,6 +94,7 @@ class MainWidget : public QWidget
     QPushButton *imageIterationPushButton;
     QPushButton *pixelIterationPushButton;
     QPushButton *selectPixelPushButton;
+    QPushButton *histogramPushButton;
 
     QTabWidget *plotsTabWidget;
 

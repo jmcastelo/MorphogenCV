@@ -20,6 +20,8 @@
 
 #include "qcustomplot.h"
 #include <QWidget>
+#include <QVector>
+#include <QString>
 
 class ImageIterationPlot: public QWidget
 {
@@ -32,6 +34,18 @@ public:
 
     void addPoint(double it, double blue, double green, double red);
     void clearGraphsData();
+};
+
+class HistogramPlot: public QWidget
+{
+public:
+    QCustomPlot *plot;
+    QString plotTitle;
+
+    HistogramPlot(QString title);
+
+    void setYMax(double yMax);
+    void setData(const QVector<double> &bins, const QVector<double> &blue, const QVector<double> &green, const QVector<double> &red);
 };
 
 #endif // IMAGEITERATIONPLOT_H

@@ -36,6 +36,8 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
     imageIterationPlot = new ImageIterationPlot("Evolution of full image colors", 0.0, 1.0);
     pixelIterationPlot = new ImageIterationPlot("Evolution of single pixel colors", 0.0, 255.0);
+    histogramPlot = new HistogramPlot("BGR Histogram");
+    histogramPlot->setYMax(generator->getHistogramMax());
 
     // Qt
 
@@ -209,6 +211,12 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     pixelButtonsHBoxLayout->addWidget(pixelIterationPushButton);
     pixelButtonsHBoxLayout->addWidget(selectPixelPushButton);
 
+    QLabel *histogramLabel = new QLabel("Histogram");
+
+    histogramPushButton = new QPushButton("Start plotting");
+    histogramPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    histogramPushButton->setCheckable(true);
+
     QVBoxLayout *computationVBoxLayout = new QVBoxLayout;
     computationVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
     computationVBoxLayout->addWidget(togglePlotsPushButton);
@@ -216,6 +224,8 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     computationVBoxLayout->addWidget(imageIterationPushButton);
     computationVBoxLayout->addWidget(pixelIterationLabel);
     computationVBoxLayout->addLayout(pixelButtonsHBoxLayout);
+    computationVBoxLayout->addWidget(histogramLabel);
+    computationVBoxLayout->addWidget(histogramPushButton);
 
     QWidget *computationWidget = new QWidget;
     computationWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -234,6 +244,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     plotsTabWidget = new QTabWidget;
     plotsTabWidget->addTab(imageIterationPlot->plot, "Full image color intensity");
     plotsTabWidget->addTab(pixelIterationPlot->plot, "Single pixel color intensity");
+    plotsTabWidget->addTab(histogramPlot->plot, "Histogram");
     plotsTabWidget->hide();
 
     // Main layout
@@ -269,12 +280,15 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     connect(pixelIterationPushButton, &QPushButton::clicked, [=](bool checked){ if (checked) pixelIterationPlot->clearGraphsData(); });
     connect(selectPixelPushButton, &QPushButton::clicked, [=](bool checked){ generator->selectingPixel = checked; });
     connect(timer, &QTimer::timeout, this, &MainWidget::iterationLoop);
+
+    initImageOperationsListWidget(0);
 }
 
 MainWidget::~MainWidget()
 {
     delete imageIterationPlot;
     delete pixelIterationPlot;
+    delete histogramPlot;
 }
 
 void MainWidget::pauseResumeSystem(bool checked)
@@ -293,14 +307,15 @@ void MainWidget::pauseResumeSystem(bool checked)
 
 void MainWidget::setTimerInterval()
 {
-    int interval = timerIntervalLineEdit->text().toInt();
-    timer->setInterval(interval);
+    timerInterval = timerIntervalLineEdit->text().toInt();
+    timer->setInterval(timerInterval);
 }
 
 void MainWidget::setImageSize()
 {
     timer->stop();
     generator->setImageSize(imageSizeLineEdit->text().toInt());
+    histogramPlot->setYMax(generator->getHistogramMax());
     timer->start(timerInterval);
 }
 
@@ -464,6 +479,12 @@ void MainWidget::removeImageOperation()
 void MainWidget::iterationLoop()
 {
     generator->iterate();
+
+    if (histogramPushButton->isChecked())
+    {
+        generator->computeHistogram();
+        histogramPlot->setData(generator->getHistogramBins(), generator->getBlueHistogram(), generator->getGreenHistogram(), generator->getRedHistogram());
+    }
 
     if (imageIterationPushButton->isChecked())
     {

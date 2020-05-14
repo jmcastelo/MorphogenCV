@@ -25,6 +25,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
+#include <QVector>
 #include <QString>
 #include <QWidget>
 
@@ -39,8 +40,15 @@ class GeneratorCV
     double blendFactor;
 
     int iteration;
+
     int imageSize;
 
+    int histogramSize;
+    cv::Mat blueHistogram;
+    cv::Mat greenHistogram;
+    cv::Mat redHistogram;
+
+    double histogramMax;
     double colorScaleFactor;
 
     cv::Scalar bgrSum;
@@ -49,6 +57,8 @@ class GeneratorCV
     cv::Point selectedPixel;
 
     void setMask();
+    void computeHistogramMax();
+    void initImageOperations();
     void applyImageOperations();
     static void onMouse(int event, int x, int y, int, void* userdata);
     void selectPixel(int x, int y);
@@ -66,12 +76,15 @@ public:
     void iterate();
     void computeBGRSum();
     void computeBGRPixel();
+    void computeHistogram();
     void showPixelSelectionCursor();
     void showImage();
 
     void writeImage(std::string filename);
 
-    int getIterationNumber();
+    int getIterationNumber(){ return iteration; };
+
+    int getHistogramMax(){ return histogramMax; };
 
     void setImageSize(int size);
     int getImageSize(){ return imageSize; };
@@ -86,6 +99,11 @@ public:
     double getBPixel(){ return bgrPixel[0]; };
     double getGPixel(){ return bgrPixel[1]; };
     double getRPixel(){ return bgrPixel[2]; };
+
+    QVector<double> getBlueHistogram();
+    QVector<double> getGreenHistogram();
+    QVector<double> getRedHistogram();
+    QVector<double> getHistogramBins();
 
     void swapImageOperations(int imageIndex, int operationIndex0, int operationIndex1);
     void removeImageOperation(int imageIndex, int operationIndex);

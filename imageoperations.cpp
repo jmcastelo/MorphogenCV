@@ -52,7 +52,7 @@ Canny::Canny(double th1, double th2, int s, bool g): threshold1(th1), threshold2
     apertureSizeLineEdit->setText(QString::number(apertureSize));
 
     L2gradientCheckBox = new QCheckBox("L2 gradient");
-    L2gradientCheckBox->setChecked(false);
+    L2gradientCheckBox->setChecked(L2gradient);
 
     QVBoxLayout *vBoxLayout = new QVBoxLayout;
     vBoxLayout->addWidget(threshold1Label);
@@ -102,7 +102,7 @@ QWidget* Canny::getParametersWidget()
     return mainWidget;
 }
 
-cv::Mat Canny::applyOperation(cv::Mat src)
+cv::Mat Canny::applyOperation(const cv::Mat &src)
 {
     cv::Mat detectedEdges;
     cv::Canny(src, detectedEdges, threshold1, threshold2, apertureSize, L2gradient);
@@ -171,10 +171,36 @@ QWidget* ConvertTo::getParametersWidget()
     return mainWidget;
 }
 
-cv::Mat ConvertTo::applyOperation(cv::Mat src)
+cv::Mat ConvertTo::applyOperation(const cv::Mat &src)
 {
     cv::Mat dst;
     src.convertTo(dst, -1, alpha, beta);
+    return dst;
+}
+
+// Equalize histogram
+
+QString EqualizeHist::name = "Equalize histogram";
+
+QWidget* EqualizeHist::getParametersWidget()
+{
+    return mainWidget;
+}
+
+cv::Mat EqualizeHist::applyOperation(const cv::Mat &src)
+{
+    cv::Mat dst;
+    cv::cvtColor(src, dst, cv::COLOR_BGR2YCrCb);
+
+    std::vector<cv::Mat> channels;
+    cv::split(dst, channels);
+
+    cv::equalizeHist(channels[0], channels[0]);
+
+    cv::merge(channels, dst);
+
+    cv::cvtColor(dst, dst, cv::COLOR_YCrCb2BGR);
+
     return dst;
 }
 
@@ -284,7 +310,7 @@ QWidget* GaussianBlur::getParametersWidget()
     return mainWidget;
 }
 
-cv::Mat GaussianBlur::applyOperation(cv::Mat src)
+cv::Mat GaussianBlur::applyOperation(const cv::Mat &src)
 {
     cv::Mat dst;
     cv::GaussianBlur(src, dst, cv::Size(ksize, ksize), sigmaX, sigmaY, cv::BORDER_DEFAULT);
@@ -368,7 +394,7 @@ QWidget* Laplacian::getParametersWidget()
     return mainWidget;
 }
 
-cv::Mat Laplacian::applyOperation(cv::Mat src)
+cv::Mat Laplacian::applyOperation(const cv::Mat &src)
 {
     cv::Mat tmp;
     cv::Laplacian(src, tmp, CV_16SC3, ksize, scale, delta, cv::BORDER_DEFAULT);
@@ -392,21 +418,21 @@ MixChannels::MixChannels(int b, int g, int r): blue(b), green(g), red(r)
     blueComboBox->addItem("Blue");
     blueComboBox->addItem("Green");
     blueComboBox->addItem("Red");
-    blueComboBox->setCurrentIndex(0);
+    blueComboBox->setCurrentIndex(blue);
 
     greenComboBox = new QComboBox;
     greenComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     greenComboBox->addItem("Blue");
     greenComboBox->addItem("Green");
     greenComboBox->addItem("Red");
-    greenComboBox->setCurrentIndex(1);
+    greenComboBox->setCurrentIndex(green);
 
     redComboBox = new QComboBox;
     redComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     redComboBox->addItem("Blue");
     redComboBox->addItem("Green");
     redComboBox->addItem("Red");
-    redComboBox->setCurrentIndex(2);
+    redComboBox->setCurrentIndex(red);
 
     QVBoxLayout *vBoxLayout = new QVBoxLayout;
     vBoxLayout->addWidget(blueLabel);
@@ -452,7 +478,7 @@ QWidget* MixChannels::getParametersWidget()
     return mainWidget;
 }
 
-cv::Mat MixChannels::applyOperation(cv::Mat src)
+cv::Mat MixChannels::applyOperation(const cv::Mat &src)
 {
     cv::Mat dst(src.rows, src.cols, src.type());
     cv::mixChannels(&src, 1, &dst, 1, fromTo, 3);
@@ -470,6 +496,24 @@ MorphologyEx::MorphologyEx(int k, int its, cv::MorphTypes t, cv::MorphShapes s):
     QLabel *morphShapeLabel = new QLabel("Shape");
     QLabel *iterationsLabel = new QLabel("Iterations");
 
+    morphTypes[0] = cv::MORPH_ERODE;
+    morphTypes[1] = cv::MORPH_DILATE;
+    morphTypes[2] = cv::MORPH_OPEN;
+    morphTypes[3] = cv::MORPH_CLOSE;
+    morphTypes[4] = cv::MORPH_GRADIENT;
+    morphTypes[5] = cv::MORPH_TOPHAT;
+    morphTypes[6] = cv::MORPH_BLACKHAT;
+
+    int morphTypeComboBoxIndex = 0;
+
+    for (int i = 0; i < 7; i++)
+    {
+        if (morphType == morphTypes[i])
+        {
+            morphTypeComboBoxIndex = i;
+        }
+    }
+
     morphTypeComboBox = new QComboBox;
     morphTypeComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     morphTypeComboBox->addItem("Erode");
@@ -479,15 +523,7 @@ MorphologyEx::MorphologyEx(int k, int its, cv::MorphTypes t, cv::MorphShapes s):
     morphTypeComboBox->addItem("Gradient");
     morphTypeComboBox->addItem("Top hat");
     morphTypeComboBox->addItem("Black hat");
-    morphTypeComboBox->setCurrentIndex(0);
-
-    morphTypes[0] = cv::MORPH_ERODE;
-    morphTypes[1] = cv::MORPH_DILATE;
-    morphTypes[2] = cv::MORPH_OPEN;
-    morphTypes[3] = cv::MORPH_CLOSE;
-    morphTypes[4] = cv::MORPH_GRADIENT;
-    morphTypes[5] = cv::MORPH_TOPHAT;
-    morphTypes[6] = cv::MORPH_BLACKHAT;
+    morphTypeComboBox->setCurrentIndex(morphTypeComboBoxIndex);
 
     ksizeLineEdit = new CustomLineEdit();
     ksizeLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -496,16 +532,26 @@ MorphologyEx::MorphologyEx(int k, int its, cv::MorphTypes t, cv::MorphShapes s):
     ksizeLineEdit->setValidator(ksizeValidator);
     ksizeLineEdit->setText(QString::number(ksize));
 
+    morphShapes[0] = cv::MORPH_RECT;
+    morphShapes[1] = cv::MORPH_CROSS;
+    morphShapes[2] = cv::MORPH_ELLIPSE;
+
+    int morphShapeComboBoxIndex = 0;
+
+    for (int i = 0; i < 3; i++)
+    {
+        if (morphShape == morphShapes[i])
+        {
+            morphShapeComboBoxIndex = i;
+        }
+    }
+
     morphShapeComboBox = new QComboBox;
     morphShapeComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     morphShapeComboBox->addItem("Rectangle");
     morphShapeComboBox->addItem("Cross");
     morphShapeComboBox->addItem("Ellipse");
-    morphShapeComboBox->setCurrentIndex(0);
-
-    morphShapes[0] = cv::MORPH_RECT;
-    morphShapes[1] = cv::MORPH_CROSS;
-    morphShapes[2] = cv::MORPH_ELLIPSE;
+    morphShapeComboBox->setCurrentIndex(morphShapeComboBoxIndex);
 
     iterationsLineEdit = new CustomLineEdit();
     iterationsLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -562,7 +608,7 @@ QWidget* MorphologyEx::getParametersWidget()
     return mainWidget;
 }
 
-cv::Mat MorphologyEx::applyOperation(cv::Mat src)
+cv::Mat MorphologyEx::applyOperation(const cv::Mat &src)
 {
     cv::Mat element = cv::getStructuringElement(morphShape, cv::Size(ksize, ksize));
     cv::Mat dst;
@@ -596,16 +642,6 @@ Rotation::Rotation(double a, double s, cv::InterpolationFlags f): angle(a), scal
     scaleLineEdit->setValidator(scaleValidator);
     scaleLineEdit->setText(QString::number(scale));
 
-    flagCombobox = new QComboBox;
-    flagCombobox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    flagCombobox->addItem("Nearest neighbor");
-    flagCombobox->addItem("Bilinear");
-    flagCombobox->addItem("Bicubic");
-    flagCombobox->addItem("Area");
-    flagCombobox->addItem("Lanczos 8x8");
-    //flagCombobox->addItem("Bit exact biliniar");
-    flagCombobox->setCurrentIndex(0);
-
     flags[0] = cv::INTER_NEAREST;
     flags[1] = cv::INTER_LINEAR;
     flags[2] = cv::INTER_CUBIC;
@@ -613,13 +649,29 @@ Rotation::Rotation(double a, double s, cv::InterpolationFlags f): angle(a), scal
     flags[4] = cv::INTER_LANCZOS4;
     //flags[5] = cv::INTER_LINEAR_EXACT;
 
+    int flagComboBoxIndex = 0;
+
+    for (int i = 0; i < 5; i++)
+        if (flag == flags[i])
+            flagComboBoxIndex = i;
+
+    flagComboBox = new QComboBox;
+    flagComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    flagComboBox->addItem("Nearest neighbor");
+    flagComboBox->addItem("Bilinear");
+    flagComboBox->addItem("Bicubic");
+    flagComboBox->addItem("Area");
+    flagComboBox->addItem("Lanczos 8x8");
+    //flagComboBox->addItem("Bit exact biliniar");
+    flagComboBox->setCurrentIndex(flagComboBoxIndex);
+
     QVBoxLayout *vBoxLayout = new QVBoxLayout;
     vBoxLayout->addWidget(angleLabel);
     vBoxLayout->addWidget(angleLineEdit);
     vBoxLayout->addWidget(scaleLabel);
     vBoxLayout->addWidget(scaleLineEdit);
     vBoxLayout->addWidget(flagLabel);
-    vBoxLayout->addWidget(flagCombobox);
+    vBoxLayout->addWidget(flagComboBox);
 
     mainWidget = new QWidget(this);
     mainWidget->setLayout(vBoxLayout);
@@ -628,14 +680,14 @@ Rotation::Rotation(double a, double s, cv::InterpolationFlags f): angle(a), scal
     connect(scaleLineEdit, &CustomLineEdit::returnPressed, [=](){ scale = scaleLineEdit->text().toDouble(); });
     connect(angleLineEdit, &CustomLineEdit::focusOut, [=](){ angleLineEdit->setText(QString::number(angle)); });
     connect(scaleLineEdit, &CustomLineEdit::focusOut, [=](){ scaleLineEdit->setText(QString::number(scale)); });
-    connect(flagCombobox, QOverload<int>::of(&QComboBox::activated), [=](int flagIndex){ flag = flags[flagIndex]; });
+    connect(flagComboBox, QOverload<int>::of(&QComboBox::activated), [=](int flagIndex){ flag = flags[flagIndex]; });
 }
 
 Rotation::~Rotation()
 {
     angleLineEdit->disconnect();
     scaleLineEdit->disconnect();
-    flagCombobox->disconnect();
+    flagComboBox->disconnect();
 
     QLayoutItem *child;
     while ((child = mainWidget->layout()->takeAt(0)) != 0)
@@ -652,7 +704,7 @@ QWidget* Rotation::getParametersWidget()
     return mainWidget;
 }
 
-cv::Mat Rotation::applyOperation(cv::Mat src)
+cv::Mat Rotation::applyOperation(const cv::Mat &src)
 {
     cv::Point center = cv::Point(src.cols / 2, src.rows / 2);
     cv::Mat rotationMat = cv::getRotationMatrix2D(center, angle, scale);
@@ -734,7 +786,7 @@ QWidget* Sharpen::getParametersWidget()
     return mainWidget;
 }
 
-cv::Mat Sharpen::applyOperation(cv::Mat src)
+cv::Mat Sharpen::applyOperation(const cv::Mat &src)
 {
     cv::Mat blurred;
     cv::GaussianBlur(src, blurred, cv::Size(), sigma, sigma);

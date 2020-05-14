@@ -22,6 +22,7 @@ GeneratorCV::GeneratorCV()
     availableImageOperations = {
         Canny::name,
         ConvertTo::name,
+        EqualizeHist::name,
         GaussianBlur::name,
         Laplacian::name,
         MixChannels::name,
@@ -38,6 +39,9 @@ GeneratorCV::GeneratorCV()
 
     imageSize = 700;
     colorScaleFactor = 1.0 / (imageSize * imageSize * 255);
+
+    histogramSize = 256;
+
     iteration = 0;
 
     selectingPixel = false;
@@ -45,7 +49,9 @@ GeneratorCV::GeneratorCV()
     blendFactor = 0.5;
 
     setMask();
+    computeHistogramMax();
     initSystem(true);
+    initImageOperations();
 
     cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
     cv::setMouseCallback("image", onMouse, this);
@@ -62,6 +68,15 @@ void GeneratorCV::setMask()
     mask = cv::Mat::zeros(imageSize, imageSize, CV_8U);
     cv::Point center = cv::Point(imageSize / 2, imageSize / 2);
     cv::circle(mask, center, imageSize / 2, cv::Scalar(255, 255, 255), -1);
+}
+
+void GeneratorCV::computeHistogramMax()
+{
+    cv::Mat full = cv::Mat::ones(imageSize, imageSize, CV_8U);
+    cv::Mat masked;
+    full.copyTo(masked, mask);
+    int pixelCount = cv::countNonZero(masked);
+    histogramMax = pixelCount * 5.0 / 100.0;
 }
 
 void GeneratorCV::initSystem(bool grayscale)
@@ -81,6 +96,18 @@ void GeneratorCV::initSystem(bool grayscale)
     }
 
     cv::imshow("image", images[0]);
+}
+
+void GeneratorCV::initImageOperations()
+{
+    imageOperations[0].clear();
+    imageOperations[0].push_back(new ConvertTo(1.0, 0.0));
+    imageOperations[0].push_back(new MorphologyEx(3, 1, cv::MORPH_DILATE, cv::MORPH_ELLIPSE));
+    imageOperations[0].push_back(new Rotation(36.0, 1.005, cv::INTER_LINEAR));
+
+    imageOperations[1].clear();
+    imageOperations[1].push_back(new ConvertTo(0.85, 0.0));
+    imageOperations[1].push_back(new Sharpen(1.0, 5.0, 1.0));
 }
 
 void GeneratorCV::applyImageOperations()
@@ -123,6 +150,19 @@ void GeneratorCV::computeBGRPixel()
     bgrPixel = blendedImage.at<cv::Vec3b>(selectedPixel);
 }
 
+void GeneratorCV::computeHistogram()
+{
+    float range[] = {0, 256};
+    const float *histogramRange[] = {range};
+
+    cv::Mat bgrChannels[3];
+    cv::split(blendedImage, bgrChannels);
+
+    cv::calcHist(&bgrChannels[0], 1, 0, mask, blueHistogram, 1, &histogramSize, histogramRange, true, false);
+    cv::calcHist(&bgrChannels[1], 1, 0, mask, greenHistogram, 1, &histogramSize, histogramRange, true, false);
+    cv::calcHist(&bgrChannels[2], 1, 0, mask, redHistogram, 1, &histogramSize, histogramRange, true, false);
+}
+
 void GeneratorCV::showPixelSelectionCursor()
 {
     cv::Mat layer = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
@@ -161,11 +201,6 @@ void GeneratorCV::writeImage(std::string filename)
     cv::imwrite(filename, images[0], params);
 }
 
-int GeneratorCV::getIterationNumber()
-{
-    return iteration;
-}
-
 void GeneratorCV::setImageSize(int size)
 {
     imageSize = size;
@@ -180,10 +215,59 @@ void GeneratorCV::setImageSize(int size)
     }
 
     setMask();
+    computeHistogramMax();
 
     cv::imshow("image", images[0]);
 
     selectedPixel = cv::Point(imageSize / 2, imageSize / 2);
+}
+
+QVector<double> GeneratorCV::getBlueHistogram()
+{
+    QVector<double> histogram(histogramSize);
+
+    for (int i = 0; i < histogramSize; i++)
+    {
+        histogram[i] = blueHistogram.at<float>(i);
+    }
+
+    return histogram;
+}
+
+QVector<double> GeneratorCV::getGreenHistogram()
+{
+    QVector<double> histogram(histogramSize);
+
+    for (int i = 0; i < histogramSize; i++)
+    {
+        histogram[i] = greenHistogram.at<float>(i);
+    }
+
+    return histogram;
+}
+
+QVector<double> GeneratorCV::getRedHistogram()
+{
+    QVector<double> histogram(histogramSize);
+
+    for (int i = 0; i < histogramSize; i++)
+    {
+        histogram[i] = redHistogram.at<float>(i);
+    }
+
+    return histogram;
+}
+
+QVector<double> GeneratorCV::getHistogramBins()
+{
+    QVector<double> bins(histogramSize);
+
+    for (int i = 0; i < histogramSize; i++)
+    {
+        bins[i] = i;
+    }
+
+    return bins;
 }
 
 void GeneratorCV::swapImageOperations(int imageIndex, int operationIndex0, int operationIndex1)
@@ -214,25 +298,29 @@ void GeneratorCV::insertImageOperation(int imageIndex, int newOperationIndex, in
     }
     else if (newOperationIndex == 2)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new GaussianBlur(3, 0.0, 0.0));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new EqualizeHist());
     }
     else if (newOperationIndex == 3)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Laplacian(3, 1.0, 0.0));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new GaussianBlur(3, 0.0, 0.0));
     }
     else if (newOperationIndex == 4)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new MixChannels(0, 1, 2));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Laplacian(3, 1.0, 0.0));
     }
     else if (newOperationIndex == 5)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new MorphologyEx(3, 1, cv::MORPH_ERODE, cv::MORPH_RECT));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new MixChannels(0, 1, 2));
     }
     else if (newOperationIndex == 6)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Rotation(0.0, 1.0, cv::INTER_NEAREST));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new MorphologyEx(3, 1, cv::MORPH_ERODE, cv::MORPH_RECT));
     }
     else if (newOperationIndex == 7)
+    {
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Rotation(0.0, 1.0, cv::INTER_NEAREST));
+    }
+    else if (newOperationIndex == 8)
     {
         imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Sharpen(1.0, 5.0, 1.0));
     }
