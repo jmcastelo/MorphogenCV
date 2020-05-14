@@ -18,13 +18,9 @@
 #ifndef MAINWIDGET_H
 #define MAINWIDGET_H
 
-#include "imageoperations.h"
+#include "generator.h"
 #include "imageiterationplot.h"
 #include <vector>
-#include <opencv2/core.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/highgui.hpp>
 #include <QWidget>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -53,15 +49,7 @@ class MainWidget : public QWidget
 {
     Q_OBJECT
 
-    std::vector<QString> availableImageOperations;
-
-    cv::Mat mask;
-
-    std::vector<cv::Mat> images;
-    std::vector<std::vector<ImageOperation*>> imageOperations;
-
-    cv::Mat blendedImage;
-    double blendFactor;
+    GeneratorCV *generator;
 
     ImageIterationPlot *imageIterationPlot;
     ImageIterationPlot *pixelIterationPlot;
@@ -76,14 +64,6 @@ class MainWidget : public QWidget
 
     QTimer *timer;
     int timerInterval;
-
-    int iteration;
-
-    int currentImageIndex;
-
-    int imageSize;
-
-    double colorScaleFactor;
 
     QLineEdit *imageSizeLineEdit;
 
@@ -116,22 +96,16 @@ class MainWidget : public QWidget
 
     QTabWidget *plotsTabWidget;
 
-    cv::Point selectedPixel;
-
-    void initSystem();
     void pauseResumeSystem(bool checked);
     void setTimerInterval();
 
     void setImageSize();
-    void setMask();
 
     void selectScreenshotPath();
     void setScreenshotFilename(QString text);
     void setTakeScreenshotSeries(int state);
     void takeScreenshot();
     void takeScreenshotSeriesElement();
-
-    void setBlendFactor();
 
     void initNewImageOperationComboBox();
     void initImageOperationsListWidget(int imageIndex);
@@ -142,14 +116,10 @@ class MainWidget : public QWidget
     void insertImageOperation();
     void removeImageOperation();
 
-    void initImageOperations();
     void applyImageOperations();
     void iterationLoop();
 
     void togglePlots(bool checked);
-
-    static void onMouse(int event, int x, int y, int, void* userdata);
-    void selectPixel(int x, int y);
 
     void closeEvent(QCloseEvent *event);
 

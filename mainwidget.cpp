@@ -19,42 +19,17 @@
 
 MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 {
-    // Images + Operations
-
-    cv::Mat img;
-    images = {img, img};
-
-    std::vector<ImageOperation*> ops;
-    imageOperations = {ops, ops};
-
-    initImageOperations();
+    generator = new GeneratorCV();
 
     // Init variables
 
-    availableImageOperations = {
-        Canny::name,
-        ConvertTo::name,
-        GaussianBlur::name,
-        Laplacian::name,
-        MixChannels::name,
-        MorphologyEx::name,
-        Rotation::name,
-        Sharpen::name
-    };
-
     timerInterval = 30; // ms
-    imageSize = 700;
-    colorScaleFactor = 1.0 / (imageSize * imageSize * 255);
-    iteration = 0;
 
     screenshotPath = "";
     screenshotFilename = "screenshot";
     takeScreenshotSeries = false;
     screenshotIndex = 1;
 
-    blendFactor = 0.5;
-
-    currentImageIndex = 0;
     currentImageOperationIndex = {0, 0};
 
     // Plots
@@ -102,7 +77,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     imageSizeLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QIntValidator *imageSizeIntValidator = new QIntValidator(0, 4096, imageSizeLineEdit);
     imageSizeLineEdit->setValidator(imageSizeIntValidator);
-    imageSizeLineEdit->setText(QString::number(imageSize));
+    imageSizeLineEdit->setText(QString::number(generator->getImageSize()));
 
     screenshotPushButton = new QPushButton("Take screenshot");
     screenshotPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -155,7 +130,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     QDoubleValidator *blendFactorDoubleValidator = new QDoubleValidator(0.0, 1.0, 10, blendFactorLineEdit);
     blendFactorDoubleValidator->setLocale(QLocale::English);
     blendFactorLineEdit->setValidator(blendFactorDoubleValidator);
-    blendFactorLineEdit->setText(QString::number(blendFactor));
+    blendFactorLineEdit->setText(QString::number(generator->getBlendFactor()));
 
     QLabel *imageSelectLabel = new QLabel("Select image");
 
@@ -225,7 +200,6 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     pixelIterationPushButton = new QPushButton("Start plotting");
     pixelIterationPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     pixelIterationPushButton->setCheckable(true);
-    pixelIterationPushButton->setEnabled(false);
 
     selectPixelPushButton = new QPushButton("Select pixel");
     selectPixelPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -272,9 +246,11 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     setLayout(mainHBoxLayout);
     setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
+    // Timer for iteration loop
+
     timer = new QTimer(this);
 
-    connect(initPushButton, &QPushButton::clicked, this, &MainWidget::initSystem);
+    connect(initPushButton, &QPushButton::clicked, [=](){ generator->initSystem(bwSeedCheckBox->isChecked()); });
     connect(pauseResumePushButton, &QPushButton::clicked, this, &MainWidget::pauseResumeSystem);
     connect(timerIntervalLineEdit, &QLineEdit::returnPressed, this, &MainWidget::setTimerInterval);
     connect(imageSizeLineEdit, &QLineEdit::returnPressed, this, &MainWidget::setImageSize);
@@ -282,9 +258,8 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     connect(screenshotFilenameLineEdit, &QLineEdit::textChanged, this, &MainWidget::setScreenshotFilename);
     connect(screenshotSeriesCheckBox, &QCheckBox::stateChanged, this, &MainWidget::setTakeScreenshotSeries);
     connect(screenshotPushButton, &QPushButton::clicked, this, &MainWidget::takeScreenshot);
-    connect(blendFactorLineEdit, &QLineEdit::returnPressed, this, &MainWidget::setBlendFactor);
+    connect(blendFactorLineEdit, &QLineEdit::returnPressed, [=](){ generator->setBlendFactor(blendFactorLineEdit->text().toDouble()); });
     connect(imageSelectComboBox, QOverload<int>::of(&QComboBox::activated), [=](int imageIndex){ initImageOperationsListWidget(imageIndex); });
-    connect(imageSelectComboBox, QOverload<int>::of(&QComboBox::activated), [=](int imageIndex){ currentImageIndex = imageIndex; });
     connect(imageOperationsListWidget, &QListWidget::currentRowChanged, this, &MainWidget::onImageOperationsListWidgetCurrentRowChanged);
     connect(imageOperationsListWidget->model(), &QAbstractItemModel::rowsMoved, this, &MainWidget::onRowsMoved);
     connect(insertImageOperationPushButton, &QPushButton::clicked, this, &MainWidget::insertImageOperation);
@@ -292,43 +267,14 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     connect(togglePlotsPushButton, &QPushButton::clicked, this, &MainWidget::togglePlots);
     connect(imageIterationPushButton, &QPushButton::clicked, [=](bool checked){ if (checked) imageIterationPlot->clearGraphsData(); });
     connect(pixelIterationPushButton, &QPushButton::clicked, [=](bool checked){ if (checked) pixelIterationPlot->clearGraphsData(); });
+    connect(selectPixelPushButton, &QPushButton::clicked, [=](bool checked){ generator->selectingPixel = checked; });
     connect(timer, &QTimer::timeout, this, &MainWidget::iterationLoop);
-
-    // OpenCV
-
-    cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
-    cv::setMouseCallback("image", onMouse, this);
-    selectedPixel = cv::Point(imageSize / 2, imageSize / 2);
-    setMask();
-    initSystem();
-
-    // Init widgets
-
-    initImageOperationsListWidget(0);
 }
 
 MainWidget::~MainWidget()
 {
     delete imageIterationPlot;
-}
-
-void MainWidget::initSystem()
-{
-    cv::Mat seedImage = cv::Mat(imageSize, imageSize, CV_8UC3);
-    cv::randu(seedImage, cv::Scalar::all(0), cv::Scalar::all(255));
-
-    if (bwSeedCheckBox->isChecked())
-    {
-        cv::cvtColor(seedImage, seedImage, cv::COLOR_BGR2GRAY);
-        cv::cvtColor(seedImage, seedImage, cv::COLOR_GRAY2BGR);
-    }
-
-    for (size_t i = 0; i < images.size(); i++)
-    {
-        seedImage.copyTo(images[i], mask);
-    }
-
-    cv::imshow("image", images[0]);
+    delete pixelIterationPlot;
 }
 
 void MainWidget::pauseResumeSystem(bool checked)
@@ -353,33 +299,9 @@ void MainWidget::setTimerInterval()
 
 void MainWidget::setImageSize()
 {
-    imageSize = imageSizeLineEdit->text().toInt();
-
-    colorScaleFactor = 1.0 / (imageSize * imageSize * 255);
-
     timer->stop();
-
-    for (auto &img: images)
-    {
-        cv::Mat dst;
-        cv::resize(img, dst, cv::Size(imageSize, imageSize));
-        img = dst.clone();
-    }
-
-    setMask();
-
-    cv::imshow("image", images[0]);
-
-    selectedPixel = cv::Point(imageSize / 2, imageSize / 2);
-
+    generator->setImageSize(imageSizeLineEdit->text().toInt());
     timer->start(timerInterval);
-}
-
-void MainWidget::setMask()
-{
-    mask = cv::Mat::zeros(imageSize, imageSize, CV_8U);
-    cv::Point center = cv::Point(imageSize / 2, imageSize / 2);
-    cv::circle(mask, center, imageSize / 2, cv::Scalar(255, 255, 255), -1);
 }
 
 void MainWidget::selectScreenshotPath()
@@ -407,12 +329,9 @@ void MainWidget::takeScreenshot()
         QDir dir(screenshotPath);
         QString absPath = dir.absoluteFilePath(screenshotFilename + ".jpg");
 
-        cv::String filename = absPath.toStdString();
-        std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 100};
-
-        timer->stop();
-        cv::imwrite(filename, images[0], params);
-        timer->start(timerInterval);
+        //timer->stop();
+        generator->writeImage(absPath.toStdString());
+        //timer->start(timerInterval);
     }
 
     if (screenshotPushButton->isCheckable())
@@ -428,29 +347,15 @@ void MainWidget::takeScreenshotSeriesElement()
         QDir dir(screenshotPath);
         QString absPath = dir.absoluteFilePath(screenshotFilename + QString("%1").arg(screenshotIndex, 5, 10, QChar('0')) + ".jpg");
 
-        cv::String filename = absPath.toStdString();
-        std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 100};
-
-        cv::imwrite(filename, images[0], params);
+        generator->writeImage(absPath.toStdString());
 
         screenshotIndex++;
     }
 }
 
-void MainWidget::setBlendFactor()
-{
-    blendFactor = blendFactorLineEdit->text().toDouble();
-}
-
-void MainWidget::initImageOperations()
-{
-    imageOperations[0].clear();
-    imageOperations[1].clear();
-}
-
 void MainWidget::initNewImageOperationComboBox()
 {
-    for (auto op: availableImageOperations)
+    for (auto op: generator->availableImageOperations)
     {
         newImageOperationComboBox->addItem(op);
     }
@@ -460,14 +365,14 @@ void MainWidget::initImageOperationsListWidget(int imageIndex)
 {
     imageOperationsListWidget->clear();
 
-    for (size_t i = 0; i < imageOperations[imageIndex].size(); i++)
+    for (int i = 0; i < generator->getImageOperationsSize(imageIndex); i++)
     {
         QListWidgetItem *newOperation = new QListWidgetItem;
-        newOperation->setText(imageOperations[imageIndex][i]->getName());
+        newOperation->setText(generator->getImageOperationName(imageIndex, i));
         imageOperationsListWidget->insertItem(i, newOperation);
     }
 
-    if (imageOperations[imageIndex].empty())
+    if (generator->getImageOperationsSize(imageIndex) == 0)
     {
         currentImageOperationIndex[imageIndex] = -1;
 
@@ -502,8 +407,9 @@ void MainWidget::onImageOperationsListWidgetCurrentRowChanged(int currentRow)
     {
         int imageIndex = imageSelectComboBox->currentIndex();
 
-        parametersLayout->addWidget(imageOperations[imageIndex][currentRow]->getParametersWidget());
-        imageOperations[imageIndex][currentRow]->getParametersWidget()->show();
+        QWidget *widget = generator->getImageOperationParametersWidget(imageIndex, currentRow);
+        parametersLayout->addWidget(widget);
+        widget->show();
 
         currentImageOperationIndex[imageIndex] = currentRow;
 
@@ -519,15 +425,12 @@ void MainWidget::onRowsMoved(QModelIndex parent, int start, int end, QModelIndex
 
     int imageIndex = imageSelectComboBox->currentIndex();
 
-    if (row >= static_cast<int>(imageOperations[imageIndex].size()))
+    if (row >= generator->getImageOperationsSize(imageIndex))
     {
         row--;
     }
 
-    ImageOperation *operation = imageOperations[imageIndex][start];
-    std::vector<ImageOperation*>::iterator it = imageOperations[imageIndex].begin();
-    imageOperations[imageIndex].erase(it + start);
-    imageOperations[imageIndex].insert(it + row, operation);
+    generator->swapImageOperations(imageIndex, start, row);
 
     currentImageOperationIndex[imageIndex] = row;
 }
@@ -538,43 +441,10 @@ void MainWidget::insertImageOperation()
     int newOperationIndex = newImageOperationComboBox->currentIndex();
     int currentOperationIndex = imageOperationsListWidget->currentRow();
 
-    std::vector<ImageOperation*>::iterator it = imageOperations[imageIndex].begin();
-
-    if (newOperationIndex == 0)
-    {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Canny(100, 300, 3, false));
-    }
-    else if (newOperationIndex == 1)
-    {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new ConvertTo(1.0, 0.0));
-    }
-    else if (newOperationIndex == 2)
-    {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new GaussianBlur(3, 0.0, 0.0));
-    }
-    else if (newOperationIndex == 3)
-    {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Laplacian(3, 1.0, 0.0));
-    }
-    else if (newOperationIndex == 4)
-    {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new MixChannels(0, 1, 2));
-    }
-    else if (newOperationIndex == 5)
-    {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new MorphologyEx(3, 1, cv::MORPH_ERODE, cv::MORPH_RECT));
-    }
-    else if (newOperationIndex == 6)
-    {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Rotation(0.0, 1.0, cv::INTER_NEAREST));
-    }
-    else if (newOperationIndex == 7)
-    {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Sharpen(1.0, 5.0, 1.0));
-    }
+    generator->insertImageOperation(imageIndex, newOperationIndex, currentOperationIndex);
 
     QListWidgetItem *newOperation = new QListWidgetItem;
-    newOperation->setText(imageOperations[imageIndex][currentOperationIndex + 1]->getName());
+    newOperation->setText(generator->getImageOperationName(imageIndex, currentOperationIndex + 1));
     imageOperationsListWidget->insertItem(currentOperationIndex + 1, newOperation);
     imageOperationsListWidget->setCurrentItem(newOperation);
 }
@@ -586,65 +456,35 @@ void MainWidget::removeImageOperation()
 
     imageOperationsListWidget->takeItem(operationIndex);
 
-    std::vector<ImageOperation*>::iterator it = imageOperations[imageIndex].begin();
-    imageOperations[imageIndex].erase(it + operationIndex);
+    generator->removeImageOperation(imageIndex, operationIndex);
 
     currentImageOperationIndex[imageIndex] = operationIndex;
 }
 
-void MainWidget::applyImageOperations()
-{
-    for (size_t i = 0; i < images.size(); i++)
-    {
-        cv::Mat src = images[i];
-
-        for (auto operation: imageOperations[i])
-        {
-            cv::Mat dst = operation->applyOperation(src);
-            dst.copyTo(src, mask);
-        }
-
-        images[i] = src.clone();
-    }
-}
-
 void MainWidget::iterationLoop()
 {
-    applyImageOperations();
-
-    cv::addWeighted(images[0], blendFactor, images[1], 1.0 - blendFactor, 0.0, blendedImage);
-
-    for (size_t i = 0; i < images.size(); i++)
-    {
-        blendedImage.copyTo(images[i], mask);
-    }
+    generator->iterate();
 
     if (imageIterationPushButton->isChecked())
     {
-        cv::Scalar bgr = cv::sum(blendedImage);
-        imageIterationPlot->addPoint(iteration, bgr[0] * colorScaleFactor, bgr[1] * colorScaleFactor, bgr[2] * colorScaleFactor);
+        generator->computeBGRSum();
+        imageIterationPlot->addPoint(generator->getIterationNumber(), generator->getBSum(), generator->getGSum(), generator->getRSum());
     }
 
     if (pixelIterationPushButton->isChecked())
     {
-        cv::Vec3b bgr = blendedImage.at<cv::Vec3b>(selectedPixel);
-        pixelIterationPlot->addPoint(iteration, bgr[0], bgr[1], bgr[2]);
+        generator->computeBGRPixel();
+        pixelIterationPlot->addPoint(generator->getIterationNumber(), generator->getBPixel(), generator->getGPixel(), generator->getRPixel());
     }
 
     if (selectPixelPushButton->isChecked())
     {
-        cv::Mat layer = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
-        cv::line(layer, cv::Point(0, selectedPixel.y), cv::Point(imageSize, selectedPixel.y), cv::Scalar(255, 255, 255));
-        cv::line(layer, cv::Point(selectedPixel.x, 0), cv::Point(selectedPixel.x, imageSize), cv::Scalar(255, 255, 255));
-        cv::addWeighted(blendedImage, 0.5, layer, 0.5, 0.0, layer);
-        cv::imshow("image", layer);
+        generator->showPixelSelectionCursor();
     }
     else
     {
-        cv::imshow("image", blendedImage);
+        generator->showImage();
     }
-
-    iteration++;
 
     if (takeScreenshotSeries && screenshotPushButton->isChecked())
     {
@@ -666,33 +506,8 @@ void MainWidget::togglePlots(bool checked)
     }
 }
 
-void MainWidget::onMouse(int event, int x, int y, int, void *userdata)
-{
-    MainWidget *mw = reinterpret_cast<MainWidget*>(userdata);
-
-    if (event == cv::EVENT_LBUTTONDOWN)
-    {
-        mw->selectPixel(x, y);
-    }
-}
-
-void MainWidget::selectPixel(int x, int y)
-{
-    if (selectPixelPushButton->isChecked())
-    {
-        selectedPixel = cv::Point(x, y);
-
-        pixelIterationPlot->clearGraphsData();
-
-        if (!pixelIterationPushButton->isEnabled())
-        {
-            pixelIterationPushButton->setEnabled(true);
-        }
-    }
-}
-
 void MainWidget::closeEvent(QCloseEvent *event)
 {
-    cv::destroyWindow("image");
+    delete generator;
     event->accept();
 }
