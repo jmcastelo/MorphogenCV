@@ -26,8 +26,9 @@ class ImageIterationPlot: public QWidget
 public:
     int itMin;
     QCustomPlot *plot;
+    QString plotTitle;
 
-    ImageIterationPlot();
+    ImageIterationPlot(QString title, double yMin, double yMax);
 
     void addPoint(double it, double blue, double green, double red);
     void clearGraphsData();

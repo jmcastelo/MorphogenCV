@@ -17,16 +17,16 @@
 
 #include "imageiterationplot.h"
 
-ImageIterationPlot::ImageIterationPlot()
+ImageIterationPlot::ImageIterationPlot(QString title, double yMin, double yMax): plotTitle(title)
 {
-    itMin = 500;
+    itMin = 1000;
 
     plot = new QCustomPlot(this);
 
     plot->xAxis->setLabel("Iteration");
     plot->yAxis->setLabel("Intensity");
 
-    plot->yAxis->setRange(0.0, 1.0);
+    plot->yAxis->setRange(yMin, yMax);
 
     plot->setInteractions(QCP::iRangeZoom | QCP::iRangeDrag);
 
@@ -35,9 +35,8 @@ ImageIterationPlot::ImageIterationPlot()
     plot->axisRect()->setRangeDrag(Qt::Vertical | Qt::Horizontal);
 
     plot->plotLayout()->insertRow(0);
-    //QCPTextElement *title = new QCPTextElement(plot, "Image color", QFont("sans", 17, QFont::Bold));
-    QCPTextElement *title = new QCPTextElement(plot, "Evolution of blue, green and red channels");
-    plot->plotLayout()->addElement(0, 0, title);
+    QCPTextElement *text = new QCPTextElement(plot, title);
+    plot->plotLayout()->addElement(0, 0, text);
 
     plot->addGraph();
     plot->graph(0)->setPen(QPen(Qt::blue));

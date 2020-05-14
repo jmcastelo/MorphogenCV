@@ -20,19 +20,17 @@ SOURCES += \
     imageoperations.cpp \
     main.cpp \
     mainwidget.cpp \
-    mat2qimage.cpp \
     qcustomplot.cpp
 
 HEADERS += \
     imageiterationplot.h \
     imageoperations.h \
     mainwidget.h \
-    mat2qimage.h \
     qcustomplot.h
 
 INCLUDEPATH += /usr/include/opencv4
 
-LIBS += -lopencv_core -lopencv_imgproc -lopencv_imgcodecs
+LIBS += -lopencv_core -lopencv_imgproc -lopencv_imgcodecs -lopencv_highgui
 
 QMAKE_CXXFLAGS_RELEASE += -O3
 

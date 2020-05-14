@@ -104,8 +104,10 @@ QWidget* Canny::getParametersWidget()
 
 cv::Mat Canny::applyOperation(cv::Mat src)
 {
-    cv::Mat dst;
-    cv::Canny(src, dst, threshold1, threshold2, apertureSize, L2gradient);
+    cv::Mat detectedEdges;
+    cv::Canny(src, detectedEdges, threshold1, threshold2, apertureSize, L2gradient);
+    cv::Mat dst = cv::Mat(src.rows, src.cols, src.type(), cv::Scalar(0));
+    src.copyTo(dst, detectedEdges);
     return dst;
 }
 

@@ -59,16 +59,17 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
     // Plots
 
-    imageIterationPlot = new ImageIterationPlot();
+    imageIterationPlot = new ImageIterationPlot("Evolution of full image colors", 0.0, 1.0);
+    pixelIterationPlot = new ImageIterationPlot("Evolution of single pixel colors", 0.0, 255.0);
 
     // Qt
 
     // General controls
 
-    initPushButton = new QPushButton("Init");
+    initPushButton = new QPushButton("Draw seed");
     initPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
-    pauseResumePushButton = new QPushButton("Pause");
+    pauseResumePushButton = new QPushButton("Start");
     pauseResumePushButton->setCheckable(true);
     pauseResumePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
@@ -91,7 +92,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
     timerIntervalLineEdit = new QLineEdit;
     timerIntervalLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    QIntValidator *timeIntervalIntValidator = new QIntValidator(0, 10000, timerIntervalLineEdit);
+    QIntValidator *timeIntervalIntValidator = new QIntValidator(1, 10000, timerIntervalLineEdit);
     timerIntervalLineEdit->setValidator(timeIntervalIntValidator);
     timerIntervalLineEdit->setText(QString::number(timerInterval));
 
@@ -99,7 +100,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
     imageSizeLineEdit = new QLineEdit;
     imageSizeLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    QIntValidator *imageSizeIntValidator = new QIntValidator(1, 4096, imageSizeLineEdit);
+    QIntValidator *imageSizeIntValidator = new QIntValidator(0, 4096, imageSizeLineEdit);
     imageSizeLineEdit->setValidator(imageSizeIntValidator);
     imageSizeLineEdit->setText(QString::number(imageSize));
 
@@ -209,16 +210,38 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
     // Computations and plots controls
 
+    togglePlotsPushButton = new QPushButton("Toggle plots");
+    togglePlotsPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    togglePlotsPushButton->setCheckable(true);
+
     QLabel *imageIterationLabel = new QLabel("Full image color intensity plot");
 
     imageIterationPushButton = new QPushButton("Start plotting");
     imageIterationPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     imageIterationPushButton->setCheckable(true);
 
+    QLabel *pixelIterationLabel = new QLabel("Pixel color intensity plot");
+
+    pixelIterationPushButton = new QPushButton("Start plotting");
+    pixelIterationPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    pixelIterationPushButton->setCheckable(true);
+    pixelIterationPushButton->setEnabled(false);
+
+    selectPixelPushButton = new QPushButton("Select pixel");
+    selectPixelPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    selectPixelPushButton->setCheckable(true);
+
+    QHBoxLayout *pixelButtonsHBoxLayout = new QHBoxLayout;
+    pixelButtonsHBoxLayout->addWidget(pixelIterationPushButton);
+    pixelButtonsHBoxLayout->addWidget(selectPixelPushButton);
+
     QVBoxLayout *computationVBoxLayout = new QVBoxLayout;
     computationVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
+    computationVBoxLayout->addWidget(togglePlotsPushButton);
     computationVBoxLayout->addWidget(imageIterationLabel);
     computationVBoxLayout->addWidget(imageIterationPushButton);
+    computationVBoxLayout->addWidget(pixelIterationLabel);
+    computationVBoxLayout->addLayout(pixelButtonsHBoxLayout);
 
     QWidget *computationWidget = new QWidget;
     computationWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -234,22 +257,20 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
     // Plot tabs
 
-    QTabWidget *plotsTabWidget = new QTabWidget;
+    plotsTabWidget = new QTabWidget;
     plotsTabWidget->addTab(imageIterationPlot->plot, "Full image color intensity");
+    plotsTabWidget->addTab(pixelIterationPlot->plot, "Single pixel color intensity");
+    plotsTabWidget->hide();
 
     // Main layout
 
     QHBoxLayout *mainHBoxLayout = new QHBoxLayout;
 
-    imageLabel = new QLabel;
-    imageLabel->setFixedSize(imageSize, imageSize);
-    imageLabel->show();
-
     mainHBoxLayout->addWidget(mainTabWidget);
     mainHBoxLayout->addWidget(plotsTabWidget);
 
     setLayout(mainHBoxLayout);
-    resize(1200, 700);
+    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     timer = new QTimer(this);
 
@@ -268,18 +289,22 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     connect(imageOperationsListWidget->model(), &QAbstractItemModel::rowsMoved, this, &MainWidget::onRowsMoved);
     connect(insertImageOperationPushButton, &QPushButton::clicked, this, &MainWidget::insertImageOperation);
     connect(removeImageOperationPushButton, &QPushButton::clicked, this, &MainWidget::removeImageOperation);
+    connect(togglePlotsPushButton, &QPushButton::clicked, this, &MainWidget::togglePlots);
     connect(imageIterationPushButton, &QPushButton::clicked, [=](bool checked){ if (checked) imageIterationPlot->clearGraphsData(); });
+    connect(pixelIterationPushButton, &QPushButton::clicked, [=](bool checked){ if (checked) pixelIterationPlot->clearGraphsData(); });
     connect(timer, &QTimer::timeout, this, &MainWidget::iterationLoop);
 
     // OpenCV
 
+    cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
+    cv::setMouseCallback("image", onMouse, this);
+    selectedPixel = cv::Point(imageSize / 2, imageSize / 2);
     setMask();
     initSystem();
 
     // Init widgets
 
     initImageOperationsListWidget(0);
-    timer->start(timerInterval);
 }
 
 MainWidget::~MainWidget()
@@ -302,11 +327,13 @@ void MainWidget::initSystem()
     {
         seedImage.copyTo(images[i], mask);
     }
+
+    cv::imshow("image", images[0]);
 }
 
 void MainWidget::pauseResumeSystem(bool checked)
 {
-    if (checked)
+    if (!checked)
     {
         timer->stop();
         pauseResumePushButton->setText("Resume");
@@ -341,12 +368,9 @@ void MainWidget::setImageSize()
 
     setMask();
 
-    imageLabel->setFixedSize(imageSize, imageSize);
+    cv::imshow("image", images[0]);
 
-    QImage qImage = Mat2QImage(images[0]);
-    imageLabel->setPixmap(QPixmap::fromImage(qImage));
-
-    adjustSize();
+    selectedPixel = cv::Point(imageSize / 2, imageSize / 2);
 
     timer->start(timerInterval);
 }
@@ -595,13 +619,29 @@ void MainWidget::iterationLoop()
         blendedImage.copyTo(images[i], mask);
     }
 
-    imageLabel->setPixmap(QPixmap::fromImage(Mat2QImage(blendedImage)));
-
-    cv::Scalar bgr = cv::sum(blendedImage);
-
     if (imageIterationPushButton->isChecked())
     {
+        cv::Scalar bgr = cv::sum(blendedImage);
         imageIterationPlot->addPoint(iteration, bgr[0] * colorScaleFactor, bgr[1] * colorScaleFactor, bgr[2] * colorScaleFactor);
+    }
+
+    if (pixelIterationPushButton->isChecked())
+    {
+        cv::Vec3b bgr = blendedImage.at<cv::Vec3b>(selectedPixel);
+        pixelIterationPlot->addPoint(iteration, bgr[0], bgr[1], bgr[2]);
+    }
+
+    if (selectPixelPushButton->isChecked())
+    {
+        cv::Mat layer = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
+        cv::line(layer, cv::Point(0, selectedPixel.y), cv::Point(imageSize, selectedPixel.y), cv::Scalar(255, 255, 255));
+        cv::line(layer, cv::Point(selectedPixel.x, 0), cv::Point(selectedPixel.x, imageSize), cv::Scalar(255, 255, 255));
+        cv::addWeighted(blendedImage, 0.5, layer, 0.5, 0.0, layer);
+        cv::imshow("image", layer);
+    }
+    else
+    {
+        cv::imshow("image", blendedImage);
     }
 
     iteration++;
@@ -612,8 +652,47 @@ void MainWidget::iterationLoop()
     }
 }
 
+void MainWidget::togglePlots(bool checked)
+{
+    plotsTabWidget->setVisible(checked);
+
+    if (checked)
+    {
+        resize(1100, height());
+    }
+    else
+    {
+        adjustSize();
+    }
+}
+
+void MainWidget::onMouse(int event, int x, int y, int, void *userdata)
+{
+    MainWidget *mw = reinterpret_cast<MainWidget*>(userdata);
+
+    if (event == cv::EVENT_LBUTTONDOWN)
+    {
+        mw->selectPixel(x, y);
+    }
+}
+
+void MainWidget::selectPixel(int x, int y)
+{
+    if (selectPixelPushButton->isChecked())
+    {
+        selectedPixel = cv::Point(x, y);
+
+        pixelIterationPlot->clearGraphsData();
+
+        if (!pixelIterationPushButton->isEnabled())
+        {
+            pixelIterationPushButton->setEnabled(true);
+        }
+    }
+}
+
 void MainWidget::closeEvent(QCloseEvent *event)
 {
-    imageLabel->close();
+    cv::destroyWindow("image");
     event->accept();
 }

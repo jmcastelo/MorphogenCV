@@ -20,11 +20,11 @@
 
 #include "imageoperations.h"
 #include "imageiterationplot.h"
-#include "mat2qimage.h"
 #include <vector>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui.hpp>
 #include <QWidget>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -64,6 +64,7 @@ class MainWidget : public QWidget
     double blendFactor;
 
     ImageIterationPlot *imageIterationPlot;
+    ImageIterationPlot *pixelIterationPlot;
 
     QPushButton *initPushButton;
     QPushButton *pauseResumePushButton;
@@ -72,8 +73,6 @@ class MainWidget : public QWidget
     QCheckBox *bwSeedCheckBox;
 
     QLineEdit *timerIntervalLineEdit;
-
-    QLabel *imageLabel;
 
     QTimer *timer;
     int timerInterval;
@@ -110,7 +109,14 @@ class MainWidget : public QWidget
 
     QVBoxLayout *parametersLayout;
 
+    QPushButton *togglePlotsPushButton;
     QPushButton *imageIterationPushButton;
+    QPushButton *pixelIterationPushButton;
+    QPushButton *selectPixelPushButton;
+
+    QTabWidget *plotsTabWidget;
+
+    cv::Point selectedPixel;
 
     void initSystem();
     void pauseResumeSystem(bool checked);
@@ -139,6 +145,11 @@ class MainWidget : public QWidget
     void initImageOperations();
     void applyImageOperations();
     void iterationLoop();
+
+    void togglePlots(bool checked);
+
+    static void onMouse(int event, int x, int y, int, void* userdata);
+    void selectPixel(int x, int y);
 
     void closeEvent(QCloseEvent *event);
 
