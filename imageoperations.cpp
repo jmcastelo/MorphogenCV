@@ -17,18 +17,12 @@
 
 #include "imageoperations.h"
 
-ImageOperation::~ImageOperation(){}
-
 // Canny
 
 QString Canny::name = "Canny";
 
-Canny::Canny(double th1, double th2, int s, bool g): threshold1(th1), threshold2(th2), apertureSize(s), L2gradient(g)
+Canny::Canny(int stp, double th1, double th2, int size, bool g): ImageOperation(stp), threshold1(th1), threshold2(th2), apertureSize(size), L2gradient(g)
 {
-    QLabel *threshold1Label = new QLabel("Threshold 1");
-    QLabel *threshold2Label = new QLabel("Threshold 2");
-    QLabel *apertureSizeLabel = new QLabel("Aperture size");
-
     threshold1LineEdit = new CustomLineEdit();
     threshold2LineEdit = new CustomLineEdit();
     apertureSizeLineEdit = new CustomLineEdit();
@@ -54,17 +48,18 @@ Canny::Canny(double th1, double th2, int s, bool g): threshold1(th1), threshold2
     L2gradientCheckBox = new QCheckBox("L2 gradient");
     L2gradientCheckBox->setChecked(L2gradient);
 
-    QVBoxLayout *vBoxLayout = new QVBoxLayout;
-    vBoxLayout->addWidget(threshold1Label);
-    vBoxLayout->addWidget(threshold1LineEdit);
-    vBoxLayout->addWidget(threshold2Label);
-    vBoxLayout->addWidget(threshold2LineEdit);
-    vBoxLayout->addWidget(apertureSizeLabel);
-    vBoxLayout->addWidget(apertureSizeLineEdit);
-    vBoxLayout->addWidget(L2gradientCheckBox);
+    QSpinBox *stepSpinBox = new QSpinBox;
+    stepSpinBox->setRange(0, 10000);
+    stepSpinBox->setValue(step);
+
+    QFormLayout *formLayout = new QFormLayout;
+    formLayout->addRow("Threshold 1:", threshold1LineEdit);
+    formLayout->addRow("Threshold 2:", threshold2LineEdit);
+    formLayout->addRow("Aperture size:", apertureSizeLineEdit);
+    formLayout->addRow("Step:", stepSpinBox);
 
     mainWidget = new QWidget(this);
-    mainWidget->setLayout(vBoxLayout);
+    mainWidget->setLayout(formLayout);
 
     connect(apertureSizeLineEdit, &CustomLineEdit::returnPressed, [=](){
         int size = apertureSizeLineEdit->text().toInt();
@@ -78,28 +73,7 @@ Canny::Canny(double th1, double th2, int s, bool g): threshold1(th1), threshold2
     connect(threshold1LineEdit, &CustomLineEdit::focusOut, [=](){ threshold1LineEdit->setText(QString::number(threshold1)); });
     connect(threshold2LineEdit, &CustomLineEdit::focusOut, [=](){ threshold2LineEdit->setText(QString::number(threshold2)); });
     connect(L2gradientCheckBox, &QCheckBox::stateChanged, [=](int state){ L2gradient = (state == Qt::Checked); });
-}
-
-Canny::~Canny()
-{
-    threshold1LineEdit->disconnect();
-    threshold2LineEdit->disconnect();
-    apertureSizeLineEdit->disconnect();
-    L2gradientCheckBox->disconnect();
-
-    QLayoutItem *child;
-    while ((child = mainWidget->layout()->takeAt(0)) != 0)
-    {
-        delete child;
-    }
-
-    delete mainWidget->layout();
-    delete mainWidget;
-}
-
-QWidget* Canny::getParametersWidget()
-{
-    return mainWidget;
+    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
 }
 
 cv::Mat Canny::applyOperation(const cv::Mat &src)
@@ -115,11 +89,8 @@ cv::Mat Canny::applyOperation(const cv::Mat &src)
 
 QString ConvertTo::name = "Convert to";
 
-ConvertTo::ConvertTo(double a, double b): alpha(a), beta(b)
+ConvertTo::ConvertTo(int stp, double a, double b): ImageOperation(stp), alpha(a), beta(b)
 {
-    QLabel *alphaLabel = new QLabel("Alpha");
-    QLabel *betaLabel = new QLabel("Beta");
-
     alphaLineEdit = new CustomLineEdit();
     betaLineEdit = new CustomLineEdit();
 
@@ -136,39 +107,23 @@ ConvertTo::ConvertTo(double a, double b): alpha(a), beta(b)
     betaLineEdit->setValidator(betaValidator);
     betaLineEdit->setText(QString::number(beta));
 
-    QVBoxLayout *vBoxLayout = new QVBoxLayout;
-    vBoxLayout->addWidget(alphaLabel);
-    vBoxLayout->addWidget(alphaLineEdit);
-    vBoxLayout->addWidget(betaLabel);
-    vBoxLayout->addWidget(betaLineEdit);
+    QSpinBox *stepSpinBox = new QSpinBox;
+    stepSpinBox->setRange(0, 10000);
+    stepSpinBox->setValue(step);
+
+    QFormLayout *formLayout = new QFormLayout;
+    formLayout->addRow("Alpha:", alphaLineEdit);
+    formLayout->addRow("Beta:", betaLineEdit);
+    formLayout->addRow("Step:", stepSpinBox);
 
     mainWidget = new QWidget(this);
-    mainWidget->setLayout(vBoxLayout);
+    mainWidget->setLayout(formLayout);
 
     connect(alphaLineEdit, &CustomLineEdit::returnPressed, [=](){ alpha = alphaLineEdit->text().toDouble(); });
     connect(betaLineEdit, &CustomLineEdit::returnPressed, [=](){ beta = betaLineEdit->text().toDouble(); });
     connect(alphaLineEdit, &CustomLineEdit::focusOut, [=](){ alphaLineEdit->setText(QString::number(alpha)); });
     connect(betaLineEdit, &CustomLineEdit::focusOut, [=](){ betaLineEdit->setText(QString::number(beta)); });
-}
-
-ConvertTo::~ConvertTo()
-{
-    alphaLineEdit->disconnect();
-    betaLineEdit->disconnect();
-
-    QLayoutItem *child;
-    while ((child = mainWidget->layout()->takeAt(0)) != 0)
-    {
-        delete child;
-    }
-
-    delete mainWidget->layout();
-    delete mainWidget;
-}
-
-QWidget* ConvertTo::getParametersWidget()
-{
-    return mainWidget;
+    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
 }
 
 cv::Mat ConvertTo::applyOperation(const cv::Mat &src)
@@ -182,9 +137,19 @@ cv::Mat ConvertTo::applyOperation(const cv::Mat &src)
 
 QString EqualizeHist::name = "Equalize histogram";
 
-QWidget* EqualizeHist::getParametersWidget()
+EqualizeHist::EqualizeHist(int stp): ImageOperation(stp)
 {
-    return mainWidget;
+    QSpinBox *stepSpinBox = new QSpinBox;
+    stepSpinBox->setRange(0, 10000);
+    stepSpinBox->setValue(step);
+
+    QFormLayout *formLayout = new QFormLayout;
+    formLayout->addRow("Step:", stepSpinBox);
+
+    mainWidget = new QWidget(this);
+    mainWidget->setLayout(formLayout);
+
+    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
 }
 
 cv::Mat EqualizeHist::applyOperation(const cv::Mat &src)
@@ -208,12 +173,8 @@ cv::Mat EqualizeHist::applyOperation(const cv::Mat &src)
 
 QString GaussianBlur::name = "Gaussian blur";
 
-GaussianBlur::GaussianBlur(int k, double sx, double sy): ksize(k), sigmaX(sx), sigmaY(sy)
+GaussianBlur::GaussianBlur(int stp, int k, double sx, double sy): ImageOperation(stp), ksize(k), sigmaX(sx), sigmaY(sy)
 {
-    QLabel *ksizeLabel = new QLabel("Kernel size");
-    QLabel *sigmaXLabel = new QLabel("Sigma X");
-    QLabel *sigmaYLabel = new QLabel("Sigma Y");
-
     ksizeLineEdit = new CustomLineEdit();
     sigmaXLineEdit = new CustomLineEdit();
     sigmaYLineEdit = new CustomLineEdit();
@@ -236,16 +197,18 @@ GaussianBlur::GaussianBlur(int k, double sx, double sy): ksize(k), sigmaX(sx), s
     sigmaYLineEdit->setValidator(sigmaYValidator);
     sigmaYLineEdit->setText(QString::number(sigmaY));
 
-    QVBoxLayout *vBoxLayout = new QVBoxLayout;
-    vBoxLayout->addWidget(ksizeLabel);
-    vBoxLayout->addWidget(ksizeLineEdit);
-    vBoxLayout->addWidget(sigmaXLabel);
-    vBoxLayout->addWidget(sigmaXLineEdit);
-    vBoxLayout->addWidget(sigmaYLabel);
-    vBoxLayout->addWidget(sigmaYLineEdit);
+    QSpinBox *stepSpinBox = new QSpinBox;
+    stepSpinBox->setRange(0, 10000);
+    stepSpinBox->setValue(step);
+
+    QFormLayout *formLayout = new QFormLayout;
+    formLayout->addRow("Kernel size:", ksizeLineEdit);
+    formLayout->addRow("Sigma X:", sigmaXLineEdit);
+    formLayout->addRow("Sigma Y:", sigmaYLineEdit);
+    formLayout->addRow("Step:", stepSpinBox);
 
     mainWidget = new QWidget(this);
-    mainWidget->setLayout(vBoxLayout);
+    mainWidget->setLayout(formLayout);
 
     connect(ksizeLineEdit, &CustomLineEdit::returnPressed, [=]()
     {
@@ -287,27 +250,7 @@ GaussianBlur::GaussianBlur(int k, double sx, double sy): ksize(k), sigmaX(sx), s
     connect(ksizeLineEdit, &CustomLineEdit::focusOut, [=](){ ksizeLineEdit->setText(QString::number(ksize)); });
     connect(sigmaXLineEdit, &CustomLineEdit::focusOut, [=](){ sigmaXLineEdit->setText(QString::number(sigmaX)); });
     connect(sigmaYLineEdit, &CustomLineEdit::focusOut, [=](){ sigmaYLineEdit->setText(QString::number(sigmaY)); });
-}
-
-GaussianBlur::~GaussianBlur()
-{
-    ksizeLineEdit->disconnect();
-    sigmaXLineEdit->disconnect();
-    sigmaYLineEdit->disconnect();
-
-    QLayoutItem *child;
-    while ((child = mainWidget->layout()->takeAt(0)) != 0)
-    {
-        delete child;
-    }
-
-    delete mainWidget->layout();
-    delete mainWidget;
-}
-
-QWidget* GaussianBlur::getParametersWidget()
-{
-    return mainWidget;
+    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
 }
 
 cv::Mat GaussianBlur::applyOperation(const cv::Mat &src)
@@ -321,12 +264,8 @@ cv::Mat GaussianBlur::applyOperation(const cv::Mat &src)
 
 QString Laplacian::name = "Laplacian";
 
-Laplacian::Laplacian(int k, double s, double d): ksize(k), scale(s), delta(d)
+Laplacian::Laplacian(int stp, int k, double s, double d): ImageOperation(stp), ksize(k), scale(s), delta(d)
 {
-    QLabel *ksizeLabel = new QLabel("Kernel size");
-    QLabel *scaleLabel = new QLabel("Scale");
-    QLabel *deltaLabel = new QLabel("Delta");
-
     ksizeLineEdit = new CustomLineEdit();
     scaleLineEdit = new CustomLineEdit();
     deltaLineEdit = new CustomLineEdit();
@@ -349,16 +288,18 @@ Laplacian::Laplacian(int k, double s, double d): ksize(k), scale(s), delta(d)
     deltaLineEdit->setValidator(deltaValidator);
     deltaLineEdit->setText(QString::number(delta));
 
-    QVBoxLayout *vBoxLayout = new QVBoxLayout;
-    vBoxLayout->addWidget(ksizeLabel);
-    vBoxLayout->addWidget(ksizeLineEdit);
-    vBoxLayout->addWidget(scaleLabel);
-    vBoxLayout->addWidget(scaleLineEdit);
-    vBoxLayout->addWidget(deltaLabel);
-    vBoxLayout->addWidget(deltaLineEdit);
+    QSpinBox *stepSpinBox = new QSpinBox;
+    stepSpinBox->setRange(0, 10000);
+    stepSpinBox->setValue(step);
+
+    QFormLayout *formLayout = new QFormLayout;
+    formLayout->addRow("Kernel size:", ksizeLineEdit);
+    formLayout->addRow("Scale:", scaleLineEdit);
+    formLayout->addRow("Delta:", deltaLineEdit);
+    formLayout->addRow("Step:", stepSpinBox);
 
     mainWidget = new QWidget(this);
-    mainWidget->setLayout(vBoxLayout);
+    mainWidget->setLayout(formLayout);
 
     connect(ksizeLineEdit, &CustomLineEdit::returnPressed, [=](){
         int size = ksizeLineEdit->text().toInt();
@@ -371,27 +312,7 @@ Laplacian::Laplacian(int k, double s, double d): ksize(k), scale(s), delta(d)
     connect(ksizeLineEdit, &CustomLineEdit::focusOut, [=](){ ksizeLineEdit->setText(QString::number(ksize)); });
     connect(scaleLineEdit, &CustomLineEdit::focusOut, [=](){ scaleLineEdit->setText(QString::number(scale)); });
     connect(deltaLineEdit, &CustomLineEdit::focusOut, [=](){ deltaLineEdit->setText(QString::number(delta)); });
-}
-
-Laplacian::~Laplacian()
-{
-    ksizeLineEdit->disconnect();
-    scaleLineEdit->disconnect();
-    deltaLineEdit->disconnect();
-
-    QLayoutItem *child;
-    while ((child = mainWidget->layout()->takeAt(0)) != 0)
-    {
-        delete child;
-    }
-
-    delete mainWidget->layout();
-    delete mainWidget;
-}
-
-QWidget* Laplacian::getParametersWidget()
-{
-    return mainWidget;
+    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
 }
 
 cv::Mat Laplacian::applyOperation(const cv::Mat &src)
@@ -407,12 +328,8 @@ cv::Mat Laplacian::applyOperation(const cv::Mat &src)
 
 QString MixChannels::name = "Mix channels";
 
-MixChannels::MixChannels(int b, int g, int r): blue(b), green(g), red(r)
+MixChannels::MixChannels(int stp, int b, int g, int r): ImageOperation(stp), blue(b), green(g), red(r)
 {
-    QLabel *blueLabel = new QLabel("Blue");
-    QLabel *greenLabel = new QLabel("Green");
-    QLabel *redLabel = new QLabel("Red");
-
     blueComboBox = new QComboBox;
     blueComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     blueComboBox->addItem("Blue");
@@ -434,16 +351,18 @@ MixChannels::MixChannels(int b, int g, int r): blue(b), green(g), red(r)
     redComboBox->addItem("Red");
     redComboBox->setCurrentIndex(red);
 
-    QVBoxLayout *vBoxLayout = new QVBoxLayout;
-    vBoxLayout->addWidget(blueLabel);
-    vBoxLayout->addWidget(blueComboBox);
-    vBoxLayout->addWidget(greenLabel);
-    vBoxLayout->addWidget(greenComboBox);
-    vBoxLayout->addWidget(redLabel);
-    vBoxLayout->addWidget(redComboBox);
+    QSpinBox *stepSpinBox = new QSpinBox;
+    stepSpinBox->setRange(0, 10000);
+    stepSpinBox->setValue(step);
+
+    QFormLayout *formLayout = new QFormLayout;
+    formLayout->addRow("Blue to:", blueComboBox);
+    formLayout->addRow("Green to:", greenComboBox);
+    formLayout->addRow("Red to:", redComboBox);
+    formLayout->addRow("Step:", stepSpinBox);
 
     mainWidget = new QWidget(this);
-    mainWidget->setLayout(vBoxLayout);
+    mainWidget->setLayout(formLayout);
 
     fromTo[0] = 0;
     fromTo[1] = blue;
@@ -455,27 +374,7 @@ MixChannels::MixChannels(int b, int g, int r): blue(b), green(g), red(r)
     connect(blueComboBox, QOverload<int>::of(&QComboBox::activated), [=](int channelIndex){ fromTo[1] = channelIndex; });
     connect(greenComboBox, QOverload<int>::of(&QComboBox::activated), [=](int channelIndex){ fromTo[3] = channelIndex; });
     connect(redComboBox, QOverload<int>::of(&QComboBox::activated), [=](int channelIndex){ fromTo[5] = channelIndex; });
-}
-
-MixChannels::~MixChannels()
-{
-    blueComboBox->disconnect();
-    greenComboBox->disconnect();
-    redComboBox->disconnect();
-
-    QLayoutItem *child;
-    while ((child = mainWidget->layout()->takeAt(0)) != 0)
-    {
-        delete child;
-    }
-
-    delete mainWidget->layout();
-    delete mainWidget;
-}
-
-QWidget* MixChannels::getParametersWidget()
-{
-    return mainWidget;
+    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
 }
 
 cv::Mat MixChannels::applyOperation(const cv::Mat &src)
@@ -489,13 +388,8 @@ cv::Mat MixChannels::applyOperation(const cv::Mat &src)
 
 QString MorphologyEx::name = "Morphology operation";
 
-MorphologyEx::MorphologyEx(int k, int its, cv::MorphTypes t, cv::MorphShapes s): ksize(k), iterations(its), morphType(t), morphShape(s)
+MorphologyEx::MorphologyEx(int stp, int k, int its, cv::MorphTypes t, cv::MorphShapes s): ImageOperation(stp), ksize(k), iterations(its), morphType(t), morphShape(s)
 {
-    QLabel *morphTypeLabel = new QLabel("Type");
-    QLabel *ksizeLabel = new QLabel("Kernel size");
-    QLabel *morphShapeLabel = new QLabel("Shape");
-    QLabel *iterationsLabel = new QLabel("Iterations");
-
     morphTypes[0] = cv::MORPH_ERODE;
     morphTypes[1] = cv::MORPH_DILATE;
     morphTypes[2] = cv::MORPH_OPEN;
@@ -507,12 +401,8 @@ MorphologyEx::MorphologyEx(int k, int its, cv::MorphTypes t, cv::MorphShapes s):
     int morphTypeComboBoxIndex = 0;
 
     for (int i = 0; i < 7; i++)
-    {
         if (morphType == morphTypes[i])
-        {
             morphTypeComboBoxIndex = i;
-        }
-    }
 
     morphTypeComboBox = new QComboBox;
     morphTypeComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -539,12 +429,8 @@ MorphologyEx::MorphologyEx(int k, int its, cv::MorphTypes t, cv::MorphShapes s):
     int morphShapeComboBoxIndex = 0;
 
     for (int i = 0; i < 3; i++)
-    {
         if (morphShape == morphShapes[i])
-        {
             morphShapeComboBoxIndex = i;
-        }
-    }
 
     morphShapeComboBox = new QComboBox;
     morphShapeComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -560,18 +446,19 @@ MorphologyEx::MorphologyEx(int k, int its, cv::MorphTypes t, cv::MorphShapes s):
     iterationsLineEdit->setValidator(iterationsValidator);
     iterationsLineEdit->setText(QString::number(iterations));
 
-    QVBoxLayout *vBoxLayout = new QVBoxLayout;
-    vBoxLayout->addWidget(morphTypeLabel);
-    vBoxLayout->addWidget(morphTypeComboBox);
-    vBoxLayout->addWidget(ksizeLabel);
-    vBoxLayout->addWidget(ksizeLineEdit);
-    vBoxLayout->addWidget(morphShapeLabel);
-    vBoxLayout->addWidget(morphShapeComboBox);
-    vBoxLayout->addWidget(iterationsLabel);
-    vBoxLayout->addWidget(iterationsLineEdit);
+    QSpinBox *stepSpinBox = new QSpinBox;
+    stepSpinBox->setRange(0, 10000);
+    stepSpinBox->setValue(step);
+
+    QFormLayout *formLayout = new QFormLayout;
+    formLayout->addRow("Type:", morphTypeComboBox);
+    formLayout->addRow("Kernel size:", ksizeLineEdit);
+    formLayout->addRow("Shape:", morphShapeComboBox);
+    formLayout->addRow("Iterations:", iterationsLineEdit);
+    formLayout->addRow("Step:", stepSpinBox);
 
     mainWidget = new QWidget(this);
-    mainWidget->setLayout(vBoxLayout);
+    mainWidget->setLayout(formLayout);
 
     connect(ksizeLineEdit, &CustomLineEdit::returnPressed, [=](){
         int size = ksizeLineEdit->text().toInt();
@@ -584,28 +471,7 @@ MorphologyEx::MorphologyEx(int k, int its, cv::MorphTypes t, cv::MorphShapes s):
     connect(iterationsLineEdit, &CustomLineEdit::focusOut, [=](){ iterationsLineEdit->setText(QString::number(iterations)); });
     connect(morphTypeComboBox, QOverload<int>::of(&QComboBox::activated), [=](int typeIndex){ morphType = morphTypes[typeIndex]; });
     connect(morphShapeComboBox, QOverload<int>::of(&QComboBox::activated), [=](int shapeIndex){ morphShape = morphShapes[shapeIndex]; });
-}
-
-MorphologyEx::~MorphologyEx()
-{
-    ksizeLineEdit->disconnect();
-    morphTypeComboBox->disconnect();
-    iterationsLineEdit->disconnect();
-    morphShapeComboBox->disconnect();
-
-    QLayoutItem *child;
-    while ((child = mainWidget->layout()->takeAt(0)) != 0)
-    {
-        delete child;
-    }
-
-    delete mainWidget->layout();
-    delete mainWidget;
-}
-
-QWidget* MorphologyEx::getParametersWidget()
-{
-    return mainWidget;
+    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
 }
 
 cv::Mat MorphologyEx::applyOperation(const cv::Mat &src)
@@ -620,12 +486,8 @@ cv::Mat MorphologyEx::applyOperation(const cv::Mat &src)
 
 QString Rotation::name = "Rotation";
 
-Rotation::Rotation(double a, double s, cv::InterpolationFlags f): angle(a), scale(s), flag(f)
+Rotation::Rotation(int stp, double a, double s, cv::InterpolationFlags f): ImageOperation(stp), angle(a), scale(s), flag(f)
 {
-    QLabel *angleLabel = new QLabel("Angle");
-    QLabel *scaleLabel = new QLabel("Scale");
-    QLabel *flagLabel = new QLabel("Interpolation");
-
     angleLineEdit = new CustomLineEdit();
     scaleLineEdit = new CustomLineEdit();
 
@@ -665,43 +527,25 @@ Rotation::Rotation(double a, double s, cv::InterpolationFlags f): angle(a), scal
     //flagComboBox->addItem("Bit exact biliniar");
     flagComboBox->setCurrentIndex(flagComboBoxIndex);
 
-    QVBoxLayout *vBoxLayout = new QVBoxLayout;
-    vBoxLayout->addWidget(angleLabel);
-    vBoxLayout->addWidget(angleLineEdit);
-    vBoxLayout->addWidget(scaleLabel);
-    vBoxLayout->addWidget(scaleLineEdit);
-    vBoxLayout->addWidget(flagLabel);
-    vBoxLayout->addWidget(flagComboBox);
+    QSpinBox *stepSpinBox = new QSpinBox;
+    stepSpinBox->setRange(0, 10000);
+    stepSpinBox->setValue(step);
+
+    QFormLayout *formLayout = new QFormLayout;
+    formLayout->addRow("Angle:", angleLineEdit);
+    formLayout->addRow("Scale:", scaleLineEdit);
+    formLayout->addRow("Interpolation:", flagComboBox);
+    formLayout->addRow("Step:", stepSpinBox);
 
     mainWidget = new QWidget(this);
-    mainWidget->setLayout(vBoxLayout);
+    mainWidget->setLayout(formLayout);
 
     connect(angleLineEdit, &CustomLineEdit::returnPressed, [=](){ angle = angleLineEdit->text().toDouble(); });
     connect(scaleLineEdit, &CustomLineEdit::returnPressed, [=](){ scale = scaleLineEdit->text().toDouble(); });
     connect(angleLineEdit, &CustomLineEdit::focusOut, [=](){ angleLineEdit->setText(QString::number(angle)); });
     connect(scaleLineEdit, &CustomLineEdit::focusOut, [=](){ scaleLineEdit->setText(QString::number(scale)); });
     connect(flagComboBox, QOverload<int>::of(&QComboBox::activated), [=](int flagIndex){ flag = flags[flagIndex]; });
-}
-
-Rotation::~Rotation()
-{
-    angleLineEdit->disconnect();
-    scaleLineEdit->disconnect();
-    flagComboBox->disconnect();
-
-    QLayoutItem *child;
-    while ((child = mainWidget->layout()->takeAt(0)) != 0)
-    {
-        delete child;
-    }
-
-    delete mainWidget->layout();
-    delete mainWidget;
-}
-
-QWidget* Rotation::getParametersWidget()
-{
-    return mainWidget;
+    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
 }
 
 cv::Mat Rotation::applyOperation(const cv::Mat &src)
@@ -717,12 +561,8 @@ cv::Mat Rotation::applyOperation(const cv::Mat &src)
 
 QString Sharpen::name = "Sharpen";
 
-Sharpen::Sharpen(double s, double t, double a): sigma(s), threshold(t), amount(a)
+Sharpen::Sharpen(int stp, double s, double t, double a): ImageOperation(stp), sigma(s), threshold(t), amount(a)
 {
-    QLabel *sigmaLabel = new QLabel("Sigma");
-    QLabel *thresholdLabel = new QLabel("Threshold");
-    QLabel *amountLabel = new QLabel("Amount");
-
     sigmaLineEdit = new CustomLineEdit();
     thresholdLineEdit = new CustomLineEdit();
     amountLineEdit = new CustomLineEdit();
@@ -746,16 +586,18 @@ Sharpen::Sharpen(double s, double t, double a): sigma(s), threshold(t), amount(a
     amountLineEdit->setValidator(amountValidator);
     amountLineEdit->setText(QString::number(amount));
 
-    QVBoxLayout *vBoxLayout = new QVBoxLayout;
-    vBoxLayout->addWidget(sigmaLabel);
-    vBoxLayout->addWidget(sigmaLineEdit);
-    vBoxLayout->addWidget(thresholdLabel);
-    vBoxLayout->addWidget(thresholdLineEdit);
-    vBoxLayout->addWidget(amountLabel);
-    vBoxLayout->addWidget(amountLineEdit);
+    QSpinBox *stepSpinBox = new QSpinBox;
+    stepSpinBox->setRange(0, 10000);
+    stepSpinBox->setValue(step);
+
+    QFormLayout *formLayout = new QFormLayout;
+    formLayout->addRow("Sigma:", sigmaLineEdit);
+    formLayout->addRow("Threshold:", thresholdLineEdit);
+    formLayout->addRow("Amount:", amountLineEdit);
+    formLayout->addRow("Step:", stepSpinBox);
 
     mainWidget = new QWidget(this);
-    mainWidget->setLayout(vBoxLayout);
+    mainWidget->setLayout(formLayout);
 
     connect(sigmaLineEdit, &CustomLineEdit::returnPressed, [=](){ sigma = sigmaLineEdit->text().toDouble(); });
     connect(thresholdLineEdit, &CustomLineEdit::returnPressed, [=](){ threshold = thresholdLineEdit->text().toDouble(); });
@@ -763,27 +605,7 @@ Sharpen::Sharpen(double s, double t, double a): sigma(s), threshold(t), amount(a
     connect(sigmaLineEdit, &CustomLineEdit::focusOut, [=](){ sigmaLineEdit->setText(QString::number(sigma)); });
     connect(thresholdLineEdit, &CustomLineEdit::focusOut, [=](){ thresholdLineEdit->setText(QString::number(threshold)); });
     connect(amountLineEdit, &CustomLineEdit::focusOut, [=](){ amountLineEdit->setText(QString::number(amount)); });
-}
-
-Sharpen::~Sharpen()
-{
-    sigmaLineEdit->disconnect();
-    thresholdLineEdit->disconnect();
-    amountLineEdit->disconnect();
-
-    QLayoutItem *child;
-    while ((child = mainWidget->layout()->takeAt(0)) != 0)
-    {
-        delete child;
-    }
-
-    delete mainWidget->layout();
-    delete mainWidget;
-}
-
-QWidget* Sharpen::getParametersWidget()
-{
-    return mainWidget;
+    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
 }
 
 cv::Mat Sharpen::applyOperation(const cv::Mat &src)
@@ -798,10 +620,8 @@ cv::Mat Sharpen::applyOperation(const cv::Mat &src)
 
 QString ShiftHue::name = "Shift hue";
 
-ShiftHue::ShiftHue(int d): delta(d)
+ShiftHue::ShiftHue(int stp, int d): ImageOperation(stp), delta(d)
 {
-    QLabel *deltaLabel = new QLabel("delta");
-
     deltaLineEdit = new CustomLineEdit();
     deltaLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
@@ -809,34 +629,20 @@ ShiftHue::ShiftHue(int d): delta(d)
     deltaLineEdit->setValidator(deltaValidator);
     deltaLineEdit->setText(QString::number(delta));
 
-    QVBoxLayout *vBoxLayout = new QVBoxLayout;
-    vBoxLayout->addWidget(deltaLabel);
-    vBoxLayout->addWidget(deltaLineEdit);
+    QSpinBox *stepSpinBox = new QSpinBox;
+    stepSpinBox->setRange(0, 10000);
+    stepSpinBox->setValue(step);
+
+    QFormLayout *formLayout = new QFormLayout;
+    formLayout->addRow("Delta:", deltaLineEdit);
+    formLayout->addRow("Step:", stepSpinBox);
 
     mainWidget = new QWidget(this);
-    mainWidget->setLayout(vBoxLayout);
+    mainWidget->setLayout(formLayout);
 
     connect(deltaLineEdit, &CustomLineEdit::returnPressed, [=](){ delta = deltaLineEdit->text().toInt(); });
     connect(deltaLineEdit, &CustomLineEdit::focusOut, [=](){ deltaLineEdit->setText(QString::number(delta)); });
-}
-
-ShiftHue::~ShiftHue()
-{
-    deltaLineEdit->disconnect();
-
-    QLayoutItem *child;
-    while ((child = mainWidget->layout()->takeAt(0)) != 0)
-    {
-        delete child;
-    }
-
-    delete mainWidget->layout();
-    delete mainWidget;
-}
-
-QWidget* ShiftHue::getParametersWidget()
-{
-    return mainWidget;
+    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
 }
 
 cv::Mat ShiftHue::applyOperation(const cv::Mat &src)

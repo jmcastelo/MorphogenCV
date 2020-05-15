@@ -136,21 +136,21 @@ void MainWidget::constructGeneralControls()
     seedButtonGroup->addButton(coloredSeedCheckBox, 0);
     seedButtonGroup->addButton(bwSeedCheckBox, 1);
 
-    QLabel *timerIntervalLabel = new QLabel("Time interval (ms)");
-
     timerIntervalLineEdit = new QLineEdit;
     timerIntervalLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QIntValidator *timeIntervalIntValidator = new QIntValidator(1, 10000, timerIntervalLineEdit);
     timerIntervalLineEdit->setValidator(timeIntervalIntValidator);
     timerIntervalLineEdit->setText(QString::number(timerInterval));
 
-    QLabel *imageSizeLabel = new QLabel("Image size (px)");
-
     imageSizeLineEdit = new QLineEdit;
     imageSizeLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QIntValidator *imageSizeIntValidator = new QIntValidator(0, 4096, imageSizeLineEdit);
     imageSizeLineEdit->setValidator(imageSizeIntValidator);
     imageSizeLineEdit->setText(QString::number(generator->getImageSize()));
+
+    QFormLayout *formLayout = new QFormLayout;
+    formLayout->addRow("Time interval (ms):", timerIntervalLineEdit);
+    formLayout->addRow("Image size (px):", imageSizeLineEdit);
 
     screenshotPushButton = new QPushButton("Take screenshot");
     screenshotPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -184,10 +184,7 @@ void MainWidget::constructGeneralControls()
     generalControlsVBoxLayout->addLayout(hBoxLayout);
     generalControlsVBoxLayout->addWidget(coloredSeedCheckBox);
     generalControlsVBoxLayout->addWidget(bwSeedCheckBox);
-    generalControlsVBoxLayout->addWidget(timerIntervalLabel);
-    generalControlsVBoxLayout->addWidget(timerIntervalLineEdit);
-    generalControlsVBoxLayout->addWidget(imageSizeLabel);
-    generalControlsVBoxLayout->addWidget(imageSizeLineEdit);
+    generalControlsVBoxLayout->addLayout(formLayout);
     generalControlsVBoxLayout->addWidget(screenshotGroupBox);
 
     generalControlsWidget = new QWidget;
@@ -197,8 +194,6 @@ void MainWidget::constructGeneralControls()
 
 void MainWidget::constructImageManipulationControls()
 {
-    QLabel *blendFactorLabel = new QLabel("Blend factor");
-
     blendFactorLineEdit = new QLineEdit;
     blendFactorLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QDoubleValidator *blendFactorDoubleValidator = new QDoubleValidator(0.0, 1.0, 10, blendFactorLineEdit);
@@ -206,20 +201,21 @@ void MainWidget::constructImageManipulationControls()
     blendFactorLineEdit->setValidator(blendFactorDoubleValidator);
     blendFactorLineEdit->setText(QString::number(generator->getBlendFactor()));
 
-    QLabel *imageSelectLabel = new QLabel("Select image");
-
     imageSelectComboBox = new QComboBox;
     imageSelectComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     imageSelectComboBox->addItem("Image 1");
     imageSelectComboBox->addItem("Image 2");
     imageSelectComboBox->setCurrentIndex(0);
 
-    QLabel *newImageOperationLabel = new QLabel("New operation");
-
     newImageOperationComboBox = new QComboBox;
     newImageOperationComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     initNewImageOperationComboBox();
+
+    QFormLayout *formLayout = new QFormLayout;
+    formLayout->addRow("Blend factor:", blendFactorLineEdit);
+    formLayout->addRow("Select image:", imageSelectComboBox);
+    formLayout->addRow("New operation:", newImageOperationComboBox);
 
     insertImageOperationPushButton = new QPushButton("Insert");
     insertImageOperationPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -243,12 +239,7 @@ void MainWidget::constructImageManipulationControls()
 
     QVBoxLayout *imageManipulationVBoxLayout = new QVBoxLayout;
     imageManipulationVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
-    imageManipulationVBoxLayout->addWidget(blendFactorLabel);
-    imageManipulationVBoxLayout->addWidget(blendFactorLineEdit);
-    imageManipulationVBoxLayout->addWidget(imageSelectLabel);
-    imageManipulationVBoxLayout->addWidget(imageSelectComboBox);
-    imageManipulationVBoxLayout->addWidget(newImageOperationLabel);
-    imageManipulationVBoxLayout->addWidget(newImageOperationComboBox);
+    imageManipulationVBoxLayout->addLayout(formLayout);
     imageManipulationVBoxLayout->addLayout(insertRemoveHBoxLayout);
     imageManipulationVBoxLayout->addWidget(imageOperationsListWidget);
     imageManipulationVBoxLayout->addWidget(parametersGroupBox);

@@ -102,12 +102,12 @@ void GeneratorCV::initSystem(bool grayscale)
 void GeneratorCV::initImageOperations()
 {
     imageOperations[0].clear();
-    imageOperations[0].push_back(new MorphologyEx(3, 1, cv::MORPH_DILATE, cv::MORPH_ELLIPSE));
-    imageOperations[0].push_back(new Rotation(36.0, 1.005, cv::INTER_LINEAR));
+    imageOperations[0].push_back(new MorphologyEx(1, 3, 1, cv::MORPH_DILATE, cv::MORPH_ELLIPSE));
+    imageOperations[0].push_back(new Rotation(1, 36.0, 1.005, cv::INTER_LINEAR));
 
     imageOperations[1].clear();
-    imageOperations[1].push_back(new ConvertTo(0.85, 0.0));
-    imageOperations[1].push_back(new Sharpen(1.0, 5.0, 1.0));
+    imageOperations[1].push_back(new ConvertTo(1, 0.85, 0.0));
+    imageOperations[1].push_back(new Sharpen(1, 1.0, 5.0, 1.0));
 }
 
 void GeneratorCV::applyImageOperations()
@@ -118,8 +118,11 @@ void GeneratorCV::applyImageOperations()
 
         for (auto operation: imageOperations[i])
         {
-            cv::Mat dst = operation->applyOperation(src);
-            dst.copyTo(src, mask);
+            if (operation->isEnabled(iteration))
+            {
+                cv::Mat dst = operation->applyOperation(src);
+                dst.copyTo(src, mask);
+            }
         }
 
         images[i] = src.clone();
@@ -303,42 +306,42 @@ void GeneratorCV::insertImageOperation(int imageIndex, int newOperationIndex, in
 
     if (newOperationIndex == 0)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Canny(100, 300, 3, false));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Canny(1, 100, 300, 3, false));
     }
     else if (newOperationIndex == 1)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new ConvertTo(1.0, 0.0));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new ConvertTo(1, 1.0, 0.0));
     }
     else if (newOperationIndex == 2)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new EqualizeHist());
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new EqualizeHist(1));
     }
     else if (newOperationIndex == 3)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new GaussianBlur(3, 0.0, 0.0));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new GaussianBlur(1, 3, 0.0, 0.0));
     }
     else if (newOperationIndex == 4)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Laplacian(3, 1.0, 0.0));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Laplacian(1, 3, 1.0, 0.0));
     }
     else if (newOperationIndex == 5)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new MixChannels(0, 1, 2));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new MixChannels(1, 0, 1, 2));
     }
     else if (newOperationIndex == 6)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new MorphologyEx(3, 1, cv::MORPH_ERODE, cv::MORPH_RECT));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new MorphologyEx(1, 3, 1, cv::MORPH_ERODE, cv::MORPH_RECT));
     }
     else if (newOperationIndex == 7)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Rotation(0.0, 1.0, cv::INTER_NEAREST));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Rotation(1, 0.0, 1.0, cv::INTER_NEAREST));
     }
     else if (newOperationIndex == 8)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Sharpen(1.0, 5.0, 1.0));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Sharpen(1, 1.0, 5.0, 1.0));
     }
     else if (newOperationIndex == 9)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new ShiftHue(0));
+        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new ShiftHue(1, 0));
     }
 }

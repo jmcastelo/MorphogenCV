@@ -24,6 +24,7 @@
 #include <QWidget>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QFormLayout>
 #include <QLabel>
 #include <QImage>
 #include <QPixmap>

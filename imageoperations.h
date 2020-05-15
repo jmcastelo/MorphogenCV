@@ -27,7 +27,9 @@
 #include <QDoubleValidator>
 #include <QComboBox>
 #include <QCheckBox>
+#include <QSpinBox>
 #include <QVBoxLayout>
+#include <QFormLayout>
 
 // A custom QLineEdit that signals focus out
 
@@ -53,11 +55,23 @@ signals:
 
 class ImageOperation
 {
+protected:
+    QWidget *mainWidget;
+
 public:
+    int step;
+
     virtual QString getName() = 0;
-    virtual QWidget* getParametersWidget() = 0;
+    QWidget* getParametersWidget(){ return mainWidget; };
+    bool isEnabled(int iteration){ return (step > 0) && (iteration % step == 0); }
     virtual cv::Mat applyOperation(const cv::Mat &src) = 0;
-    virtual ~ImageOperation() = 0;
+
+    ImageOperation(int stp): step(stp){};
+    ~ImageOperation()
+    {
+        delete mainWidget->layout();
+        delete mainWidget;
+    };
 };
 
 // Canny
@@ -72,16 +86,13 @@ class Canny: public QWidget, public ImageOperation
     CustomLineEdit *threshold2LineEdit;
     CustomLineEdit *apertureSizeLineEdit;
     QCheckBox *L2gradientCheckBox;
-    QWidget *mainWidget;
 
 public:
     static QString name;
 
-    Canny(double th1, double th2, int s, bool g);
-    ~Canny();
+    Canny(int stp, double th1, double th2, int size, bool g);
 
     QString getName(){ return name; };
-    QWidget *getParametersWidget();
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
@@ -93,31 +104,26 @@ class ConvertTo: public QWidget, public ImageOperation
 
     CustomLineEdit *alphaLineEdit;
     CustomLineEdit *betaLineEdit;
-    QWidget *mainWidget;
 
 public:
     static QString name;
 
-    ConvertTo(double a, double b);
-    ~ConvertTo();
+    ConvertTo(int stp, double a, double b);
 
     QString getName(){ return name; };
-    QWidget *getParametersWidget();
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
+// Equalize histogram
+
 class EqualizeHist: public QWidget, public ImageOperation
 {
-    QWidget *mainWidget;
-
 public:
     static QString name;
 
-    EqualizeHist(){ mainWidget = new QWidget(this); };
-    ~EqualizeHist(){ delete mainWidget; };
+    EqualizeHist(int stp);
 
     QString getName(){ return name; };
-    QWidget *getParametersWidget();
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
@@ -131,16 +137,13 @@ class GaussianBlur: public QWidget, public ImageOperation
     CustomLineEdit *ksizeLineEdit;
     CustomLineEdit *sigmaXLineEdit;
     CustomLineEdit *sigmaYLineEdit;
-    QWidget *mainWidget;
 
 public:
     static QString name;
 
-    GaussianBlur(int k, double sx, double sy);
-    ~GaussianBlur();
+    GaussianBlur(int stp, int k, double sx, double sy);
 
     QString getName(){ return name; };
-    QWidget *getParametersWidget();
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
@@ -154,16 +157,13 @@ class Laplacian: public QWidget, public ImageOperation
     CustomLineEdit *ksizeLineEdit;
     CustomLineEdit *scaleLineEdit;
     CustomLineEdit *deltaLineEdit;
-    QWidget *mainWidget;
 
 public:
     static QString name;
 
-    Laplacian(int k, double s, double d);
-    ~Laplacian();
+    Laplacian(int stp, int k, double s, double d);
 
     QString getName(){ return name; };
-    QWidget *getParametersWidget();
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
@@ -177,16 +177,13 @@ class MixChannels: public QWidget, public ImageOperation
     QComboBox *blueComboBox;
     QComboBox *greenComboBox;
     QComboBox *redComboBox;
-    QWidget *mainWidget;
 
 public:
     static QString name;
 
-    MixChannels(int b, int g, int r);
-    ~MixChannels();
+    MixChannels(int stp, int b, int g, int r);
 
     QString getName(){ return name; };
-    QWidget *getParametersWidget();
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
@@ -202,16 +199,13 @@ class MorphologyEx: public QWidget, public ImageOperation
     CustomLineEdit *iterationsLineEdit;
     QComboBox *morphTypeComboBox;
     QComboBox *morphShapeComboBox;
-    QWidget *mainWidget;
 
 public:
     static QString name;
 
-    MorphologyEx(int k, int its, cv::MorphTypes t, cv::MorphShapes s);
-    ~MorphologyEx();
+    MorphologyEx(int stp, int k, int its, cv::MorphTypes t, cv::MorphShapes s);
 
     QString getName(){ return name; };
-    QWidget *getParametersWidget();
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
@@ -225,16 +219,13 @@ class Rotation: public QWidget, public ImageOperation
     CustomLineEdit *angleLineEdit;
     CustomLineEdit *scaleLineEdit;
     QComboBox *flagComboBox;
-    QWidget *mainWidget;
 
 public:
     static QString name;
 
-    Rotation(double a, double s, cv::InterpolationFlags f);
-    ~Rotation();
+    Rotation(int stp, double a, double s, cv::InterpolationFlags f);
 
     QString getName(){ return name; };
-    QWidget *getParametersWidget();
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
@@ -247,16 +238,13 @@ class Sharpen: public QWidget, public ImageOperation
     CustomLineEdit *sigmaLineEdit;
     CustomLineEdit *thresholdLineEdit;
     CustomLineEdit *amountLineEdit;
-    QWidget *mainWidget;
 
 public:
     static QString name;
 
-    Sharpen(double s, double t, double a);
-    ~Sharpen();
+    Sharpen(int stp, double s, double t, double a);
 
     QString getName(){ return name; };
-    QWidget *getParametersWidget();
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
@@ -267,16 +255,13 @@ class ShiftHue: public QWidget, public ImageOperation
     int delta;
 
     CustomLineEdit *deltaLineEdit;
-    QWidget *mainWidget;
 
 public:
     static QString name;
 
-    ShiftHue(int d);
-    ~ShiftHue();
+    ShiftHue(int stp, int d);
 
     QString getName(){ return name; };
-    QWidget *getParametersWidget();
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
