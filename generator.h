@@ -36,8 +36,7 @@ class GeneratorCV
     std::vector<cv::Mat> images;
     std::vector<std::vector<ImageOperation*>> imageOperations;
 
-    cv::Mat blendedImage;
-    double blendFactor;
+    cv::Mat outImage;
 
     int iteration;
 
@@ -50,6 +49,7 @@ class GeneratorCV
 
     double histogramMax;
     double colorScaleFactor;
+    double blendFactor;
 
     cv::Scalar bgrSum;
     cv::Vec3b bgrPixel;
@@ -96,14 +96,14 @@ public:
     double getGSum(){ return bgrSum[1] * colorScaleFactor; };
     double getRSum(){ return bgrSum[2] * colorScaleFactor; };
 
-    double getBPixel(){ return bgrPixel[0]; };
-    double getGPixel(){ return bgrPixel[1]; };
-    double getRPixel(){ return bgrPixel[2]; };
+    double getPixelComponent(int colorIndex){ return bgrPixel[colorIndex]; };
 
     QVector<double> getBlueHistogram();
     QVector<double> getGreenHistogram();
     QVector<double> getRedHistogram();
     QVector<double> getHistogramBins();
+
+    QVector<double> getColorComponents(int colorIndex);
 
     void swapImageOperations(int imageIndex, int operationIndex0, int operationIndex1);
     void removeImageOperation(int imageIndex, int operationIndex);

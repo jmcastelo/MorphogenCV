@@ -54,6 +54,8 @@ class MainWidget : public QWidget
     ImageIterationPlot *imageIterationPlot;
     ImageIterationPlot *pixelIterationPlot;
     HistogramPlot *histogramPlot;
+    ScatterPlot *colorSpacePlot;
+    CurvePlot *colorSpacePixelPlot;
 
     QPushButton *initPushButton;
     QPushButton *pauseResumePushButton;
@@ -95,8 +97,18 @@ class MainWidget : public QWidget
     QPushButton *pixelIterationPushButton;
     QPushButton *selectPixelPushButton;
     QPushButton *histogramPushButton;
+    QPushButton *colorSpacePushButton;
+    QPushButton *colorSpacePixelPushButton;
 
     QTabWidget *plotsTabWidget;
+
+    QWidget *generalControlsWidget;
+    QWidget *imageManipulationWidget;
+    QWidget *computationWidget;
+
+    void constructGeneralControls();
+    void constructImageManipulationControls();
+    void constructComputationControls();
 
     void pauseResumeSystem(bool checked);
     void setTimerInterval();

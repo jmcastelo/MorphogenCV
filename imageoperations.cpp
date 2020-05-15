@@ -313,7 +313,7 @@ QWidget* GaussianBlur::getParametersWidget()
 cv::Mat GaussianBlur::applyOperation(const cv::Mat &src)
 {
     cv::Mat dst;
-    cv::GaussianBlur(src, dst, cv::Size(ksize, ksize), sigmaX, sigmaY, cv::BORDER_DEFAULT);
+    cv::GaussianBlur(src, dst, cv::Size(ksize, ksize), sigmaX, sigmaY, cv::BORDER_ISOLATED);
     return dst;
 }
 
@@ -397,7 +397,7 @@ QWidget* Laplacian::getParametersWidget()
 cv::Mat Laplacian::applyOperation(const cv::Mat &src)
 {
     cv::Mat tmp;
-    cv::Laplacian(src, tmp, CV_16SC3, ksize, scale, delta, cv::BORDER_DEFAULT);
+    cv::Laplacian(src, tmp, CV_16SC3, ksize, scale, delta, cv::BORDER_ISOLATED);
     cv::Mat dst;
     cv::convertScaleAbs(tmp, dst);
     return dst;
@@ -612,7 +612,7 @@ cv::Mat MorphologyEx::applyOperation(const cv::Mat &src)
 {
     cv::Mat element = cv::getStructuringElement(morphShape, cv::Size(ksize, ksize));
     cv::Mat dst;
-    cv::morphologyEx(src, dst, morphType, element, cv::Point(-1, -1), iterations);
+    cv::morphologyEx(src, dst, morphType, element, cv::Point(-1, -1), iterations, cv::BORDER_ISOLATED);
     return dst;
 }
 
@@ -709,7 +709,7 @@ cv::Mat Rotation::applyOperation(const cv::Mat &src)
     cv::Point center = cv::Point(src.cols / 2, src.rows / 2);
     cv::Mat rotationMat = cv::getRotationMatrix2D(center, angle, scale);
     cv::Mat dst;
-    cv::warpAffine(src, dst, rotationMat, src.size(), flag, cv::BORDER_TRANSPARENT);
+    cv::warpAffine(src, dst, rotationMat, src.size(), flag);
     return dst;
 }
 
@@ -789,9 +789,65 @@ QWidget* Sharpen::getParametersWidget()
 cv::Mat Sharpen::applyOperation(const cv::Mat &src)
 {
     cv::Mat blurred;
-    cv::GaussianBlur(src, blurred, cv::Size(), sigma, sigma);
+    cv::GaussianBlur(src, blurred, cv::Size(), sigma, sigma, cv::BORDER_ISOLATED);
     cv::Mat lowContrastMask = abs(src - blurred) < threshold;
     cv::Mat dst = src * (1 + amount) + blurred * (-amount);
     src.copyTo(dst, lowContrastMask);
+    return dst;
+}
+
+QString ShiftHue::name = "Shift hue";
+
+ShiftHue::ShiftHue(int d): delta(d)
+{
+    QLabel *deltaLabel = new QLabel("delta");
+
+    deltaLineEdit = new CustomLineEdit();
+    deltaLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    QIntValidator *deltaValidator = new QIntValidator(-180, 180, deltaLineEdit);
+    deltaLineEdit->setValidator(deltaValidator);
+    deltaLineEdit->setText(QString::number(delta));
+
+    QVBoxLayout *vBoxLayout = new QVBoxLayout;
+    vBoxLayout->addWidget(deltaLabel);
+    vBoxLayout->addWidget(deltaLineEdit);
+
+    mainWidget = new QWidget(this);
+    mainWidget->setLayout(vBoxLayout);
+
+    connect(deltaLineEdit, &CustomLineEdit::returnPressed, [=](){ delta = deltaLineEdit->text().toInt(); });
+    connect(deltaLineEdit, &CustomLineEdit::focusOut, [=](){ deltaLineEdit->setText(QString::number(delta)); });
+}
+
+ShiftHue::~ShiftHue()
+{
+    deltaLineEdit->disconnect();
+
+    QLayoutItem *child;
+    while ((child = mainWidget->layout()->takeAt(0)) != 0)
+    {
+        delete child;
+    }
+
+    delete mainWidget->layout();
+    delete mainWidget;
+}
+
+QWidget* ShiftHue::getParametersWidget()
+{
+    return mainWidget;
+}
+
+cv::Mat ShiftHue::applyOperation(const cv::Mat &src)
+{
+    cv::Mat hsv;
+    cv::cvtColor(src, hsv, cv::COLOR_BGR2HSV);
+
+    hsv.forEach<cv::Vec3b>([&](cv::Vec3b &pixel, const int*){ pixel[0] = (pixel[0] + delta) % 180; });
+
+    cv::Mat dst;
+    cv::cvtColor(hsv, dst, cv::COLOR_HSV2BGR);
+
     return dst;
 }

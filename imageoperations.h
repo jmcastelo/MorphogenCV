@@ -260,4 +260,24 @@ public:
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
+// Shift hue
+
+class ShiftHue: public QWidget, public ImageOperation
+{
+    int delta;
+
+    CustomLineEdit *deltaLineEdit;
+    QWidget *mainWidget;
+
+public:
+    static QString name;
+
+    ShiftHue(int d);
+    ~ShiftHue();
+
+    QString getName(){ return name; };
+    QWidget *getParametersWidget();
+    cv::Mat applyOperation(const cv::Mat &src);
+};
+
 #endif // IMAGEOPERATIONS_H

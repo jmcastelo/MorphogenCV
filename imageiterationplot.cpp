@@ -17,7 +17,9 @@
 
 #include "imageiterationplot.h"
 
-ImageIterationPlot::ImageIterationPlot(QString title, double yMin, double yMax): plotTitle(title)
+// Image iteration plot
+
+ImageIterationPlot::ImageIterationPlot(QString title, double yMin, double yMax)
 {
     itMin = 1000;
 
@@ -48,6 +50,11 @@ ImageIterationPlot::ImageIterationPlot(QString title, double yMin, double yMax):
     plot->graph(2)->setPen(QPen(Qt::red));
 }
 
+ImageIterationPlot::~ImageIterationPlot()
+{
+    delete plot;
+}
+
 void ImageIterationPlot::addPoint(double it, double blue, double green, double red)
 {
     plot->graph(0)->addData(it, blue);
@@ -73,12 +80,16 @@ void ImageIterationPlot::clearGraphsData()
     plot->graph(2)->data()->clear();
 }
 
-HistogramPlot::HistogramPlot(QString title): plotTitle(title)
+// Histogram plot
+
+HistogramPlot::HistogramPlot(QString title, double xMin, double xMax)
 {
     plot = new QCustomPlot(this);
 
     plot->xAxis->setLabel("Intensity");
     plot->yAxis->setLabel("Count");
+
+    plot->xAxis->setRange(xMin, xMax);
 
     plot->setInteractions(QCP::iRangeZoom | QCP::iRangeDrag);
 
@@ -100,6 +111,11 @@ HistogramPlot::HistogramPlot(QString title): plotTitle(title)
     plot->graph(2)->setPen(QPen(Qt::red));
 }
 
+HistogramPlot::~HistogramPlot()
+{
+    delete plot;
+}
+
 void HistogramPlot::setYMax(double yMax)
 {
     plot->yAxis->setRange(0.0, yMax);
@@ -111,7 +127,98 @@ void HistogramPlot::setData(const QVector<double> &bins, const QVector<double> &
     plot->graph(1)->setData(bins, green, true);
     plot->graph(2)->setData(bins, red, true);
 
-    plot->xAxis->setRange(0.0, 255.0);
-
     plot->replot();
+}
+
+// Scatter plot
+
+ScatterPlot::ScatterPlot(QString title, double xMin, double xMax, double yMin, double yMax)
+{
+    plot = new QCustomPlot(this);
+
+    plot->xAxis->setLabel("Blue");
+    plot->yAxis->setLabel("Green");
+
+    plot->xAxis->setRange(xMin, xMax);
+    plot->yAxis->setRange(yMin, yMax);
+
+    plot->setInteractions(QCP::iRangeZoom | QCP::iRangeDrag);
+
+    plot->axisRect()->setupFullAxesBox(true);
+    plot->axisRect()->setRangeZoom(Qt::Vertical | Qt::Horizontal);
+    plot->axisRect()->setRangeDrag(Qt::Vertical | Qt::Horizontal);
+
+    plot->plotLayout()->insertRow(0);
+    QCPTextElement *text = new QCPTextElement(plot, title);
+    plot->plotLayout()->addElement(0, 0, text);
+
+    plot->addGraph();
+    plot->graph(0)->setLineStyle(QCPGraph::lsNone);
+    plot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 1.0));
+    plot->graph(0)->setPen(QPen(Qt::black));
+    plot->graph(0)->setAdaptiveSampling(false);
+}
+
+ScatterPlot::~ScatterPlot()
+{
+    delete plot;
+}
+
+void ScatterPlot::setAxesLabels(QString xLabel, QString yLabel)
+{
+    plot->xAxis->setLabel(xLabel);
+    plot->yAxis->setLabel(yLabel);
+}
+
+void ScatterPlot::setData(const QVector<double> &x, const QVector<double> &y)
+{
+    plot->graph(0)->setData(x, y, true);
+    plot->replot();
+}
+
+// Curve plot
+
+CurvePlot::CurvePlot(QString title, double xMin, double xMax, double yMin, double yMax)
+{
+    plot = new QCustomPlot(this);
+
+    plot->xAxis->setLabel("Blue");
+    plot->yAxis->setLabel("Green");
+
+    plot->xAxis->setRange(xMin, xMax);
+    plot->yAxis->setRange(yMin, yMax);
+
+    plot->setInteractions(QCP::iRangeZoom | QCP::iRangeDrag);
+
+    plot->axisRect()->setupFullAxesBox(true);
+    plot->axisRect()->setRangeZoom(Qt::Vertical | Qt::Horizontal);
+    plot->axisRect()->setRangeDrag(Qt::Vertical | Qt::Horizontal);
+
+    plot->plotLayout()->insertRow(0);
+    QCPTextElement *text = new QCPTextElement(plot, title);
+    plot->plotLayout()->addElement(0, 0, text);
+
+    curve = new QCPCurve(plot->xAxis, plot->yAxis);
+}
+
+CurvePlot::~CurvePlot()
+{
+    delete plot;
+}
+
+void CurvePlot::setAxesLabels(QString xLabel, QString yLabel)
+{
+    plot->xAxis->setLabel(xLabel);
+    plot->yAxis->setLabel(yLabel);
+}
+
+void CurvePlot::addPoint(double x, double y)
+{
+    curve->addData(x, y);
+    plot->replot();
+}
+
+void CurvePlot::clearCurveData()
+{
+    curve->data()->clear();
 }
