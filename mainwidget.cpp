@@ -79,26 +79,9 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
     timer = new QTimer(this);
 
-    connect(initPushButton, &QPushButton::clicked, [=](){ generator->initSystem(bwSeedCheckBox->isChecked()); });
-    connect(pauseResumePushButton, &QPushButton::clicked, this, &MainWidget::pauseResumeSystem);
-    connect(timerIntervalLineEdit, &QLineEdit::returnPressed, this, &MainWidget::setTimerInterval);
-    connect(imageSizeLineEdit, &QLineEdit::returnPressed, this, &MainWidget::setImageSize);
-    connect(selectScreenshotPathPushButton, &QPushButton::clicked, this, &MainWidget::selectScreenshotPath);
-    connect(screenshotFilenameLineEdit, &QLineEdit::textChanged, this, &MainWidget::setScreenshotFilename);
-    connect(screenshotSeriesCheckBox, &QCheckBox::stateChanged, this, &MainWidget::setTakeScreenshotSeries);
-    connect(screenshotPushButton, &QPushButton::clicked, this, &MainWidget::takeScreenshot);
-    connect(blendFactorLineEdit, &QLineEdit::returnPressed, [=](){ generator->setBlendFactor(blendFactorLineEdit->text().toDouble()); });
-    connect(imageSelectComboBox, QOverload<int>::of(&QComboBox::activated), [=](int imageIndex){ initImageOperationsListWidget(imageIndex); });
-    connect(imageOperationsListWidget, &QListWidget::currentRowChanged, this, &MainWidget::onImageOperationsListWidgetCurrentRowChanged);
-    connect(imageOperationsListWidget->model(), &QAbstractItemModel::rowsMoved, this, &MainWidget::onRowsMoved);
-    connect(insertImageOperationPushButton, &QPushButton::clicked, this, &MainWidget::insertImageOperation);
-    connect(removeImageOperationPushButton, &QPushButton::clicked, this, &MainWidget::removeImageOperation);
-    connect(togglePlotsPushButton, &QPushButton::clicked, this, &MainWidget::togglePlots);
-    connect(imageIterationPushButton, &QPushButton::clicked, [=](bool checked){ if (checked) imageIterationPlot->clearGraphsData(); });
-    connect(pixelIterationPushButton, &QPushButton::clicked, [=](bool checked){ if (checked) pixelIterationPlot->clearGraphsData(); });
-    connect(colorSpacePixelPushButton, &QPushButton::clicked, [=](bool checked){ if (checked) colorSpacePixelPlot->clearCurveData(); });
-    connect(selectPixelPushButton, &QPushButton::clicked, [=](bool checked){ generator->selectingPixel = checked; });
     connect(timer, &QTimer::timeout, this, &MainWidget::iterationLoop);
+
+    // Start with some operations for image[0]
 
     initImageOperationsListWidget(0);
 }
@@ -114,22 +97,24 @@ MainWidget::~MainWidget()
 
 void MainWidget::constructGeneralControls()
 {
-    initPushButton = new QPushButton("Draw seed");
-    initPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-
     pauseResumePushButton = new QPushButton("Start");
-    pauseResumePushButton->setCheckable(true);
     pauseResumePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    pauseResumePushButton->setCheckable(true);
 
-    QHBoxLayout *hBoxLayout = new QHBoxLayout;
-    hBoxLayout->addWidget(initPushButton);
-    hBoxLayout->addWidget(pauseResumePushButton);
+    QPushButton *drawSeedPushButton = new QPushButton("Draw seed");
+    drawSeedPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     coloredSeedCheckBox = new QCheckBox("Color");
     coloredSeedCheckBox->setChecked(false);
 
     bwSeedCheckBox = new QCheckBox("Grays");
     bwSeedCheckBox->setChecked(true);
+
+    QHBoxLayout *seedHBoxLayout = new QHBoxLayout;
+    seedHBoxLayout->setAlignment(Qt::AlignLeft);
+    seedHBoxLayout->addWidget(drawSeedPushButton);
+    seedHBoxLayout->addWidget(coloredSeedCheckBox);
+    seedHBoxLayout->addWidget(bwSeedCheckBox);
 
     QButtonGroup *seedButtonGroup = new QButtonGroup;
     seedButtonGroup->setExclusive(true);
@@ -139,18 +124,22 @@ void MainWidget::constructGeneralControls()
     timerIntervalLineEdit = new QLineEdit;
     timerIntervalLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QIntValidator *timeIntervalIntValidator = new QIntValidator(1, 10000, timerIntervalLineEdit);
+    timeIntervalIntValidator->setLocale(QLocale::English);
     timerIntervalLineEdit->setValidator(timeIntervalIntValidator);
     timerIntervalLineEdit->setText(QString::number(timerInterval));
 
     imageSizeLineEdit = new QLineEdit;
     imageSizeLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QIntValidator *imageSizeIntValidator = new QIntValidator(0, 4096, imageSizeLineEdit);
+    imageSizeIntValidator->setLocale(QLocale::English);
     imageSizeLineEdit->setValidator(imageSizeIntValidator);
     imageSizeLineEdit->setText(QString::number(generator->getImageSize()));
 
     QFormLayout *formLayout = new QFormLayout;
     formLayout->addRow("Time interval (ms):", timerIntervalLineEdit);
     formLayout->addRow("Image size (px):", imageSizeLineEdit);
+
+    // Screenshots controls
 
     screenshotPushButton = new QPushButton("Take screenshot");
     screenshotPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -179,17 +168,31 @@ void MainWidget::constructGeneralControls()
     QGroupBox *screenshotGroupBox = new QGroupBox("Screenshots");
     screenshotGroupBox->setLayout(screenshotVBoxLayout);
 
+    // Main layout
+
     QVBoxLayout *generalControlsVBoxLayout = new QVBoxLayout;
     generalControlsVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
-    generalControlsVBoxLayout->addLayout(hBoxLayout);
-    generalControlsVBoxLayout->addWidget(coloredSeedCheckBox);
-    generalControlsVBoxLayout->addWidget(bwSeedCheckBox);
+    generalControlsVBoxLayout->addWidget(pauseResumePushButton);
+    generalControlsVBoxLayout->addLayout(seedHBoxLayout);
     generalControlsVBoxLayout->addLayout(formLayout);
     generalControlsVBoxLayout->addWidget(screenshotGroupBox);
+
+    // Widget to put in tab
 
     generalControlsWidget = new QWidget;
     generalControlsWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     generalControlsWidget->setLayout(generalControlsVBoxLayout);
+
+    // Signals + Slots
+
+    connect(drawSeedPushButton, &QPushButton::clicked, [=](){ generator->drawSeed(bwSeedCheckBox->isChecked()); });
+    connect(pauseResumePushButton, &QPushButton::clicked, this, &MainWidget::pauseResumeSystem);
+    connect(timerIntervalLineEdit, &QLineEdit::returnPressed, this, &MainWidget::setTimerInterval);
+    connect(imageSizeLineEdit, &QLineEdit::returnPressed, this, &MainWidget::setImageSize);
+    connect(selectScreenshotPathPushButton, &QPushButton::clicked, this, &MainWidget::selectScreenshotPath);
+    connect(screenshotFilenameLineEdit, &QLineEdit::textChanged, this, &MainWidget::setScreenshotFilename);
+    connect(screenshotSeriesCheckBox, &QCheckBox::stateChanged, this, &MainWidget::setTakeScreenshotSeries);
+    connect(screenshotPushButton, &QPushButton::clicked, this, &MainWidget::takeScreenshot);
 }
 
 void MainWidget::constructImageManipulationControls()
@@ -247,6 +250,15 @@ void MainWidget::constructImageManipulationControls()
     imageManipulationWidget = new QWidget;
     imageManipulationWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     imageManipulationWidget->setLayout(imageManipulationVBoxLayout);
+
+    // Signals + Slots
+
+    connect(blendFactorLineEdit, &QLineEdit::returnPressed, [=](){ generator->setBlendFactor(blendFactorLineEdit->text().toDouble()); });
+    connect(imageSelectComboBox, QOverload<int>::of(&QComboBox::activated), [=](int imageIndex){ initImageOperationsListWidget(imageIndex); });
+    connect(imageOperationsListWidget, &QListWidget::currentRowChanged, this, &MainWidget::onImageOperationsListWidgetCurrentRowChanged);
+    connect(imageOperationsListWidget->model(), &QAbstractItemModel::rowsMoved, this, &MainWidget::onRowsMoved);
+    connect(insertImageOperationPushButton, &QPushButton::clicked, this, &MainWidget::insertImageOperation);
+    connect(removeImageOperationPushButton, &QPushButton::clicked, this, &MainWidget::removeImageOperation);
 }
 
 void MainWidget::constructComputationControls()
@@ -257,84 +269,126 @@ void MainWidget::constructComputationControls()
 
     // Full image controls
 
-    QLabel *histogramLabel = new QLabel("Histogram");
-
     histogramPushButton = new QPushButton("Start plotting");
     histogramPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     histogramPushButton->setCheckable(true);
-
-    QLabel *imageIterationLabel = new QLabel("Color intensity plot");
 
     imageIterationPushButton = new QPushButton("Start plotting");
     imageIterationPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     imageIterationPushButton->setCheckable(true);
 
-    QLabel *colorSpaceLabel = new QLabel("Color-space plot");
-
     colorSpacePushButton = new QPushButton("Start plotting");
     colorSpacePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     colorSpacePushButton->setCheckable(true);
 
-    QVBoxLayout *fullImageVBoxLayout = new QVBoxLayout;
-    fullImageVBoxLayout->setAlignment(Qt::AlignTop);
-    fullImageVBoxLayout->addWidget(histogramLabel);
-    fullImageVBoxLayout->addWidget(histogramPushButton);
-    fullImageVBoxLayout->addWidget(imageIterationLabel);
-    fullImageVBoxLayout->addWidget(imageIterationPushButton);
-    fullImageVBoxLayout->addWidget(colorSpaceLabel);
-    fullImageVBoxLayout->addWidget(colorSpacePushButton);
+    colorSpaceXAxisComboBox = new QComboBox;
+    colorSpaceXAxisComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    colorSpaceXAxisComboBox->addItem("Blue");
+    colorSpaceXAxisComboBox->addItem("Green");
+    colorSpaceXAxisComboBox->addItem("Red");
+
+    colorSpaceYAxisComboBox = new QComboBox;
+    colorSpaceYAxisComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    colorSpaceYAxisComboBox->addItem("Blue");
+    colorSpaceYAxisComboBox->addItem("Green");
+    colorSpaceYAxisComboBox->addItem("Red");
+
+    QFormLayout *fullImageLayout = new QFormLayout;
+    //fullImageLayout->setAlignment(Qt::AlignTop);
+    fullImageLayout->addRow("Histogram:", histogramPushButton);
+    fullImageLayout->addRow("Color intensity plot:", imageIterationPushButton);
+    fullImageLayout->addRow("Color-space plot:", colorSpacePushButton);
+    fullImageLayout->addRow("X-Axis:", colorSpaceXAxisComboBox);
+    fullImageLayout->addRow("Y-Axis:", colorSpaceYAxisComboBox);
 
     QGroupBox *fullImageGroupBox = new QGroupBox("Full image");
-    fullImageGroupBox->setLayout(fullImageVBoxLayout);
+    fullImageGroupBox->setLayout(fullImageLayout);
 
     // Pixel controls
-
-    QLabel *pixelSelectionLabel = new QLabel("Pixel selection");
 
     selectPixelPushButton = new QPushButton("Select pixel");
     selectPixelPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     selectPixelPushButton->setCheckable(true);
 
-    QLabel *pixelIterationLabel = new QLabel("Color intensity plot");
-
     pixelIterationPushButton = new QPushButton("Start plotting");
     pixelIterationPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     pixelIterationPushButton->setCheckable(true);
-
-    QLabel *colorSpacePixelLabel = new QLabel("Color-space plot");
 
     colorSpacePixelPushButton = new QPushButton("Start plotting");
     colorSpacePixelPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     colorSpacePixelPushButton->setCheckable(true);
 
-    QVBoxLayout *pixelVBoxLayout = new QVBoxLayout;
-    pixelVBoxLayout->setAlignment(Qt::AlignTop);
-    pixelVBoxLayout->addWidget(pixelSelectionLabel);
-    pixelVBoxLayout->addWidget(selectPixelPushButton);
-    pixelVBoxLayout->addWidget(pixelIterationLabel);
-    pixelVBoxLayout->addWidget(pixelIterationPushButton);
-    pixelVBoxLayout->addWidget(colorSpacePixelLabel);
-    pixelVBoxLayout->addWidget(colorSpacePixelPushButton);
+    colorSpacePixelXAxisComboBox = new QComboBox;
+    colorSpacePixelXAxisComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    colorSpacePixelXAxisComboBox->addItem("Blue");
+    colorSpacePixelXAxisComboBox->addItem("Green");
+    colorSpacePixelXAxisComboBox->addItem("Red");
+
+    colorSpacePixelYAxisComboBox = new QComboBox;
+    colorSpacePixelYAxisComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    colorSpacePixelYAxisComboBox->addItem("Blue");
+    colorSpacePixelYAxisComboBox->addItem("Green");
+    colorSpacePixelYAxisComboBox->addItem("Red");
+
+    QFormLayout *pixelLayout = new QFormLayout;
+    pixelLayout->addRow("Pixel selection:", selectPixelPushButton);
+    pixelLayout->addRow("Color intensity plot:", pixelIterationPushButton);
+    pixelLayout->addRow("Color-space plot", colorSpacePixelPushButton);
+    pixelLayout->addRow("X-Axis:", colorSpacePixelXAxisComboBox);
+    pixelLayout->addRow("Y-Axis:", colorSpacePixelYAxisComboBox);
 
     QGroupBox *pixelGroupBox = new QGroupBox("Single pixel");
-    pixelGroupBox->setLayout(pixelVBoxLayout);
+    pixelGroupBox->setLayout(pixelLayout);
 
     // Main
-
-    QHBoxLayout *computationHBoxLayout = new QHBoxLayout;
-    computationHBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
-    computationHBoxLayout->addWidget(fullImageGroupBox);
-    computationHBoxLayout->addWidget(pixelGroupBox);
 
     QVBoxLayout *computationVBoxLayout = new QVBoxLayout;
     computationVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
     computationVBoxLayout->addWidget(togglePlotsPushButton);
-    computationVBoxLayout->addLayout(computationHBoxLayout);
+    computationVBoxLayout->addWidget(fullImageGroupBox);
+    computationVBoxLayout->addWidget(pixelGroupBox);
 
     computationWidget = new QWidget;
     computationWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     computationWidget->setLayout(computationVBoxLayout);
 
+    // Signals + Slots
+
+    connect(togglePlotsPushButton, &QPushButton::clicked, this, &MainWidget::togglePlots);
+    connect(imageIterationPushButton, &QPushButton::clicked, [=](bool checked){ if (checked) imageIterationPlot->clearGraphsData(); });
+    connect(pixelIterationPushButton, &QPushButton::clicked, [=](bool checked){ if (checked) pixelIterationPlot->clearGraphsData(); });
+    connect(colorSpacePixelPushButton, &QPushButton::clicked, [=](bool checked){ if (checked) colorSpacePixelPlot->clearCurveData(); });
+    connect(selectPixelPushButton, &QPushButton::clicked, [=](bool checked){ generator->selectingPixel = checked; });
+    connect(colorSpaceXAxisComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int axisIndex)
+    {
+        colorSpaceAxisChanged(axisIndex, colorSpaceYAxisComboBox);
+        colorSpacePlot->setAxesLabels(colorSpaceXAxisComboBox->currentText(), colorSpaceYAxisComboBox->currentText());
+    });
+    connect(colorSpaceYAxisComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int axisIndex)
+    {
+        colorSpaceAxisChanged(axisIndex, colorSpaceXAxisComboBox);
+        colorSpacePlot->setAxesLabels(colorSpaceXAxisComboBox->currentText(), colorSpaceYAxisComboBox->currentText());
+    });
+    connect(colorSpacePixelXAxisComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int axisIndex)
+    {
+        colorSpaceAxisChanged(axisIndex, colorSpacePixelYAxisComboBox);
+        colorSpacePixelPlot->setAxesLabels(colorSpacePixelXAxisComboBox->currentText(), colorSpacePixelYAxisComboBox->currentText());
+        colorSpacePixelPlot->clearCurveData();
+    });
+    connect(colorSpacePixelYAxisComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int axisIndex)
+    {
+        colorSpaceAxisChanged(axisIndex, colorSpacePixelXAxisComboBox);
+        colorSpacePixelPlot->setAxesLabels(colorSpacePixelXAxisComboBox->currentText(), colorSpacePixelYAxisComboBox->currentText());
+        colorSpacePixelPlot->clearCurveData();
+    });
+
+    // Init axes
+
+    colorSpaceXAxisComboBox->setCurrentIndex(0);
+    colorSpaceYAxisComboBox->setCurrentIndex(1);
+
+    colorSpacePixelXAxisComboBox->setCurrentIndex(0);
+    colorSpacePixelYAxisComboBox->setCurrentIndex(1);
 }
 
 void MainWidget::pauseResumeSystem(bool checked)
@@ -532,7 +586,10 @@ void MainWidget::iterationLoop()
 
     if (colorSpacePushButton->isChecked())
     {
-        colorSpacePlot->setData(generator->getColorComponents(0), generator->getColorComponents(1));
+        int xAxisIndex = colorSpaceXAxisComboBox->currentIndex();
+        int yAxisIndex = colorSpaceYAxisComboBox->currentIndex();
+
+        colorSpacePlot->setData(generator->getColorComponents(xAxisIndex), generator->getColorComponents(yAxisIndex));
     }
 
     if (histogramPushButton->isChecked())
@@ -561,7 +618,10 @@ void MainWidget::iterationLoop()
 
     if (colorSpacePixelPushButton->isChecked())
     {
-        colorSpacePixelPlot->addPoint(generator->getPixelComponent(0), generator->getPixelComponent(1));
+        int xAxisIndex = colorSpacePixelXAxisComboBox->currentIndex();
+        int yAxisIndex = colorSpacePixelYAxisComboBox->currentIndex();
+
+        colorSpacePixelPlot->addPoint(generator->getPixelComponent(xAxisIndex), generator->getPixelComponent(yAxisIndex));
     }
 
     // Show out image
@@ -594,6 +654,25 @@ void MainWidget::togglePlots(bool checked)
     else
     {
         adjustSize();
+    }
+}
+
+void MainWidget::colorSpaceAxisChanged(int axisIndex, QComboBox *axisComboBox)
+{
+    QStandardItemModel *model = qobject_cast<QStandardItemModel*>(axisComboBox->model());
+
+    for (int i = 0; i < axisComboBox->count(); i++)
+    {
+        QStandardItem *item = model->item(i);
+
+        if (i == axisIndex)
+        {
+            item->setFlags(item->flags() & ~Qt::ItemIsEnabled);
+        }
+        else
+        {
+            item->setFlags(item->flags() | Qt::ItemIsEnabled);
+        }
     }
 }
 

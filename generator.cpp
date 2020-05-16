@@ -51,17 +51,17 @@ GeneratorCV::GeneratorCV()
 
     setMask();
     computeHistogramMax();
-    initSystem(true);
+    drawSeed(true);
     initImageOperations();
 
-    cv::namedWindow("image", cv::WINDOW_AUTOSIZE);
-    cv::setMouseCallback("image", onMouse, this);
+    cv::namedWindow("Out image", cv::WINDOW_AUTOSIZE);
+    cv::setMouseCallback("Out image", onMouse, this);
     selectedPixel = cv::Point(imageSize / 2, imageSize / 2);
 }
 
 GeneratorCV::~GeneratorCV()
 {
-    cv::destroyWindow("image");
+    cv::destroyWindow("Out image");
 }
 
 void GeneratorCV::setMask()
@@ -80,7 +80,7 @@ void GeneratorCV::computeHistogramMax()
     histogramMax = pixelCount * 5.0 / 100.0;
 }
 
-void GeneratorCV::initSystem(bool grayscale)
+void GeneratorCV::drawSeed(bool grayscale)
 {
     cv::Mat seedImage = cv::Mat(imageSize, imageSize, CV_8UC3);
     cv::randu(seedImage, cv::Scalar::all(0), cv::Scalar::all(255));
@@ -96,7 +96,7 @@ void GeneratorCV::initSystem(bool grayscale)
         seedImage.copyTo(images[i], mask);
     }
 
-    cv::imshow("image", images[0]);
+    cv::imshow("Out image", images[0]);
 }
 
 void GeneratorCV::initImageOperations()
@@ -172,12 +172,12 @@ void GeneratorCV::showPixelSelectionCursor()
     cv::line(layer, cv::Point(0, selectedPixel.y), cv::Point(imageSize, selectedPixel.y), cv::Scalar(255, 255, 255));
     cv::line(layer, cv::Point(selectedPixel.x, 0), cv::Point(selectedPixel.x, imageSize), cv::Scalar(255, 255, 255));
     cv::addWeighted(outImage, 0.5, layer, 0.5, 0.0, layer);
-    cv::imshow("image", layer);
+    cv::imshow("Out image", layer);
 }
 
 void GeneratorCV::showImage()
 {
-    cv::imshow("image", outImage);
+    cv::imshow("Out image", outImage);
 }
 
 void GeneratorCV::onMouse(int event, int x, int y, int, void *userdata)
@@ -220,7 +220,7 @@ void GeneratorCV::setImageSize(int size)
     setMask();
     computeHistogramMax();
 
-    cv::imshow("image", images[0]);
+    cv::imshow("Out image", images[0]);
 
     selectedPixel = cv::Point(imageSize / 2, imageSize / 2);
 }
@@ -282,7 +282,6 @@ QVector<double> GeneratorCV::getColorComponents(int colorIndex)
     {
         components.push_back((*it)[colorIndex]);
     }
-
     return components;
 }
 

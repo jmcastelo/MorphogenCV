@@ -71,7 +71,7 @@ public:
     GeneratorCV();
     ~GeneratorCV();
 
-    void initSystem(bool grayscale);
+    void drawSeed(bool grayscale);
 
     void iterate();
     void computeBGRSum();

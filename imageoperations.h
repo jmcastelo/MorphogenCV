@@ -28,7 +28,6 @@
 #include <QComboBox>
 #include <QCheckBox>
 #include <QSpinBox>
-#include <QVBoxLayout>
 #include <QFormLayout>
 
 // A custom QLineEdit that signals focus out
@@ -57,13 +56,12 @@ class ImageOperation
 {
 protected:
     QWidget *mainWidget;
-
-public:
     int step;
 
-    virtual QString getName() = 0;
-    QWidget* getParametersWidget(){ return mainWidget; };
+public:
     bool isEnabled(int iteration){ return (step > 0) && (iteration % step == 0); }
+    QWidget* getParametersWidget(){ return mainWidget; };
+    virtual QString getName() = 0;
     virtual cv::Mat applyOperation(const cv::Mat &src) = 0;
 
     ImageOperation(int stp): step(stp){};
@@ -82,11 +80,6 @@ class Canny: public QWidget, public ImageOperation
     int apertureSize;
     bool L2gradient;
 
-    CustomLineEdit *threshold1LineEdit;
-    CustomLineEdit *threshold2LineEdit;
-    CustomLineEdit *apertureSizeLineEdit;
-    QCheckBox *L2gradientCheckBox;
-
 public:
     static QString name;
 
@@ -101,9 +94,6 @@ public:
 class ConvertTo: public QWidget, public ImageOperation
 {
     double alpha, beta;
-
-    CustomLineEdit *alphaLineEdit;
-    CustomLineEdit *betaLineEdit;
 
 public:
     static QString name;
@@ -134,10 +124,6 @@ class GaussianBlur: public QWidget, public ImageOperation
     int ksize;
     double sigmaX, sigmaY;
 
-    CustomLineEdit *ksizeLineEdit;
-    CustomLineEdit *sigmaXLineEdit;
-    CustomLineEdit *sigmaYLineEdit;
-
 public:
     static QString name;
 
@@ -154,10 +140,6 @@ class Laplacian: public QWidget, public ImageOperation
     int ksize;
     double scale, delta;
 
-    CustomLineEdit *ksizeLineEdit;
-    CustomLineEdit *scaleLineEdit;
-    CustomLineEdit *deltaLineEdit;
-
 public:
     static QString name;
 
@@ -173,10 +155,6 @@ class MixChannels: public QWidget, public ImageOperation
 {
     int blue, green, red;
     int fromTo[6];
-
-    QComboBox *blueComboBox;
-    QComboBox *greenComboBox;
-    QComboBox *redComboBox;
 
 public:
     static QString name;
@@ -195,11 +173,6 @@ class MorphologyEx: public QWidget, public ImageOperation
     cv::MorphTypes morphType, morphTypes[7];
     cv::MorphShapes morphShape, morphShapes[3];
 
-    CustomLineEdit *ksizeLineEdit;
-    CustomLineEdit *iterationsLineEdit;
-    QComboBox *morphTypeComboBox;
-    QComboBox *morphShapeComboBox;
-
 public:
     static QString name;
 
@@ -216,10 +189,6 @@ class Rotation: public QWidget, public ImageOperation
     double angle, scale;
     cv::InterpolationFlags flag, flags[5];
 
-    CustomLineEdit *angleLineEdit;
-    CustomLineEdit *scaleLineEdit;
-    QComboBox *flagComboBox;
-
 public:
     static QString name;
 
@@ -235,10 +204,6 @@ class Sharpen: public QWidget, public ImageOperation
 {
     double sigma, threshold, amount;
 
-    CustomLineEdit *sigmaLineEdit;
-    CustomLineEdit *thresholdLineEdit;
-    CustomLineEdit *amountLineEdit;
-
 public:
     static QString name;
 
@@ -253,8 +218,6 @@ public:
 class ShiftHue: public QWidget, public ImageOperation
 {
     int delta;
-
-    CustomLineEdit *deltaLineEdit;
 
 public:
     static QString name;

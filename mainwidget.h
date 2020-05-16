@@ -45,6 +45,8 @@
 #include <QListWidgetItem>
 #include <QModelIndex>
 #include <QTabWidget>
+#include <QStandardItemModel>
+#include <QStandardItem>
 
 class MainWidget : public QWidget
 {
@@ -58,7 +60,6 @@ class MainWidget : public QWidget
     ScatterPlot *colorSpacePlot;
     CurvePlot *colorSpacePixelPlot;
 
-    QPushButton *initPushButton;
     QPushButton *pauseResumePushButton;
 
     QCheckBox *coloredSeedCheckBox;
@@ -101,6 +102,11 @@ class MainWidget : public QWidget
     QPushButton *colorSpacePushButton;
     QPushButton *colorSpacePixelPushButton;
 
+    QComboBox *colorSpaceXAxisComboBox;
+    QComboBox *colorSpaceYAxisComboBox;
+    QComboBox *colorSpacePixelXAxisComboBox;
+    QComboBox *colorSpacePixelYAxisComboBox;
+
     QTabWidget *plotsTabWidget;
 
     QWidget *generalControlsWidget;
@@ -135,6 +141,7 @@ class MainWidget : public QWidget
     void iterationLoop();
 
     void togglePlots(bool checked);
+    void colorSpaceAxisChanged(int axisIndex, QComboBox *axisComboBox);
 
     void closeEvent(QCloseEvent *event);
 

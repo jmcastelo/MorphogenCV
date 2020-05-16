@@ -23,9 +23,9 @@ QString Canny::name = "Canny";
 
 Canny::Canny(int stp, double th1, double th2, int size, bool g): ImageOperation(stp), threshold1(th1), threshold2(th2), apertureSize(size), L2gradient(g)
 {
-    threshold1LineEdit = new CustomLineEdit();
-    threshold2LineEdit = new CustomLineEdit();
-    apertureSizeLineEdit = new CustomLineEdit();
+    CustomLineEdit *threshold1LineEdit = new CustomLineEdit();
+    CustomLineEdit *threshold2LineEdit = new CustomLineEdit();
+    CustomLineEdit *apertureSizeLineEdit = new CustomLineEdit();
 
     threshold1LineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     threshold2LineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -45,7 +45,7 @@ Canny::Canny(int stp, double th1, double th2, int size, bool g): ImageOperation(
     apertureSizeLineEdit->setValidator(apertureSizeValidator);
     apertureSizeLineEdit->setText(QString::number(apertureSize));
 
-    L2gradientCheckBox = new QCheckBox("L2 gradient");
+    QCheckBox *L2gradientCheckBox = new QCheckBox("L2 gradient");
     L2gradientCheckBox->setChecked(L2gradient);
 
     QSpinBox *stepSpinBox = new QSpinBox;
@@ -91,8 +91,8 @@ QString ConvertTo::name = "Convert to";
 
 ConvertTo::ConvertTo(int stp, double a, double b): ImageOperation(stp), alpha(a), beta(b)
 {
-    alphaLineEdit = new CustomLineEdit();
-    betaLineEdit = new CustomLineEdit();
+    CustomLineEdit *alphaLineEdit = new CustomLineEdit();
+    CustomLineEdit *betaLineEdit = new CustomLineEdit();
 
     alphaLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     betaLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -175,9 +175,9 @@ QString GaussianBlur::name = "Gaussian blur";
 
 GaussianBlur::GaussianBlur(int stp, int k, double sx, double sy): ImageOperation(stp), ksize(k), sigmaX(sx), sigmaY(sy)
 {
-    ksizeLineEdit = new CustomLineEdit();
-    sigmaXLineEdit = new CustomLineEdit();
-    sigmaYLineEdit = new CustomLineEdit();
+    CustomLineEdit *ksizeLineEdit = new CustomLineEdit();
+    CustomLineEdit *sigmaXLineEdit = new CustomLineEdit();
+    CustomLineEdit *sigmaYLineEdit = new CustomLineEdit();
 
     ksizeLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     sigmaXLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -266,9 +266,9 @@ QString Laplacian::name = "Laplacian";
 
 Laplacian::Laplacian(int stp, int k, double s, double d): ImageOperation(stp), ksize(k), scale(s), delta(d)
 {
-    ksizeLineEdit = new CustomLineEdit();
-    scaleLineEdit = new CustomLineEdit();
-    deltaLineEdit = new CustomLineEdit();
+    CustomLineEdit *ksizeLineEdit = new CustomLineEdit();
+    CustomLineEdit *scaleLineEdit = new CustomLineEdit();
+    CustomLineEdit *deltaLineEdit = new CustomLineEdit();
 
     ksizeLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     scaleLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -330,21 +330,21 @@ QString MixChannels::name = "Mix channels";
 
 MixChannels::MixChannels(int stp, int b, int g, int r): ImageOperation(stp), blue(b), green(g), red(r)
 {
-    blueComboBox = new QComboBox;
+    QComboBox *blueComboBox = new QComboBox;
     blueComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     blueComboBox->addItem("Blue");
     blueComboBox->addItem("Green");
     blueComboBox->addItem("Red");
     blueComboBox->setCurrentIndex(blue);
 
-    greenComboBox = new QComboBox;
+    QComboBox *greenComboBox = new QComboBox;
     greenComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     greenComboBox->addItem("Blue");
     greenComboBox->addItem("Green");
     greenComboBox->addItem("Red");
     greenComboBox->setCurrentIndex(green);
 
-    redComboBox = new QComboBox;
+    QComboBox *redComboBox = new QComboBox;
     redComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     redComboBox->addItem("Blue");
     redComboBox->addItem("Green");
@@ -404,7 +404,7 @@ MorphologyEx::MorphologyEx(int stp, int k, int its, cv::MorphTypes t, cv::MorphS
         if (morphType == morphTypes[i])
             morphTypeComboBoxIndex = i;
 
-    morphTypeComboBox = new QComboBox;
+    QComboBox *morphTypeComboBox = new QComboBox;
     morphTypeComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     morphTypeComboBox->addItem("Erode");
     morphTypeComboBox->addItem("Dilate");
@@ -415,7 +415,7 @@ MorphologyEx::MorphologyEx(int stp, int k, int its, cv::MorphTypes t, cv::MorphS
     morphTypeComboBox->addItem("Black hat");
     morphTypeComboBox->setCurrentIndex(morphTypeComboBoxIndex);
 
-    ksizeLineEdit = new CustomLineEdit();
+    CustomLineEdit *ksizeLineEdit = new CustomLineEdit();
     ksizeLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     QIntValidator *ksizeValidator = new QIntValidator(1, 25, ksizeLineEdit);
@@ -432,14 +432,14 @@ MorphologyEx::MorphologyEx(int stp, int k, int its, cv::MorphTypes t, cv::MorphS
         if (morphShape == morphShapes[i])
             morphShapeComboBoxIndex = i;
 
-    morphShapeComboBox = new QComboBox;
+    QComboBox *morphShapeComboBox = new QComboBox;
     morphShapeComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     morphShapeComboBox->addItem("Rectangle");
     morphShapeComboBox->addItem("Cross");
     morphShapeComboBox->addItem("Ellipse");
     morphShapeComboBox->setCurrentIndex(morphShapeComboBoxIndex);
 
-    iterationsLineEdit = new CustomLineEdit();
+    CustomLineEdit *iterationsLineEdit = new CustomLineEdit();
     iterationsLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     QIntValidator *iterationsValidator = new QIntValidator(1, 100, ksizeLineEdit);
@@ -488,8 +488,8 @@ QString Rotation::name = "Rotation";
 
 Rotation::Rotation(int stp, double a, double s, cv::InterpolationFlags f): ImageOperation(stp), angle(a), scale(s), flag(f)
 {
-    angleLineEdit = new CustomLineEdit();
-    scaleLineEdit = new CustomLineEdit();
+    CustomLineEdit *angleLineEdit = new CustomLineEdit();
+    CustomLineEdit *scaleLineEdit = new CustomLineEdit();
 
     angleLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     scaleLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -517,7 +517,7 @@ Rotation::Rotation(int stp, double a, double s, cv::InterpolationFlags f): Image
         if (flag == flags[i])
             flagComboBoxIndex = i;
 
-    flagComboBox = new QComboBox;
+    QComboBox *flagComboBox = new QComboBox;
     flagComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     flagComboBox->addItem("Nearest neighbor");
     flagComboBox->addItem("Bilinear");
@@ -563,9 +563,9 @@ QString Sharpen::name = "Sharpen";
 
 Sharpen::Sharpen(int stp, double s, double t, double a): ImageOperation(stp), sigma(s), threshold(t), amount(a)
 {
-    sigmaLineEdit = new CustomLineEdit();
-    thresholdLineEdit = new CustomLineEdit();
-    amountLineEdit = new CustomLineEdit();
+    CustomLineEdit *sigmaLineEdit = new CustomLineEdit();
+    CustomLineEdit *thresholdLineEdit = new CustomLineEdit();
+    CustomLineEdit *amountLineEdit = new CustomLineEdit();
 
     sigmaLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     thresholdLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -622,7 +622,7 @@ QString ShiftHue::name = "Shift hue";
 
 ShiftHue::ShiftHue(int stp, int d): ImageOperation(stp), delta(d)
 {
-    deltaLineEdit = new CustomLineEdit();
+    CustomLineEdit *deltaLineEdit = new CustomLineEdit();
     deltaLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     QIntValidator *deltaValidator = new QIntValidator(-180, 180, deltaLineEdit);
