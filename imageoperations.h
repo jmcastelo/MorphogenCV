@@ -56,20 +56,14 @@ class ImageOperation
 {
 protected:
     QWidget *mainWidget;
-    int step;
-
+    bool enabled;
 public:
-    bool isEnabled(int iteration){ return (step > 0) && (iteration % step == 0); }
+    bool isEnabled(){ return enabled; }
     QWidget* getParametersWidget(){ return mainWidget; };
     virtual QString getName() = 0;
     virtual cv::Mat applyOperation(const cv::Mat &src) = 0;
-
-    ImageOperation(int stp): step(stp){};
-    ~ImageOperation()
-    {
-        delete mainWidget->layout();
-        delete mainWidget;
-    };
+    ImageOperation(bool on): enabled(on){};
+    virtual ~ImageOperation(){ delete mainWidget->layout(); delete mainWidget; };
 };
 
 // Canny
@@ -83,7 +77,7 @@ class Canny: public QWidget, public ImageOperation
 public:
     static QString name;
 
-    Canny(int stp, double th1, double th2, int size, bool g);
+    Canny(bool on, double th1, double th2, int size, bool g);
 
     QString getName(){ return name; };
     cv::Mat applyOperation(const cv::Mat &src);
@@ -98,7 +92,7 @@ class ConvertTo: public QWidget, public ImageOperation
 public:
     static QString name;
 
-    ConvertTo(int stp, double a, double b);
+    ConvertTo(bool on, double a, double b);
 
     QString getName(){ return name; };
     cv::Mat applyOperation(const cv::Mat &src);
@@ -111,7 +105,7 @@ class EqualizeHist: public QWidget, public ImageOperation
 public:
     static QString name;
 
-    EqualizeHist(int stp);
+    EqualizeHist(bool on);
 
     QString getName(){ return name; };
     cv::Mat applyOperation(const cv::Mat &src);
@@ -127,7 +121,7 @@ class GaussianBlur: public QWidget, public ImageOperation
 public:
     static QString name;
 
-    GaussianBlur(int stp, int k, double sx, double sy);
+    GaussianBlur(bool on, int k, double sx, double sy);
 
     QString getName(){ return name; };
     cv::Mat applyOperation(const cv::Mat &src);
@@ -143,7 +137,7 @@ class Laplacian: public QWidget, public ImageOperation
 public:
     static QString name;
 
-    Laplacian(int stp, int k, double s, double d);
+    Laplacian(bool on, int k, double s, double d);
 
     QString getName(){ return name; };
     cv::Mat applyOperation(const cv::Mat &src);
@@ -159,7 +153,7 @@ class MixChannels: public QWidget, public ImageOperation
 public:
     static QString name;
 
-    MixChannels(int stp, int b, int g, int r);
+    MixChannels(bool on, int b, int g, int r);
 
     QString getName(){ return name; };
     cv::Mat applyOperation(const cv::Mat &src);
@@ -176,7 +170,7 @@ class MorphologyEx: public QWidget, public ImageOperation
 public:
     static QString name;
 
-    MorphologyEx(int stp, int k, int its, cv::MorphTypes t, cv::MorphShapes s);
+    MorphologyEx(bool on, int k, int its, cv::MorphTypes t, cv::MorphShapes s);
 
     QString getName(){ return name; };
     cv::Mat applyOperation(const cv::Mat &src);
@@ -192,7 +186,7 @@ class Rotation: public QWidget, public ImageOperation
 public:
     static QString name;
 
-    Rotation(int stp, double a, double s, cv::InterpolationFlags f);
+    Rotation(bool on, double a, double s, cv::InterpolationFlags f);
 
     QString getName(){ return name; };
     cv::Mat applyOperation(const cv::Mat &src);
@@ -207,7 +201,7 @@ class Sharpen: public QWidget, public ImageOperation
 public:
     static QString name;
 
-    Sharpen(int stp, double s, double t, double a);
+    Sharpen(bool on, double s, double t, double a);
 
     QString getName(){ return name; };
     cv::Mat applyOperation(const cv::Mat &src);
@@ -222,7 +216,7 @@ class ShiftHue: public QWidget, public ImageOperation
 public:
     static QString name;
 
-    ShiftHue(int stp, int d);
+    ShiftHue(bool on, int d);
 
     QString getName(){ return name; };
     cv::Mat applyOperation(const cv::Mat &src);

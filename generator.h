@@ -29,13 +29,28 @@
 #include <QString>
 #include <QWidget>
 
+class Pipeline
+{
+public:
+    cv::Mat image;
+    double blendFactor;
+    std::vector<ImageOperation*> imageOperations;
+
+    Pipeline(cv::Mat img): image(img){};
+    ~Pipeline();
+
+    void iterate();
+
+    void swapImageOperations(int operationIndex0, int operationIndex1);
+    void removeImageOperation(int operationIndex);
+    void insertImageOperation(int newOperationIndex, int currentOperationIndex);
+};
+
 class GeneratorCV
 {
+    std::vector<Pipeline*> pipelines;
+
     cv::Mat mask;
-
-    std::vector<cv::Mat> images;
-    std::vector<std::vector<ImageOperation*>> imageOperations;
-
     cv::Mat outImage;
 
     int iteration;
@@ -60,6 +75,7 @@ class GeneratorCV
     void computeHistogramMax();
     void initImageOperations();
     void applyImageOperations();
+    void blendImages();
     static void onMouse(int event, int x, int y, int, void* userdata);
     void selectPixel(int x, int y);
 
@@ -89,9 +105,6 @@ public:
     void setImageSize(int size);
     int getImageSize(){ return imageSize; };
 
-    void setBlendFactor(double factor){ blendFactor = factor; };
-    double getBlendFactor() { return blendFactor; };
-
     double getBSum(){ return bgrSum[0] * colorScaleFactor; };
     double getGSum(){ return bgrSum[1] * colorScaleFactor; };
     double getRSum(){ return bgrSum[2] * colorScaleFactor; };
@@ -108,9 +121,18 @@ public:
     void swapImageOperations(int imageIndex, int operationIndex0, int operationIndex1);
     void removeImageOperation(int imageIndex, int operationIndex);
     void insertImageOperation(int imageIndex, int newOperationIndex, int currentOperationIndex);
-    QString getImageOperationName(int imageIndex, int operationIndex){ return imageOperations[imageIndex][operationIndex]->getName(); };
-    int getImageOperationsSize(int imageIndex){ return imageOperations[imageIndex].size(); };
-    QWidget* getImageOperationParametersWidget(int imageIndex, int operationIndex){ return imageOperations[imageIndex][operationIndex]->getParametersWidget(); };
+
+    QString getImageOperationName(int imageIndex, int operationIndex){ return pipelines[imageIndex]->imageOperations[operationIndex]->getName(); };
+    int getImageOperationsSize(int imageIndex){ return pipelines.empty() ? 0 : pipelines[imageIndex]->imageOperations.size(); };
+    QWidget* getImageOperationParametersWidget(int imageIndex, int operationIndex){ return pipelines[imageIndex]->imageOperations[operationIndex]->getParametersWidget(); };
+
+    void removePipeline(int pipelineIndex);
+    void addPipeline();
+    int getPipelinesSize(){ return pipelines.size(); };
+
+    void setPipelineBlendFactor(int pipelineIndex, double factor);
+    double getPipelineBlendFactor(int pipelineIndex){ return pipelines[pipelineIndex]->blendFactor; };
+    void equalizePipelineBlendFactors();
 };
 
 #endif // GENERATOR_H

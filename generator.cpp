@@ -17,6 +17,81 @@
 
 #include "generator.h"
 
+void Pipeline::iterate()
+{
+    for (auto operation: imageOperations)
+        if (operation->isEnabled())
+            image = operation->applyOperation(image);
+}
+
+Pipeline::~Pipeline()
+{
+    for (auto &operation: imageOperations)
+    {
+        delete operation;
+    }
+}
+
+void Pipeline::swapImageOperations(int operationIndex0, int operationIndex1)
+{
+    ImageOperation *operation = imageOperations[operationIndex0];
+    std::vector<ImageOperation*>::iterator it = imageOperations.begin();
+    imageOperations.erase(it + operationIndex0);
+    imageOperations.insert(it + operationIndex1, operation);
+}
+
+void Pipeline::removeImageOperation(int operationIndex)
+{
+    std::vector<ImageOperation*>::iterator it = imageOperations.begin();
+    imageOperations.erase(it + operationIndex);
+}
+
+void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationIndex)
+{
+    std::vector<ImageOperation*>::iterator it = imageOperations.begin();
+
+    if (newOperationIndex == 0)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new Canny(false, 100, 300, 3, false));
+    }
+    else if (newOperationIndex == 1)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new ConvertTo(false, 1.0, 0.0));
+    }
+    else if (newOperationIndex == 2)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new EqualizeHist(false));
+    }
+    else if (newOperationIndex == 3)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new GaussianBlur(false, 3, 0.0, 0.0));
+    }
+    else if (newOperationIndex == 4)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new Laplacian(false, 3, 1.0, 0.0));
+    }
+    else if (newOperationIndex == 5)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new MixChannels(false, 0, 1, 2));
+    }
+    else if (newOperationIndex == 6)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new MorphologyEx(false, 3, 1, cv::MORPH_ERODE, cv::MORPH_RECT));
+    }
+    else if (newOperationIndex == 7)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new Rotation(false, 0.0, 1.0, cv::INTER_NEAREST));
+    }
+    else if (newOperationIndex == 8)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new Sharpen(false, 1.0, 5.0, 1.0));
+    }
+    else if (newOperationIndex == 9)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new ShiftHue(false, 0));
+    }
+}
+
 GeneratorCV::GeneratorCV()
 {
     availableImageOperations = {
@@ -32,13 +107,16 @@ GeneratorCV::GeneratorCV()
         ShiftHue::name
     };
 
-    cv::Mat img;
-    images = {img, img};
-
-    std::vector<ImageOperation*> ops;
-    imageOperations = {ops, ops};
-
     imageSize = 700;
+
+    cv::Mat img = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
+
+    pipelines.push_back(new Pipeline(img));
+    pipelines.push_back(new Pipeline(img));
+
+    pipelines[0]->blendFactor = 0.5;
+    pipelines[1]->blendFactor = 0.5;
+
     colorScaleFactor = 1.0 / (imageSize * imageSize * 255);
 
     histogramSize = 256;
@@ -46,8 +124,6 @@ GeneratorCV::GeneratorCV()
     iteration = 0;
 
     selectingPixel = false;
-
-    blendFactor = 0.5;
 
     setMask();
     computeHistogramMax();
@@ -91,54 +167,45 @@ void GeneratorCV::drawSeed(bool grayscale)
         cv::cvtColor(seedImage, seedImage, cv::COLOR_GRAY2BGR);
     }
 
-    for (size_t i = 0; i < images.size(); i++)
-    {
-        seedImage.copyTo(images[i], mask);
-    }
+    cv::Mat maskedSeed = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
+    seedImage.copyTo(maskedSeed, mask);
 
-    cv::imshow("Out image", images[0]);
+    for (auto &pipeline: pipelines)
+        pipeline->image = maskedSeed.clone();
+
+    cv::imshow("Out image", maskedSeed);
 }
 
 void GeneratorCV::initImageOperations()
 {
-    imageOperations[0].clear();
-    imageOperations[0].push_back(new MorphologyEx(1, 3, 1, cv::MORPH_DILATE, cv::MORPH_ELLIPSE));
-    imageOperations[0].push_back(new Rotation(1, 36.0, 1.005, cv::INTER_LINEAR));
+    pipelines[0]->imageOperations.clear();
+    pipelines[0]->imageOperations.push_back(new MorphologyEx(true, 3, 1, cv::MORPH_DILATE, cv::MORPH_ELLIPSE));
+    pipelines[0]->imageOperations.push_back(new Rotation(true, 36.0, 1.005, cv::INTER_LINEAR));
 
-    imageOperations[1].clear();
-    imageOperations[1].push_back(new ConvertTo(1, 0.85, 0.0));
-    imageOperations[1].push_back(new Sharpen(1, 1.0, 5.0, 1.0));
+    pipelines[1]->imageOperations.clear();
+    pipelines[1]->imageOperations.push_back(new ConvertTo(true, 0.85, 0.0));
+    pipelines[1]->imageOperations.push_back(new Sharpen(true, 1.0, 5.0, 1.0));
 }
 
-void GeneratorCV::applyImageOperations()
+void GeneratorCV::blendImages()
 {
-    for (size_t i = 0; i < images.size(); i++)
-    {
-        cv::Mat src = images[i];
+    cv::Mat blendImage = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
 
-        for (auto operation: imageOperations[i])
-        {
-            if (operation->isEnabled(iteration))
-            {
-                cv::Mat dst = operation->applyOperation(src);
-                dst.copyTo(src, mask);
-            }
-        }
+    for (auto pipeline: pipelines)
+        cv::addWeighted(blendImage, 1.0, pipeline->image, pipeline->blendFactor, 0.0, blendImage);
 
-        images[i] = src.clone();
-    }
+    blendImage.copyTo(outImage, mask);
 }
 
 void GeneratorCV::iterate()
 {
-    applyImageOperations();
+    for (auto pipeline: pipelines)
+        pipeline->iterate();
 
-    cv::addWeighted(images[0], blendFactor, images[1], 1.0 - blendFactor, 0.0, outImage);
+    blendImages();
 
-    for (size_t i = 0; i < images.size(); i++)
-    {
-        outImage.copyTo(images[i], mask);
-    }
+    for (auto &pipeline: pipelines)
+        pipeline->image = outImage.clone();
 
     iteration++;
 }
@@ -201,7 +268,7 @@ void GeneratorCV::selectPixel(int x, int y)
 void GeneratorCV::writeImage(std::string filename)
 {
     std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 100};
-    cv::imwrite(filename, images[0], params);
+    cv::imwrite(filename, outImage, params);
 }
 
 void GeneratorCV::setImageSize(int size)
@@ -210,17 +277,17 @@ void GeneratorCV::setImageSize(int size)
 
     colorScaleFactor = 1.0 / (imageSize * imageSize * 255);
 
-    for (auto &img: images)
+    for (auto &pipeline: pipelines)
     {
         cv::Mat dst;
-        cv::resize(img, dst, cv::Size(imageSize, imageSize));
-        img = dst.clone();
+        cv::resize(pipeline->image, dst, cv::Size(imageSize, imageSize));
+        pipeline->image = dst.clone();
     }
 
     setMask();
     computeHistogramMax();
 
-    cv::imshow("Out image", images[0]);
+    cv::imshow("Out image", pipelines[0]->image);
 
     selectedPixel = cv::Point(imageSize / 2, imageSize / 2);
 }
@@ -230,9 +297,7 @@ QVector<double> GeneratorCV::getBlueHistogram()
     QVector<double> histogram(histogramSize);
 
     for (int i = 0; i < histogramSize; i++)
-    {
         histogram[i] = blueHistogram.at<float>(i);
-    }
 
     return histogram;
 }
@@ -242,9 +307,7 @@ QVector<double> GeneratorCV::getGreenHistogram()
     QVector<double> histogram(histogramSize);
 
     for (int i = 0; i < histogramSize; i++)
-    {
         histogram[i] = greenHistogram.at<float>(i);
-    }
 
     return histogram;
 }
@@ -254,9 +317,7 @@ QVector<double> GeneratorCV::getRedHistogram()
     QVector<double> histogram(histogramSize);
 
     for (int i = 0; i < histogramSize; i++)
-    {
         histogram[i] = redHistogram.at<float>(i);
-    }
 
     return histogram;
 }
@@ -266,9 +327,7 @@ QVector<double> GeneratorCV::getHistogramBins()
     QVector<double> bins(histogramSize);
 
     for (int i = 0; i < histogramSize; i++)
-    {
         bins[i] = i;
-    }
 
     return bins;
 }
@@ -279,68 +338,92 @@ QVector<double> GeneratorCV::getColorComponents(int colorIndex)
 
     cv::MatIterator_<cv::Vec3b> it, end;
     for (it = outImage.begin<cv::Vec3b>(), end = outImage.end<cv::Vec3b>(); it != end; ++it)
-    {
         components.push_back((*it)[colorIndex]);
-    }
+
     return components;
 }
 
 void GeneratorCV::swapImageOperations(int imageIndex, int operationIndex0, int operationIndex1)
 {
-    ImageOperation *operation = imageOperations[imageIndex][operationIndex0];
-    std::vector<ImageOperation*>::iterator it = imageOperations[imageIndex].begin();
-    imageOperations[imageIndex].erase(it + operationIndex0);
-    imageOperations[imageIndex].insert(it + operationIndex1, operation);
+    pipelines[imageIndex]->swapImageOperations(operationIndex0, operationIndex1);
 }
 
-void GeneratorCV::removeImageOperation(int imageIndex, int operationIndex)
+void GeneratorCV::removeImageOperation(int pipelineIndex, int operationIndex)
 {
-    std::vector<ImageOperation*>::iterator it = imageOperations[imageIndex].begin();
-    imageOperations[imageIndex].erase(it + operationIndex);
+    pipelines[pipelineIndex]->removeImageOperation(operationIndex);
 }
 
-void GeneratorCV::insertImageOperation(int imageIndex, int newOperationIndex, int currentOperationIndex)
+void GeneratorCV::insertImageOperation(int pipelineIndex, int newOperationIndex, int currentOperationIndex)
 {
-    std::vector<ImageOperation*>::iterator it = imageOperations[imageIndex].begin();
+    pipelines[pipelineIndex]->insertImageOperation(newOperationIndex, currentOperationIndex);
+}
 
-    if (newOperationIndex == 0)
+void GeneratorCV::removePipeline(int pipelineIndex)
+{
+    if (!pipelines.empty())
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Canny(1, 100, 300, 3, false));
+        pipelines.erase(pipelines.begin() + pipelineIndex);
+
+        // Recompute blend factors (their sum = 1)
+
+        double sumBlendFactors = 0.0;
+
+        for (auto pipeline: pipelines)
+            sumBlendFactors += pipeline->blendFactor;
+
+        if (sumBlendFactors == 0.0)
+        {
+            for (auto &pipeline: pipelines)
+                pipeline->blendFactor = 1.0 / pipelines.size();
+        }
+        else
+        {
+            for (auto &pipeline: pipelines)
+                pipeline->blendFactor /= sumBlendFactors;
+        }
     }
-    else if (newOperationIndex == 1)
+}
+
+void GeneratorCV::addPipeline()
+{
+    pipelines.push_back(new Pipeline(outImage));
+    pipelines.back()->blendFactor = 0.0;
+}
+
+void GeneratorCV::setPipelineBlendFactor(int pipelineIndex, double factor)
+{
+    double sumBlendFactors = 0.0;
+
+    for (int i = 0; i < static_cast<int>(pipelines.size()); i++)
+        if (i != pipelineIndex)
+            sumBlendFactors += pipelines[i]->blendFactor;
+
+    if (sumBlendFactors == 0.0)
     {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new ConvertTo(1, 1.0, 0.0));
+        for (int i = 0; i < static_cast<int>(pipelines.size()); i++)
+            if (i != pipelineIndex)
+                pipelines[i]->blendFactor = 1.0e-6;
+
+        sumBlendFactors = 0.0;
+
+        for (int i = 0; i < static_cast<int>(pipelines.size()); i++)
+            if (i != pipelineIndex)
+                sumBlendFactors += pipelines[i]->blendFactor;
     }
-    else if (newOperationIndex == 2)
-    {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new EqualizeHist(1));
-    }
-    else if (newOperationIndex == 3)
-    {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new GaussianBlur(1, 3, 0.0, 0.0));
-    }
-    else if (newOperationIndex == 4)
-    {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Laplacian(1, 3, 1.0, 0.0));
-    }
-    else if (newOperationIndex == 5)
-    {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new MixChannels(1, 0, 1, 2));
-    }
-    else if (newOperationIndex == 6)
-    {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new MorphologyEx(1, 3, 1, cv::MORPH_ERODE, cv::MORPH_RECT));
-    }
-    else if (newOperationIndex == 7)
-    {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Rotation(1, 0.0, 1.0, cv::INTER_NEAREST));
-    }
-    else if (newOperationIndex == 8)
-    {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new Sharpen(1, 1.0, 5.0, 1.0));
-    }
-    else if (newOperationIndex == 9)
-    {
-        imageOperations[imageIndex].insert(it + currentOperationIndex + 1, new ShiftHue(1, 0));
-    }
+
+    // Scaling the blend factors like this ensures that its sum is unity
+
+    double scale = (1.0 - factor) / sumBlendFactors;
+
+    for (int i = 0; i < static_cast<int>(pipelines.size()); i++)
+        if (i != pipelineIndex)
+            pipelines[i]->blendFactor *= scale;
+
+    pipelines[pipelineIndex]->blendFactor = factor;
+}
+
+void GeneratorCV::equalizePipelineBlendFactors()
+{
+    for (auto &pipeline: pipelines)
+        pipeline->blendFactor = 1.0 / pipelines.size();
 }

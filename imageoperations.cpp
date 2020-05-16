@@ -21,7 +21,7 @@
 
 QString Canny::name = "Canny";
 
-Canny::Canny(int stp, double th1, double th2, int size, bool g): ImageOperation(stp), threshold1(th1), threshold2(th2), apertureSize(size), L2gradient(g)
+Canny::Canny(bool on, double th1, double th2, int size, bool g): ImageOperation(on), threshold1(th1), threshold2(th2), apertureSize(size), L2gradient(g)
 {
     CustomLineEdit *threshold1LineEdit = new CustomLineEdit();
     CustomLineEdit *threshold2LineEdit = new CustomLineEdit();
@@ -48,15 +48,16 @@ Canny::Canny(int stp, double th1, double th2, int size, bool g): ImageOperation(
     QCheckBox *L2gradientCheckBox = new QCheckBox("L2 gradient");
     L2gradientCheckBox->setChecked(L2gradient);
 
-    QSpinBox *stepSpinBox = new QSpinBox;
-    stepSpinBox->setRange(0, 10000);
-    stepSpinBox->setValue(step);
+    QCheckBox *enabledCheckBox = new QCheckBox("Enabled");
+    enabledCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    enabledCheckBox->setChecked(enabled);
 
     QFormLayout *formLayout = new QFormLayout;
     formLayout->addRow("Threshold 1:", threshold1LineEdit);
     formLayout->addRow("Threshold 2:", threshold2LineEdit);
     formLayout->addRow("Aperture size:", apertureSizeLineEdit);
-    formLayout->addRow("Step:", stepSpinBox);
+    formLayout->addWidget(L2gradientCheckBox);
+    formLayout->addWidget(enabledCheckBox);
 
     mainWidget = new QWidget(this);
     mainWidget->setLayout(formLayout);
@@ -73,7 +74,7 @@ Canny::Canny(int stp, double th1, double th2, int size, bool g): ImageOperation(
     connect(threshold1LineEdit, &CustomLineEdit::focusOut, [=](){ threshold1LineEdit->setText(QString::number(threshold1)); });
     connect(threshold2LineEdit, &CustomLineEdit::focusOut, [=](){ threshold2LineEdit->setText(QString::number(threshold2)); });
     connect(L2gradientCheckBox, &QCheckBox::stateChanged, [=](int state){ L2gradient = (state == Qt::Checked); });
-    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
+    connect(enabledCheckBox, &QCheckBox::stateChanged, [=](int state){ enabled = (state == Qt::Checked); });
 }
 
 cv::Mat Canny::applyOperation(const cv::Mat &src)
@@ -89,7 +90,7 @@ cv::Mat Canny::applyOperation(const cv::Mat &src)
 
 QString ConvertTo::name = "Convert to";
 
-ConvertTo::ConvertTo(int stp, double a, double b): ImageOperation(stp), alpha(a), beta(b)
+ConvertTo::ConvertTo(bool on, double a, double b): ImageOperation(on), alpha(a), beta(b)
 {
     CustomLineEdit *alphaLineEdit = new CustomLineEdit();
     CustomLineEdit *betaLineEdit = new CustomLineEdit();
@@ -107,14 +108,14 @@ ConvertTo::ConvertTo(int stp, double a, double b): ImageOperation(stp), alpha(a)
     betaLineEdit->setValidator(betaValidator);
     betaLineEdit->setText(QString::number(beta));
 
-    QSpinBox *stepSpinBox = new QSpinBox;
-    stepSpinBox->setRange(0, 10000);
-    stepSpinBox->setValue(step);
+    QCheckBox *enabledCheckBox = new QCheckBox("Enabled");
+    enabledCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    enabledCheckBox->setChecked(enabled);
 
     QFormLayout *formLayout = new QFormLayout;
     formLayout->addRow("Alpha:", alphaLineEdit);
     formLayout->addRow("Beta:", betaLineEdit);
-    formLayout->addRow("Step:", stepSpinBox);
+    formLayout->addWidget(enabledCheckBox);
 
     mainWidget = new QWidget(this);
     mainWidget->setLayout(formLayout);
@@ -123,7 +124,7 @@ ConvertTo::ConvertTo(int stp, double a, double b): ImageOperation(stp), alpha(a)
     connect(betaLineEdit, &CustomLineEdit::returnPressed, [=](){ beta = betaLineEdit->text().toDouble(); });
     connect(alphaLineEdit, &CustomLineEdit::focusOut, [=](){ alphaLineEdit->setText(QString::number(alpha)); });
     connect(betaLineEdit, &CustomLineEdit::focusOut, [=](){ betaLineEdit->setText(QString::number(beta)); });
-    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
+    connect(enabledCheckBox, &QCheckBox::stateChanged, [=](int state){ enabled = (state == Qt::Checked); });
 }
 
 cv::Mat ConvertTo::applyOperation(const cv::Mat &src)
@@ -137,19 +138,19 @@ cv::Mat ConvertTo::applyOperation(const cv::Mat &src)
 
 QString EqualizeHist::name = "Equalize histogram";
 
-EqualizeHist::EqualizeHist(int stp): ImageOperation(stp)
+EqualizeHist::EqualizeHist(bool on): ImageOperation(on)
 {
-    QSpinBox *stepSpinBox = new QSpinBox;
-    stepSpinBox->setRange(0, 10000);
-    stepSpinBox->setValue(step);
+    QCheckBox *enabledCheckBox = new QCheckBox("Enabled");
+    enabledCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    enabledCheckBox->setChecked(enabled);
 
     QFormLayout *formLayout = new QFormLayout;
-    formLayout->addRow("Step:", stepSpinBox);
+    formLayout->addWidget(enabledCheckBox);
 
     mainWidget = new QWidget(this);
     mainWidget->setLayout(formLayout);
 
-    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
+    connect(enabledCheckBox, &QCheckBox::stateChanged, [=](int state){ enabled = (state == Qt::Checked); });
 }
 
 cv::Mat EqualizeHist::applyOperation(const cv::Mat &src)
@@ -173,7 +174,7 @@ cv::Mat EqualizeHist::applyOperation(const cv::Mat &src)
 
 QString GaussianBlur::name = "Gaussian blur";
 
-GaussianBlur::GaussianBlur(int stp, int k, double sx, double sy): ImageOperation(stp), ksize(k), sigmaX(sx), sigmaY(sy)
+GaussianBlur::GaussianBlur(bool on, int k, double sx, double sy): ImageOperation(on), ksize(k), sigmaX(sx), sigmaY(sy)
 {
     CustomLineEdit *ksizeLineEdit = new CustomLineEdit();
     CustomLineEdit *sigmaXLineEdit = new CustomLineEdit();
@@ -197,15 +198,15 @@ GaussianBlur::GaussianBlur(int stp, int k, double sx, double sy): ImageOperation
     sigmaYLineEdit->setValidator(sigmaYValidator);
     sigmaYLineEdit->setText(QString::number(sigmaY));
 
-    QSpinBox *stepSpinBox = new QSpinBox;
-    stepSpinBox->setRange(0, 10000);
-    stepSpinBox->setValue(step);
+    QCheckBox *enabledCheckBox = new QCheckBox("Enabled");
+    enabledCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    enabledCheckBox->setChecked(enabled);
 
     QFormLayout *formLayout = new QFormLayout;
     formLayout->addRow("Kernel size:", ksizeLineEdit);
     formLayout->addRow("Sigma X:", sigmaXLineEdit);
     formLayout->addRow("Sigma Y:", sigmaYLineEdit);
-    formLayout->addRow("Step:", stepSpinBox);
+    formLayout->addWidget(enabledCheckBox);
 
     mainWidget = new QWidget(this);
     mainWidget->setLayout(formLayout);
@@ -250,7 +251,7 @@ GaussianBlur::GaussianBlur(int stp, int k, double sx, double sy): ImageOperation
     connect(ksizeLineEdit, &CustomLineEdit::focusOut, [=](){ ksizeLineEdit->setText(QString::number(ksize)); });
     connect(sigmaXLineEdit, &CustomLineEdit::focusOut, [=](){ sigmaXLineEdit->setText(QString::number(sigmaX)); });
     connect(sigmaYLineEdit, &CustomLineEdit::focusOut, [=](){ sigmaYLineEdit->setText(QString::number(sigmaY)); });
-    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
+    connect(enabledCheckBox, &QCheckBox::stateChanged, [=](int state){ enabled = (state == Qt::Checked); });
 }
 
 cv::Mat GaussianBlur::applyOperation(const cv::Mat &src)
@@ -264,7 +265,7 @@ cv::Mat GaussianBlur::applyOperation(const cv::Mat &src)
 
 QString Laplacian::name = "Laplacian";
 
-Laplacian::Laplacian(int stp, int k, double s, double d): ImageOperation(stp), ksize(k), scale(s), delta(d)
+Laplacian::Laplacian(bool on, int k, double s, double d): ImageOperation(on), ksize(k), scale(s), delta(d)
 {
     CustomLineEdit *ksizeLineEdit = new CustomLineEdit();
     CustomLineEdit *scaleLineEdit = new CustomLineEdit();
@@ -288,15 +289,15 @@ Laplacian::Laplacian(int stp, int k, double s, double d): ImageOperation(stp), k
     deltaLineEdit->setValidator(deltaValidator);
     deltaLineEdit->setText(QString::number(delta));
 
-    QSpinBox *stepSpinBox = new QSpinBox;
-    stepSpinBox->setRange(0, 10000);
-    stepSpinBox->setValue(step);
+    QCheckBox *enabledCheckBox = new QCheckBox("Enabled");
+    enabledCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    enabledCheckBox->setChecked(enabled);
 
     QFormLayout *formLayout = new QFormLayout;
     formLayout->addRow("Kernel size:", ksizeLineEdit);
     formLayout->addRow("Scale:", scaleLineEdit);
     formLayout->addRow("Delta:", deltaLineEdit);
-    formLayout->addRow("Step:", stepSpinBox);
+    formLayout->addWidget(enabledCheckBox);
 
     mainWidget = new QWidget(this);
     mainWidget->setLayout(formLayout);
@@ -312,7 +313,7 @@ Laplacian::Laplacian(int stp, int k, double s, double d): ImageOperation(stp), k
     connect(ksizeLineEdit, &CustomLineEdit::focusOut, [=](){ ksizeLineEdit->setText(QString::number(ksize)); });
     connect(scaleLineEdit, &CustomLineEdit::focusOut, [=](){ scaleLineEdit->setText(QString::number(scale)); });
     connect(deltaLineEdit, &CustomLineEdit::focusOut, [=](){ deltaLineEdit->setText(QString::number(delta)); });
-    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
+    connect(enabledCheckBox, &QCheckBox::stateChanged, [=](int state){ enabled = (state == Qt::Checked); });
 }
 
 cv::Mat Laplacian::applyOperation(const cv::Mat &src)
@@ -328,7 +329,7 @@ cv::Mat Laplacian::applyOperation(const cv::Mat &src)
 
 QString MixChannels::name = "Mix channels";
 
-MixChannels::MixChannels(int stp, int b, int g, int r): ImageOperation(stp), blue(b), green(g), red(r)
+MixChannels::MixChannels(bool on, int b, int g, int r): ImageOperation(on), blue(b), green(g), red(r)
 {
     QComboBox *blueComboBox = new QComboBox;
     blueComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -351,15 +352,15 @@ MixChannels::MixChannels(int stp, int b, int g, int r): ImageOperation(stp), blu
     redComboBox->addItem("Red");
     redComboBox->setCurrentIndex(red);
 
-    QSpinBox *stepSpinBox = new QSpinBox;
-    stepSpinBox->setRange(0, 10000);
-    stepSpinBox->setValue(step);
+    QCheckBox *enabledCheckBox = new QCheckBox("Enabled");
+    enabledCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    enabledCheckBox->setChecked(enabled);
 
     QFormLayout *formLayout = new QFormLayout;
     formLayout->addRow("Blue to:", blueComboBox);
     formLayout->addRow("Green to:", greenComboBox);
     formLayout->addRow("Red to:", redComboBox);
-    formLayout->addRow("Step:", stepSpinBox);
+    formLayout->addWidget(enabledCheckBox);
 
     mainWidget = new QWidget(this);
     mainWidget->setLayout(formLayout);
@@ -374,7 +375,7 @@ MixChannels::MixChannels(int stp, int b, int g, int r): ImageOperation(stp), blu
     connect(blueComboBox, QOverload<int>::of(&QComboBox::activated), [=](int channelIndex){ fromTo[1] = channelIndex; });
     connect(greenComboBox, QOverload<int>::of(&QComboBox::activated), [=](int channelIndex){ fromTo[3] = channelIndex; });
     connect(redComboBox, QOverload<int>::of(&QComboBox::activated), [=](int channelIndex){ fromTo[5] = channelIndex; });
-    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
+    connect(enabledCheckBox, &QCheckBox::stateChanged, [=](int state){ enabled = (state == Qt::Checked); });
 }
 
 cv::Mat MixChannels::applyOperation(const cv::Mat &src)
@@ -388,7 +389,7 @@ cv::Mat MixChannels::applyOperation(const cv::Mat &src)
 
 QString MorphologyEx::name = "Morphology operation";
 
-MorphologyEx::MorphologyEx(int stp, int k, int its, cv::MorphTypes t, cv::MorphShapes s): ImageOperation(stp), ksize(k), iterations(its), morphType(t), morphShape(s)
+MorphologyEx::MorphologyEx(bool on, int k, int its, cv::MorphTypes t, cv::MorphShapes s): ImageOperation(on), ksize(k), iterations(its), morphType(t), morphShape(s)
 {
     morphTypes[0] = cv::MORPH_ERODE;
     morphTypes[1] = cv::MORPH_DILATE;
@@ -446,16 +447,16 @@ MorphologyEx::MorphologyEx(int stp, int k, int its, cv::MorphTypes t, cv::MorphS
     iterationsLineEdit->setValidator(iterationsValidator);
     iterationsLineEdit->setText(QString::number(iterations));
 
-    QSpinBox *stepSpinBox = new QSpinBox;
-    stepSpinBox->setRange(0, 10000);
-    stepSpinBox->setValue(step);
+    QCheckBox *enabledCheckBox = new QCheckBox("Enabled");
+    enabledCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    enabledCheckBox->setChecked(enabled);
 
     QFormLayout *formLayout = new QFormLayout;
     formLayout->addRow("Type:", morphTypeComboBox);
     formLayout->addRow("Kernel size:", ksizeLineEdit);
     formLayout->addRow("Shape:", morphShapeComboBox);
     formLayout->addRow("Iterations:", iterationsLineEdit);
-    formLayout->addRow("Step:", stepSpinBox);
+    formLayout->addWidget(enabledCheckBox);
 
     mainWidget = new QWidget(this);
     mainWidget->setLayout(formLayout);
@@ -471,7 +472,7 @@ MorphologyEx::MorphologyEx(int stp, int k, int its, cv::MorphTypes t, cv::MorphS
     connect(iterationsLineEdit, &CustomLineEdit::focusOut, [=](){ iterationsLineEdit->setText(QString::number(iterations)); });
     connect(morphTypeComboBox, QOverload<int>::of(&QComboBox::activated), [=](int typeIndex){ morphType = morphTypes[typeIndex]; });
     connect(morphShapeComboBox, QOverload<int>::of(&QComboBox::activated), [=](int shapeIndex){ morphShape = morphShapes[shapeIndex]; });
-    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
+    connect(enabledCheckBox, &QCheckBox::stateChanged, [=](int state){ enabled = (state == Qt::Checked); });
 }
 
 cv::Mat MorphologyEx::applyOperation(const cv::Mat &src)
@@ -486,7 +487,7 @@ cv::Mat MorphologyEx::applyOperation(const cv::Mat &src)
 
 QString Rotation::name = "Rotation";
 
-Rotation::Rotation(int stp, double a, double s, cv::InterpolationFlags f): ImageOperation(stp), angle(a), scale(s), flag(f)
+Rotation::Rotation(bool on, double a, double s, cv::InterpolationFlags f): ImageOperation(on), angle(a), scale(s), flag(f)
 {
     CustomLineEdit *angleLineEdit = new CustomLineEdit();
     CustomLineEdit *scaleLineEdit = new CustomLineEdit();
@@ -527,15 +528,15 @@ Rotation::Rotation(int stp, double a, double s, cv::InterpolationFlags f): Image
     //flagComboBox->addItem("Bit exact biliniar");
     flagComboBox->setCurrentIndex(flagComboBoxIndex);
 
-    QSpinBox *stepSpinBox = new QSpinBox;
-    stepSpinBox->setRange(0, 10000);
-    stepSpinBox->setValue(step);
+    QCheckBox *enabledCheckBox = new QCheckBox("Enabled");
+    enabledCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    enabledCheckBox->setChecked(enabled);
 
     QFormLayout *formLayout = new QFormLayout;
     formLayout->addRow("Angle:", angleLineEdit);
     formLayout->addRow("Scale:", scaleLineEdit);
     formLayout->addRow("Interpolation:", flagComboBox);
-    formLayout->addRow("Step:", stepSpinBox);
+    formLayout->addWidget(enabledCheckBox);
 
     mainWidget = new QWidget(this);
     mainWidget->setLayout(formLayout);
@@ -545,7 +546,7 @@ Rotation::Rotation(int stp, double a, double s, cv::InterpolationFlags f): Image
     connect(angleLineEdit, &CustomLineEdit::focusOut, [=](){ angleLineEdit->setText(QString::number(angle)); });
     connect(scaleLineEdit, &CustomLineEdit::focusOut, [=](){ scaleLineEdit->setText(QString::number(scale)); });
     connect(flagComboBox, QOverload<int>::of(&QComboBox::activated), [=](int flagIndex){ flag = flags[flagIndex]; });
-    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
+    connect(enabledCheckBox, &QCheckBox::stateChanged, [=](int state){ enabled = (state == Qt::Checked); });
 }
 
 cv::Mat Rotation::applyOperation(const cv::Mat &src)
@@ -561,7 +562,7 @@ cv::Mat Rotation::applyOperation(const cv::Mat &src)
 
 QString Sharpen::name = "Sharpen";
 
-Sharpen::Sharpen(int stp, double s, double t, double a): ImageOperation(stp), sigma(s), threshold(t), amount(a)
+Sharpen::Sharpen(bool on, double s, double t, double a): ImageOperation(on), sigma(s), threshold(t), amount(a)
 {
     CustomLineEdit *sigmaLineEdit = new CustomLineEdit();
     CustomLineEdit *thresholdLineEdit = new CustomLineEdit();
@@ -586,15 +587,15 @@ Sharpen::Sharpen(int stp, double s, double t, double a): ImageOperation(stp), si
     amountLineEdit->setValidator(amountValidator);
     amountLineEdit->setText(QString::number(amount));
 
-    QSpinBox *stepSpinBox = new QSpinBox;
-    stepSpinBox->setRange(0, 10000);
-    stepSpinBox->setValue(step);
+    QCheckBox *enabledCheckBox = new QCheckBox("Enabled");
+    enabledCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    enabledCheckBox->setChecked(enabled);
 
     QFormLayout *formLayout = new QFormLayout;
     formLayout->addRow("Sigma:", sigmaLineEdit);
     formLayout->addRow("Threshold:", thresholdLineEdit);
     formLayout->addRow("Amount:", amountLineEdit);
-    formLayout->addRow("Step:", stepSpinBox);
+    formLayout->addWidget(enabledCheckBox);
 
     mainWidget = new QWidget(this);
     mainWidget->setLayout(formLayout);
@@ -605,7 +606,7 @@ Sharpen::Sharpen(int stp, double s, double t, double a): ImageOperation(stp), si
     connect(sigmaLineEdit, &CustomLineEdit::focusOut, [=](){ sigmaLineEdit->setText(QString::number(sigma)); });
     connect(thresholdLineEdit, &CustomLineEdit::focusOut, [=](){ thresholdLineEdit->setText(QString::number(threshold)); });
     connect(amountLineEdit, &CustomLineEdit::focusOut, [=](){ amountLineEdit->setText(QString::number(amount)); });
-    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
+    connect(enabledCheckBox, &QCheckBox::stateChanged, [=](int state){ enabled = (state == Qt::Checked); });
 }
 
 cv::Mat Sharpen::applyOperation(const cv::Mat &src)
@@ -620,7 +621,7 @@ cv::Mat Sharpen::applyOperation(const cv::Mat &src)
 
 QString ShiftHue::name = "Shift hue";
 
-ShiftHue::ShiftHue(int stp, int d): ImageOperation(stp), delta(d)
+ShiftHue::ShiftHue(bool on, int d): ImageOperation(on), delta(d)
 {
     CustomLineEdit *deltaLineEdit = new CustomLineEdit();
     deltaLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -629,20 +630,20 @@ ShiftHue::ShiftHue(int stp, int d): ImageOperation(stp), delta(d)
     deltaLineEdit->setValidator(deltaValidator);
     deltaLineEdit->setText(QString::number(delta));
 
-    QSpinBox *stepSpinBox = new QSpinBox;
-    stepSpinBox->setRange(0, 10000);
-    stepSpinBox->setValue(step);
+    QCheckBox *enabledCheckBox = new QCheckBox("Enabled");
+    enabledCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    enabledCheckBox->setChecked(enabled);
 
     QFormLayout *formLayout = new QFormLayout;
     formLayout->addRow("Delta:", deltaLineEdit);
-    formLayout->addRow("Step:", stepSpinBox);
+    formLayout->addWidget(enabledCheckBox);
 
     mainWidget = new QWidget(this);
     mainWidget->setLayout(formLayout);
 
     connect(deltaLineEdit, &CustomLineEdit::returnPressed, [=](){ delta = deltaLineEdit->text().toInt(); });
     connect(deltaLineEdit, &CustomLineEdit::focusOut, [=](){ deltaLineEdit->setText(QString::number(delta)); });
-    connect(stepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int i){ step = i; });
+    connect(enabledCheckBox, &QCheckBox::stateChanged, [=](int state){ enabled = (state == Qt::Checked); });
 }
 
 cv::Mat ShiftHue::applyOperation(const cv::Mat &src)

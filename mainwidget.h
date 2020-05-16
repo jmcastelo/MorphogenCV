@@ -89,6 +89,9 @@ class MainWidget : public QWidget
     QPushButton *insertImageOperationPushButton;
     QPushButton *removeImageOperationPushButton;
 
+    QFormLayout *pipelineBlendFactorsLayout;
+    std::vector<QLineEdit*> pipelineBlendFactorLineEdit;
+
     QListWidget *imageOperationsListWidget;
     std::vector<int> currentImageOperationIndex;
 
@@ -127,6 +130,11 @@ class MainWidget : public QWidget
     void setTakeScreenshotSeries(int state);
     void takeScreenshot();
     void takeScreenshotSeriesElement();
+
+    void initImageSelectComboBox(int imageIndex);
+
+    void initPipelineBlendFactorsLayout();
+    void setPipelineBlendFactorLineEditText(int pipelineIndex);
 
     void initNewImageOperationComboBox();
     void initImageOperationsListWidget(int imageIndex);

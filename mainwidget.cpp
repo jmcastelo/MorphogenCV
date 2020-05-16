@@ -80,10 +80,6 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     timer = new QTimer(this);
 
     connect(timer, &QTimer::timeout, this, &MainWidget::iterationLoop);
-
-    // Start with some operations for image[0]
-
-    initImageOperationsListWidget(0);
 }
 
 MainWidget::~MainWidget()
@@ -197,28 +193,47 @@ void MainWidget::constructGeneralControls()
 
 void MainWidget::constructImageManipulationControls()
 {
-    blendFactorLineEdit = new QLineEdit;
-    blendFactorLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    QDoubleValidator *blendFactorDoubleValidator = new QDoubleValidator(0.0, 1.0, 10, blendFactorLineEdit);
-    blendFactorDoubleValidator->setLocale(QLocale::English);
-    blendFactorLineEdit->setValidator(blendFactorDoubleValidator);
-    blendFactorLineEdit->setText(QString::number(generator->getBlendFactor()));
+    // Pipelines
 
     imageSelectComboBox = new QComboBox;
     imageSelectComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    imageSelectComboBox->addItem("Image 1");
-    imageSelectComboBox->addItem("Image 2");
-    imageSelectComboBox->setCurrentIndex(0);
+
+    QFormLayout *imageSelectFormLayout = new QFormLayout;
+    imageSelectFormLayout->addRow("Select pipeline:", imageSelectComboBox);
+
+    QPushButton *addImagePushButton = new QPushButton("Add new");
+    addImagePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    QPushButton *removeImagePushButton = new QPushButton("Remove selected");
+    removeImagePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    QHBoxLayout *pipelineButtonsHBoxLayout = new QHBoxLayout;
+    pipelineButtonsHBoxLayout->addWidget(addImagePushButton);
+    pipelineButtonsHBoxLayout->addWidget(removeImagePushButton);
+
+    pipelineBlendFactorsLayout = new QFormLayout;
+
+    QPushButton *equalizeBlendFactorsPushButton = new QPushButton("Equalize blend factors");
+    equalizeBlendFactorsPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    // Pipelines layout
+
+    QVBoxLayout *pipelineVBoxLayout = new QVBoxLayout;
+    pipelineVBoxLayout->addLayout(imageSelectFormLayout);
+    pipelineVBoxLayout->addLayout(pipelineButtonsHBoxLayout);
+    pipelineVBoxLayout->addLayout(pipelineBlendFactorsLayout);
+    pipelineVBoxLayout->addWidget(equalizeBlendFactorsPushButton);
+
+    QGroupBox *pipelineGroupBox = new QGroupBox("Pipelines");
+    pipelineGroupBox->setLayout(pipelineVBoxLayout);
+
+    // Image operations
 
     newImageOperationComboBox = new QComboBox;
     newImageOperationComboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
-    initNewImageOperationComboBox();
-
-    QFormLayout *formLayout = new QFormLayout;
-    formLayout->addRow("Blend factor:", blendFactorLineEdit);
-    formLayout->addRow("Select image:", imageSelectComboBox);
-    formLayout->addRow("New operation:", newImageOperationComboBox);
+    QFormLayout *newImageOperationFormLayout = new QFormLayout;
+    newImageOperationFormLayout->addRow("New operation:", newImageOperationComboBox);
 
     insertImageOperationPushButton = new QPushButton("Insert");
     insertImageOperationPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -235,17 +250,30 @@ void MainWidget::constructImageManipulationControls()
     imageOperationsListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
     imageOperationsListWidget->setDragDropMode(QAbstractItemView::InternalMove);
 
+    // Parameters
+
     parametersLayout = new QVBoxLayout;
 
     QGroupBox *parametersGroupBox = new QGroupBox("Parameters");
     parametersGroupBox->setLayout(parametersLayout);
 
+    // Image operations layout
+
+    QVBoxLayout *imageOperationsVBoxLayout = new QVBoxLayout;
+    imageOperationsVBoxLayout->addLayout(newImageOperationFormLayout);
+    imageOperationsVBoxLayout->addLayout(insertRemoveHBoxLayout);
+    imageOperationsVBoxLayout->addWidget(imageOperationsListWidget);
+    imageOperationsVBoxLayout->addWidget(parametersGroupBox);
+
+    QGroupBox *imageOperationsGroupBox = new QGroupBox("Pipeline operations");
+    imageOperationsGroupBox->setLayout(imageOperationsVBoxLayout);
+
+    // Main
+
     QVBoxLayout *imageManipulationVBoxLayout = new QVBoxLayout;
     imageManipulationVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
-    imageManipulationVBoxLayout->addLayout(formLayout);
-    imageManipulationVBoxLayout->addLayout(insertRemoveHBoxLayout);
-    imageManipulationVBoxLayout->addWidget(imageOperationsListWidget);
-    imageManipulationVBoxLayout->addWidget(parametersGroupBox);
+    imageManipulationVBoxLayout->addWidget(pipelineGroupBox);
+    imageManipulationVBoxLayout->addWidget(imageOperationsGroupBox);
 
     imageManipulationWidget = new QWidget;
     imageManipulationWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -253,12 +281,38 @@ void MainWidget::constructImageManipulationControls()
 
     // Signals + Slots
 
-    connect(blendFactorLineEdit, &QLineEdit::returnPressed, [=](){ generator->setBlendFactor(blendFactorLineEdit->text().toDouble()); });
+    connect(addImagePushButton, &QPushButton::clicked, [=](bool checked)
+    {
+        Q_UNUSED(checked)
+        generator->addPipeline();
+        initImageSelectComboBox(generator->getImageSize() - 1);
+        initPipelineBlendFactorsLayout();
+    });
+    connect(removeImagePushButton, &QPushButton::clicked, [=](bool checked)
+    {
+        Q_UNUSED(checked)
+        generator->removePipeline(imageSelectComboBox->currentIndex());
+        initImageSelectComboBox(imageSelectComboBox->currentIndex());
+        initPipelineBlendFactorsLayout();
+    });
+    connect(equalizeBlendFactorsPushButton, &QPushButton::clicked, [=](bool checked)
+    {
+        Q_UNUSED(checked)
+        generator->equalizePipelineBlendFactors();
+        for (int i = 0; i < generator->getPipelinesSize(); i++)
+            pipelineBlendFactorLineEdit[i]->setText(QString::number(generator->getPipelineBlendFactor(i)));
+    });
     connect(imageSelectComboBox, QOverload<int>::of(&QComboBox::activated), [=](int imageIndex){ initImageOperationsListWidget(imageIndex); });
     connect(imageOperationsListWidget, &QListWidget::currentRowChanged, this, &MainWidget::onImageOperationsListWidgetCurrentRowChanged);
     connect(imageOperationsListWidget->model(), &QAbstractItemModel::rowsMoved, this, &MainWidget::onRowsMoved);
     connect(insertImageOperationPushButton, &QPushButton::clicked, this, &MainWidget::insertImageOperation);
     connect(removeImageOperationPushButton, &QPushButton::clicked, this, &MainWidget::removeImageOperation);
+
+    // Init
+
+    initImageSelectComboBox(0);
+    initPipelineBlendFactorsLayout();
+    initNewImageOperationComboBox();
 }
 
 void MainWidget::constructComputationControls()
@@ -294,7 +348,6 @@ void MainWidget::constructComputationControls()
     colorSpaceYAxisComboBox->addItem("Red");
 
     QFormLayout *fullImageLayout = new QFormLayout;
-    //fullImageLayout->setAlignment(Qt::AlignTop);
     fullImageLayout->addRow("Histogram:", histogramPushButton);
     fullImageLayout->addRow("Color intensity plot:", imageIterationPushButton);
     fullImageLayout->addRow("Color-space plot:", colorSpacePushButton);
@@ -468,6 +521,61 @@ void MainWidget::takeScreenshotSeriesElement()
 
         screenshotIndex++;
     }
+}
+
+void MainWidget::initImageSelectComboBox(int imageIndex)
+{
+    imageSelectComboBox->clear();
+
+    for (int i = 0; i < generator->getPipelinesSize(); i++)
+        imageSelectComboBox->addItem(QString("Pipeline %1").arg(i + 1));
+
+    if (imageSelectComboBox->count() > 0)
+    {
+        if (imageIndex > imageSelectComboBox->count() - 1)
+        {
+            imageIndex = imageSelectComboBox->count() - 1;
+        }
+
+        imageSelectComboBox->setCurrentIndex(imageIndex);
+        initImageOperationsListWidget(imageIndex);
+    }
+    else
+    {
+        initImageOperationsListWidget(0);
+    }
+}
+
+void MainWidget::initPipelineBlendFactorsLayout()
+{
+    for (int i = pipelineBlendFactorLineEdit.size() - 1; i >= 0; i--)
+        pipelineBlendFactorsLayout->removeRow(i);
+
+    pipelineBlendFactorLineEdit.clear();
+
+    for (int i = 0; i < generator->getPipelinesSize(); i++)
+    {
+        QLineEdit *blendFactorLineEdit = new QLineEdit;
+        blendFactorLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+        QDoubleValidator *blendFactorValidator = new QDoubleValidator(0.0, 1.0, 10, blendFactorLineEdit);
+        blendFactorValidator->setLocale(QLocale::English);
+        blendFactorLineEdit->setText(QString::number(generator->getPipelineBlendFactor(i)));
+
+        pipelineBlendFactorsLayout->addRow(QString("Blend factor %1:").arg(i + 1), blendFactorLineEdit);
+
+        pipelineBlendFactorLineEdit.push_back(blendFactorLineEdit);
+
+        connect(blendFactorLineEdit, &QLineEdit::returnPressed, [=](){ setPipelineBlendFactorLineEditText(i); });
+    }
+}
+
+void MainWidget::setPipelineBlendFactorLineEditText(int pipelineIndex)
+{
+    generator->setPipelineBlendFactor(pipelineIndex, pipelineBlendFactorLineEdit[pipelineIndex]->text().toDouble());
+
+    for (int i = 0; i < generator->getPipelinesSize(); i++)
+        pipelineBlendFactorLineEdit[i]->setText(QString::number(generator->getPipelineBlendFactor(i)));
+
 }
 
 void MainWidget::initNewImageOperationComboBox()
