@@ -44,12 +44,11 @@ public:
     void swapImageOperations(int operationIndex0, int operationIndex1);
     void removeImageOperation(int operationIndex);
     void insertImageOperation(int newOperationIndex, int currentOperationIndex);
+    void loadImageOperation(QString operationName, bool enabled, std::vector<bool> boolParameters, std::vector<int> intParameters, std::vector<double> doubleParameters, std::vector<int> morphTypeParameters, std::vector<int> morphShapeParameters, std::vector<int> interpolationFlagParameters);
 };
 
 class GeneratorCV
 {
-    std::vector<Pipeline*> pipelines;
-
     cv::Mat mask;
     cv::Mat outImage;
 
@@ -81,6 +80,8 @@ class GeneratorCV
 
 public:
     std::vector<QString> availableImageOperations;
+
+    std::vector<Pipeline*> pipelines;
 
     bool selectingPixel;
 
@@ -128,6 +129,7 @@ public:
 
     void removePipeline(int pipelineIndex);
     void addPipeline();
+    void loadPipeline(double blendFactor);
     int getPipelinesSize(){ return pipelines.size(); };
 
     void setPipelineBlendFactor(int pipelineIndex, double factor);

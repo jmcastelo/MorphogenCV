@@ -20,6 +20,7 @@
 
 #include "generator.h"
 #include "imageiterationplot.h"
+#include "configparser.h"
 #include <vector>
 #include <QWidget>
 #include <QHBoxLayout>
@@ -121,6 +122,10 @@ class MainWidget : public QWidget
     void constructComputationControls();
 
     void pauseResumeSystem(bool checked);
+
+    void saveConfig();
+    void loadConfig();
+
     void setTimerInterval();
 
     void setImageSize();

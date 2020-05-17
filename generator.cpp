@@ -35,9 +35,12 @@ Pipeline::~Pipeline()
 void Pipeline::swapImageOperations(int operationIndex0, int operationIndex1)
 {
     ImageOperation *operation = imageOperations[operationIndex0];
+
     std::vector<ImageOperation*>::iterator it = imageOperations.begin();
+
     imageOperations.erase(it + operationIndex0);
-    imageOperations.insert(it + operationIndex1, operation);
+    if (operationIndex0 > operationIndex1) imageOperations.insert(it + operationIndex1, operation);
+    else imageOperations.insert(it + operationIndex1 - 1, operation);
 }
 
 void Pipeline::removeImageOperation(int operationIndex)
@@ -89,6 +92,53 @@ void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationI
     else if (newOperationIndex == 9)
     {
         imageOperations.insert(it + currentOperationIndex + 1, new ShiftHue(false, 0));
+    }
+}
+
+void Pipeline::loadImageOperation(QString operationName, bool enabled, std::vector<bool> boolParameters, std::vector<int> intParameters, std::vector<double> doubleParameters, std::vector<int> morphTypeParameters, std::vector<int> morphShapeParameters, std::vector<int> interpolationFlagParameters)
+{
+    if (operationName == "Canny")
+    {
+        imageOperations.push_back(new Canny(enabled, doubleParameters[0], doubleParameters[1], intParameters[0], boolParameters[0]));
+    }
+    else if (operationName == "Convert to")
+    {
+        imageOperations.push_back(new ConvertTo(enabled, doubleParameters[0], doubleParameters[1]));
+    }
+    else if (operationName == "Equalize histogram")
+    {
+        imageOperations.push_back(new EqualizeHist(enabled));
+    }
+    else if (operationName == "Gaussian blur")
+    {
+        imageOperations.push_back(new GaussianBlur(enabled, intParameters[0], doubleParameters[0], doubleParameters[1]));
+    }
+    else if (operationName == "Laplacian")
+    {
+        imageOperations.push_back(new Laplacian(enabled, intParameters[0], doubleParameters[0], doubleParameters[1]));
+    }
+    else if (operationName == "Mix channels")
+    {
+        imageOperations.push_back(new MixChannels(enabled, intParameters[0], intParameters[1], intParameters[2]));
+    }
+    else if (operationName == "Morphology operation")
+    {
+        cv::MorphTypes morphType = static_cast<cv::MorphTypes>(morphTypeParameters[0]);
+        cv::MorphShapes morphShape = static_cast<cv::MorphShapes>(morphShapeParameters[0]);
+        imageOperations.push_back(new MorphologyEx(enabled, intParameters[0], intParameters[1], morphType, morphShape));
+    }
+    else if (operationName == "Rotation")
+    {
+        cv::InterpolationFlags flag = static_cast<cv::InterpolationFlags>(interpolationFlagParameters[0]);
+        imageOperations.push_back(new Rotation(enabled, doubleParameters[0], doubleParameters[1], flag));
+    }
+    else if (operationName == "Sharpen")
+    {
+        imageOperations.push_back(new Sharpen(enabled, doubleParameters[0], doubleParameters[1], doubleParameters[2]));
+    }
+    else if (operationName == "Shift hue")
+    {
+        imageOperations.push_back(new ShiftHue(enabled, doubleParameters[0]));
     }
 }
 
@@ -172,6 +222,8 @@ void GeneratorCV::drawSeed(bool grayscale)
 
     for (auto &pipeline: pipelines)
         pipeline->image = maskedSeed.clone();
+
+    outImage = maskedSeed.clone();
 
     cv::imshow("Out image", maskedSeed);
 }
@@ -388,6 +440,12 @@ void GeneratorCV::addPipeline()
 {
     pipelines.push_back(new Pipeline(outImage));
     pipelines.back()->blendFactor = 0.0;
+}
+
+void GeneratorCV::loadPipeline(double blendFactor)
+{
+    pipelines.push_back(new Pipeline(outImage));
+    pipelines.back()->blendFactor = blendFactor;
 }
 
 void GeneratorCV::setPipelineBlendFactor(int pipelineIndex, double factor)

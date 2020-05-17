@@ -97,6 +97,17 @@ void MainWidget::constructGeneralControls()
     pauseResumePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     pauseResumePushButton->setCheckable(true);
 
+    QPushButton *loadConfigPushButton = new QPushButton("Load configuration");
+    loadConfigPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    QPushButton *saveConfigPushButton = new QPushButton("Save configuration");
+    saveConfigPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    QHBoxLayout *buttonsHBoxLayout = new QHBoxLayout;
+    buttonsHBoxLayout->setAlignment(Qt::AlignHCenter);
+    buttonsHBoxLayout->addWidget(loadConfigPushButton);
+    buttonsHBoxLayout->addWidget(saveConfigPushButton);
+
     QPushButton *drawSeedPushButton = new QPushButton("Draw seed");
     drawSeedPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
@@ -169,6 +180,7 @@ void MainWidget::constructGeneralControls()
     QVBoxLayout *generalControlsVBoxLayout = new QVBoxLayout;
     generalControlsVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
     generalControlsVBoxLayout->addWidget(pauseResumePushButton);
+    generalControlsVBoxLayout->addLayout(buttonsHBoxLayout);
     generalControlsVBoxLayout->addLayout(seedHBoxLayout);
     generalControlsVBoxLayout->addLayout(formLayout);
     generalControlsVBoxLayout->addWidget(screenshotGroupBox);
@@ -183,6 +195,8 @@ void MainWidget::constructGeneralControls()
 
     connect(drawSeedPushButton, &QPushButton::clicked, [=](){ generator->drawSeed(bwSeedCheckBox->isChecked()); });
     connect(pauseResumePushButton, &QPushButton::clicked, this, &MainWidget::pauseResumeSystem);
+    connect(saveConfigPushButton, &QPushButton::clicked, this, &MainWidget::saveConfig);
+    connect(loadConfigPushButton, &QPushButton::clicked, this, &MainWidget::loadConfig);
     connect(timerIntervalLineEdit, &QLineEdit::returnPressed, this, &MainWidget::setTimerInterval);
     connect(imageSizeLineEdit, &QLineEdit::returnPressed, this, &MainWidget::setImageSize);
     connect(selectScreenshotPathPushButton, &QPushButton::clicked, this, &MainWidget::selectScreenshotPath);
@@ -455,6 +469,34 @@ void MainWidget::pauseResumeSystem(bool checked)
     {
         timer->start(timerInterval);
         pauseResumePushButton->setText("Pause");
+    }
+}
+
+void MainWidget::saveConfig()
+{
+    QString filename = QFileDialog::getSaveFileName(this, "Save configuration", "", "MorphogenCV configurations (*.morph)");
+
+    if (!filename.isEmpty())
+    {
+        ConfigurationParser parser(generator, filename);
+        parser.write();
+    }
+}
+
+void MainWidget::loadConfig()
+{
+    QString filename = QFileDialog::getOpenFileName(this, "Load configuration", "", "MorphogenCV configurations (*.morph)");
+
+    if (!filename.isEmpty())
+    {
+        ConfigurationParser parser(generator, filename);
+        parser.read();
+
+        for (int i = 0; i < generator->getPipelinesSize(); i++)
+            currentImageOperationIndex[i] = 0;
+
+        initImageSelectComboBox(0);
+        initPipelineBlendFactorsLayout();
     }
 }
 

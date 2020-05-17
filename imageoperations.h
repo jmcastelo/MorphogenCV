@@ -19,6 +19,7 @@
 #define IMAGEOPERATIONS_H
 
 #include <opencv2/imgproc.hpp>
+#include <vector>
 #include <QWidget>
 #include <QString>
 #include <QLabel>
@@ -56,12 +57,25 @@ class ImageOperation
 {
 protected:
     QWidget *mainWidget;
+
     bool enabled;
+
 public:
     bool isEnabled(){ return enabled; }
+
     QWidget* getParametersWidget(){ return mainWidget; };
+
     virtual QString getName() = 0;
+
+    virtual std::vector<bool> getBoolParameters(){ std::vector<bool> parameters; return parameters; };
+    virtual std::vector<int> getIntParameters(){ std::vector<int> parameters; return parameters; };
+    virtual std::vector<double> getDoubleParameters(){ std::vector<double> parameters; return parameters; };
+    virtual std::vector<cv::MorphTypes> getMorphTypeParameters(){ std::vector<cv::MorphTypes> parameters; return parameters; };
+    virtual std::vector<cv::MorphShapes> getMorphShapeParameters(){ std::vector<cv::MorphShapes> parameters; return parameters; };
+    virtual std::vector<cv::InterpolationFlags> getInterpolationFlagParameters(){ std::vector<cv::InterpolationFlags> parameters; return parameters; };
+
     virtual cv::Mat applyOperation(const cv::Mat &src) = 0;
+
     ImageOperation(bool on): enabled(on){};
     virtual ~ImageOperation(){ delete mainWidget->layout(); delete mainWidget; };
 };
@@ -80,6 +94,11 @@ public:
     Canny(bool on, double th1, double th2, int size, bool g);
 
     QString getName(){ return name; };
+
+    std::vector<bool> getBoolParameters(){ std::vector<bool> parameters = {L2gradient}; return parameters; };
+    std::vector<int> getIntParameters(){ std::vector<int> parameters = {apertureSize}; return parameters; };
+    std::vector<double> getDoubleParameters(){ std::vector<double> parameters = {threshold1, threshold2}; return parameters; };
+
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
@@ -95,6 +114,9 @@ public:
     ConvertTo(bool on, double a, double b);
 
     QString getName(){ return name; };
+
+    std::vector<double> getDoubleParameters(){ std::vector<double> parameters = {alpha, beta}; return parameters; };
+
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
@@ -124,6 +146,10 @@ public:
     GaussianBlur(bool on, int k, double sx, double sy);
 
     QString getName(){ return name; };
+
+    std::vector<int> getIntParameters(){ std::vector<int> parameters = {ksize}; return parameters; };
+    std::vector<double> getDoubleParameters(){ std::vector<double> parameters = {sigmaX, sigmaY}; return parameters; };
+
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
@@ -140,6 +166,10 @@ public:
     Laplacian(bool on, int k, double s, double d);
 
     QString getName(){ return name; };
+
+    std::vector<int> getIntParameters(){ std::vector<int> parameters = {ksize}; return parameters; };
+    std::vector<double> getDoubleParameters(){ std::vector<double> parameters = {scale, delta}; return parameters; };
+
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
@@ -156,6 +186,9 @@ public:
     MixChannels(bool on, int b, int g, int r);
 
     QString getName(){ return name; };
+
+    std::vector<int> getIntParameters(){ std::vector<int> parameters = {blue, green, red}; return parameters; };
+
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
@@ -173,6 +206,11 @@ public:
     MorphologyEx(bool on, int k, int its, cv::MorphTypes t, cv::MorphShapes s);
 
     QString getName(){ return name; };
+
+    std::vector<int> getIntParameters(){ std::vector<int> parameters = {ksize, iterations}; return parameters; };
+    std::vector<cv::MorphTypes> getMorphTypeParameters(){ std::vector<cv::MorphTypes> parameters = {morphType}; return parameters; };
+    std::vector<cv::MorphShapes> getMorphShapeParameters(){ std::vector<cv::MorphShapes> parameters = {morphShape}; return parameters; };
+
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
@@ -189,6 +227,10 @@ public:
     Rotation(bool on, double a, double s, cv::InterpolationFlags f);
 
     QString getName(){ return name; };
+
+    std::vector<double> getDoubleParameters(){ std::vector<double> parameters = {angle, scale}; return parameters; };
+    std::vector<cv::InterpolationFlags> getInterpolationFlagParameters(){ std::vector<cv::InterpolationFlags> parameters = {flag}; return parameters; };
+
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
@@ -204,6 +246,9 @@ public:
     Sharpen(bool on, double s, double t, double a);
 
     QString getName(){ return name; };
+
+    std::vector<double> getDoubleParameters(){ std::vector<double> parameters = {sigma, threshold, amount}; return parameters; };
+
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
@@ -219,6 +264,9 @@ public:
     ShiftHue(bool on, int d);
 
     QString getName(){ return name; };
+
+    std::vector<int> getIntParameters(){ std::vector<int> parameters = {delta}; return parameters; };
+
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
