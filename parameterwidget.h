@@ -138,7 +138,9 @@ class DoubleParameterWidget: public QWidget
 public:
     CustomLineEdit *lineEdit;
 
-    DoubleParameterWidget(DoubleParameter *theDoubleParameter, int theIndexMax, QWidget *parent = nullptr): QWidget(parent), doubleParameter(theDoubleParameter), indexMax(theIndexMax)
+    int indexMax;
+
+    DoubleParameterWidget(DoubleParameter *theDoubleParameter, int theIndexMax, QWidget *parent = nullptr): QWidget(parent), indexMax(theIndexMax), doubleParameter(theDoubleParameter)
     {
         name = QString::fromStdString(doubleParameter->name);
 
@@ -146,19 +148,22 @@ public:
         lineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
         QDoubleValidator *validator = new QDoubleValidator(doubleParameter->min, doubleParameter->max, 10, lineEdit);
+        validator->setLocale(QLocale::English);
         lineEdit->setValidator(validator);
         lineEdit->setText(QString::number(doubleParameter->value));
 
         connect(lineEdit, &CustomLineEdit::returnPressed, [=](){ doubleParameter->value = lineEdit->text().toDouble(); setIndex(); });
         connect(lineEdit, &CustomLineEdit::focusOut, [=](){ lineEdit->setText(QString::number(doubleParameter->value)); });
-        connect(lineEdit, &CustomLineEdit::focusIn, [=](){ emit focusIn(this); });
+        connect(lineEdit, &CustomLineEdit::focusIn, [=](){ emit focusIn(); });
     }
 
     QString getName(){ return name; }
 
     void setValue(int newIndex)
     {
-        doubleParameter->value = doubleParameter->min + (doubleParameter->max - doubleParameter->min) * newIndex / indexMax;
+        double newValue = doubleParameter->min + (doubleParameter->max - doubleParameter->min) * newIndex / indexMax;
+        doubleParameter->value = newValue;
+        lineEdit->setText(QString::number(newValue));
     }
 
     void setIndex()
@@ -167,13 +172,17 @@ public:
         emit currentIndexChanged(index);
     }
 
+    int getIndex()
+    {
+        return static_cast<int>(indexMax * (doubleParameter->value - doubleParameter->min) / (doubleParameter->max - doubleParameter->min));
+    }
+
 private:
     DoubleParameter *doubleParameter;
     QString name;
-    int indexMax;
 
 signals:
-    void focusIn(DoubleParameterWidget *doubleParameterWidget);
+    void focusIn();
     void currentIndexChanged(int currentIndex);
 };
 
@@ -195,7 +204,7 @@ public:
         }
         for (auto parameter: operation->getDoubleParameters())
         {
-            DoubleParameterWidget *widget = new DoubleParameterWidget(parameter, 1000, this);
+            DoubleParameterWidget *widget = new DoubleParameterWidget(parameter, 100000, this);
             doubleParameterWidget.push_back(widget);
             formLayout->addRow(QString::fromStdString(parameter->name), widget->lineEdit);
         }

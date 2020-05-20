@@ -404,7 +404,7 @@ std::string Rotation::name = "Rotation";
 Rotation::Rotation(bool on, double a, double s, cv::InterpolationFlags f): ImageOperation(on)
 {
     angle = new DoubleParameter("Angle", a, -360.0, 360.0);
-    scale = new DoubleParameter("Scale", s, 0.0, 100.0);
+    scale = new DoubleParameter("Scale", s, 0.0, 2.0);
 
     std::vector<std::string> valueNames = {"Nearest neighbor", "Bilinear", "Bicubic", "Area", "Lanczos 8x8"};
     std::vector<cv::InterpolationFlags> values = {cv::INTER_NEAREST, cv::INTER_LINEAR, cv::INTER_CUBIC, cv::INTER_AREA, cv::INTER_LANCZOS4};

@@ -49,6 +49,7 @@
 #include <QTabWidget>
 #include <QStandardItemModel>
 #include <QStandardItem>
+#include <QSlider>
 
 class MainWidget : public QWidget
 {
@@ -98,6 +99,9 @@ class MainWidget : public QWidget
 
     QListWidget *imageOperationsListWidget;
     std::vector<int> currentImageOperationIndex;
+
+    QSlider *selectedParameterSlider;
+    QGroupBox *selectedParameterGroupBox;
 
     QVBoxLayout *parametersLayout;
 

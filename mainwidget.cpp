@@ -19,6 +19,8 @@
 
 MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 {
+    // The generator
+
     generator = new GeneratorCV();
 
     // Init variables
@@ -272,6 +274,18 @@ void MainWidget::constructImageManipulationControls()
     QGroupBox *parametersGroupBox = new QGroupBox("Parameters");
     parametersGroupBox->setLayout(parametersLayout);
 
+    // Selected real parameter
+
+    selectedParameterSlider = new QSlider(Qt::Horizontal);
+    selectedParameterSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    selectedParameterSlider->setRange(0, 10000);
+
+    QVBoxLayout *selectedParameterVBoxLayout = new QVBoxLayout;
+    selectedParameterVBoxLayout->addWidget(selectedParameterSlider);
+
+    selectedParameterGroupBox = new QGroupBox("No selected parameter");
+    selectedParameterGroupBox->setLayout(selectedParameterVBoxLayout);
+
     // Image operations layout
 
     QVBoxLayout *imageOperationsVBoxLayout = new QVBoxLayout;
@@ -279,6 +293,7 @@ void MainWidget::constructImageManipulationControls()
     imageOperationsVBoxLayout->addLayout(insertRemoveHBoxLayout);
     imageOperationsVBoxLayout->addWidget(imageOperationsListWidget);
     imageOperationsVBoxLayout->addWidget(parametersGroupBox);
+    imageOperationsVBoxLayout->addWidget(selectedParameterGroupBox);
 
     QGroupBox *imageOperationsGroupBox = new QGroupBox("Pipeline operations");
     imageOperationsGroupBox->setLayout(imageOperationsVBoxLayout);
@@ -686,6 +701,26 @@ void MainWidget::onImageOperationsListWidgetCurrentRowChanged(int currentRow)
         operationsWidget = new OperationsWidget(generator->pipelines[imageIndex]->imageOperations[currentRow]);
         parametersLayout->addWidget(operationsWidget);
         operationsWidget->show();
+
+        selectedParameterSlider->disconnect();
+        selectedParameterSlider->setValue(0);
+        selectedParameterGroupBox->setTitle("No selected parameter");
+
+        for (auto widget: operationsWidget->doubleParameterWidget)
+            connect(widget, &DoubleParameterWidget::focusIn, [=]()
+            {
+                selectedParameterSlider->disconnect();
+                selectedParameterSlider->setRange(0, widget->indexMax);
+                selectedParameterSlider->setValue(widget->getIndex());
+                connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &DoubleParameterWidget::setValue);
+                connect(widget, &DoubleParameterWidget::currentIndexChanged, [=](int currentIndex)
+                {
+                    disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
+                    selectedParameterSlider->setValue(currentIndex);
+                    connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &DoubleParameterWidget::setValue);
+                });
+                selectedParameterGroupBox->setTitle("Selected parameter: " + widget->getName());
+            });
 
         currentImageOperationIndex[imageIndex] = currentRow;
 
