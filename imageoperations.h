@@ -18,254 +18,409 @@
 #ifndef IMAGEOPERATIONS_H
 #define IMAGEOPERATIONS_H
 
+#include "parameter.h"
 #include <opencv2/imgproc.hpp>
 #include <vector>
-#include <QWidget>
-#include <QString>
-#include <QLabel>
-#include <QLineEdit>
-#include <QIntValidator>
-#include <QDoubleValidator>
-#include <QComboBox>
-#include <QCheckBox>
-#include <QSpinBox>
-#include <QFormLayout>
-
-// A custom QLineEdit that signals focus out
-
-class CustomLineEdit: public QLineEdit
-{
-    Q_OBJECT
-
-public:
-    CustomLineEdit(QWidget *parent = nullptr): QLineEdit(parent){}
-
-protected:
-    void focusOutEvent(QFocusEvent *event)
-    {
-        QLineEdit::focusOutEvent(event);
-        emit focusOut();
-    }
-
-signals:
-    void focusOut();
-};
+#include <string>
+#include <cmath>
 
 // Base image operation class
 
 class ImageOperation
 {
-protected:
-    QWidget *mainWidget;
-
-    bool enabled;
-
 public:
+    bool enabled;
     bool isEnabled(){ return enabled; }
 
-    QWidget* getParametersWidget(){ return mainWidget; };
+    virtual std::string getName() = 0;
 
-    virtual QString getName() = 0;
-
-    virtual std::vector<bool> getBoolParameters(){ std::vector<bool> parameters; return parameters; };
-    virtual std::vector<int> getIntParameters(){ std::vector<int> parameters; return parameters; };
-    virtual std::vector<double> getDoubleParameters(){ std::vector<double> parameters; return parameters; };
-    virtual std::vector<cv::MorphTypes> getMorphTypeParameters(){ std::vector<cv::MorphTypes> parameters; return parameters; };
-    virtual std::vector<cv::MorphShapes> getMorphShapeParameters(){ std::vector<cv::MorphShapes> parameters; return parameters; };
-    virtual std::vector<cv::InterpolationFlags> getInterpolationFlagParameters(){ std::vector<cv::InterpolationFlags> parameters; return parameters; };
+    virtual std::vector<BoolParameter*> getBoolParameters(){ std::vector<BoolParameter*> parameters; return parameters; };
+    virtual std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters; return parameters; };
+    virtual std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters; return parameters; };
+    virtual std::vector<OptionsParameter<int>*> getOptionsIntParameters(){ std::vector<OptionsParameter<int>*> parameters; return parameters; }
+    virtual std::vector<OptionsParameter<cv::MorphTypes>*> getMorphTypeParameters(){ std::vector<OptionsParameter<cv::MorphTypes>*> parameters; return parameters; };
+    virtual std::vector<OptionsParameter<cv::MorphShapes>*> getMorphShapeParameters(){ std::vector<OptionsParameter<cv::MorphShapes>*> parameters; return parameters; };
+    virtual std::vector<OptionsParameter<cv::InterpolationFlags>*> getInterpolationFlagParameters(){ std::vector<OptionsParameter<cv::InterpolationFlags>*> parameters; return parameters; };
 
     virtual cv::Mat applyOperation(const cv::Mat &src) = 0;
 
     ImageOperation(bool on): enabled(on){};
-    virtual ~ImageOperation(){ delete mainWidget->layout(); delete mainWidget; };
+    virtual ~ImageOperation(){};
+};
+
+// Bilateral filter
+
+class BilateralFilter: public ImageOperation
+{
+    IntParameter *diameter;
+    DoubleParameter *sigmaColor, *sigmaSpace;
+
+public:
+    static std::string name;
+
+    BilateralFilter(bool on, int d, double sc, double ss);
+    ~BilateralFilter()
+    {
+        delete diameter;
+        delete sigmaColor;
+        delete sigmaSpace;
+    }
+
+    std::string getName(){ return name; };
+
+    std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {diameter}; return parameters; };
+    std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {sigmaColor, sigmaSpace}; return parameters; };
+
+    cv::Mat applyOperation(const cv::Mat &src);
+};
+
+// Blur
+
+class Blur: public ImageOperation
+{
+    IntParameter *ksize;
+
+public:
+    static std::string name;
+
+    Blur(bool on, int size);
+    ~Blur(){ delete ksize; }
+
+    std::string getName(){ return name; };
+
+    std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {ksize}; return parameters; };
+
+    cv::Mat applyOperation(const cv::Mat &src);
 };
 
 // Canny
 
-class Canny: public QWidget, public ImageOperation
+class Canny: public ImageOperation
 {
-    double threshold1, threshold2;
-    int apertureSize;
-    bool L2gradient;
+    DoubleParameter *threshold1, *threshold2;
+    IntParameter *apertureSize;
+    BoolParameter *L2gradient;
 
 public:
-    static QString name;
+    static std::string name;
 
     Canny(bool on, double th1, double th2, int size, bool g);
+    ~Canny()
+    {
+        delete threshold1;
+        delete threshold2;
+        delete apertureSize;
+        delete L2gradient;
+    }
 
-    QString getName(){ return name; };
+    std::string getName(){ return name; };
 
-    std::vector<bool> getBoolParameters(){ std::vector<bool> parameters = {L2gradient}; return parameters; };
-    std::vector<int> getIntParameters(){ std::vector<int> parameters = {apertureSize}; return parameters; };
-    std::vector<double> getDoubleParameters(){ std::vector<double> parameters = {threshold1, threshold2}; return parameters; };
+    std::vector<BoolParameter*> getBoolParameters(){ std::vector<BoolParameter*> parameters = {L2gradient}; return parameters; };
+    std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {apertureSize}; return parameters; };
+    std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {threshold1, threshold2}; return parameters; };
 
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
 // Convert to
 
-class ConvertTo: public QWidget, public ImageOperation
+class ConvertTo: public ImageOperation
 {
-    double alpha, beta;
+    DoubleParameter *alpha, *beta;
 
 public:
-    static QString name;
+    static std::string name;
 
     ConvertTo(bool on, double a, double b);
+    ~ConvertTo()
+    {
+        delete alpha;
+        delete beta;
+    }
 
-    QString getName(){ return name; };
+    std::string getName(){ return name; };
 
-    std::vector<double> getDoubleParameters(){ std::vector<double> parameters = {alpha, beta}; return parameters; };
+    std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {alpha, beta}; return parameters; };
 
+    cv::Mat applyOperation(const cv::Mat &src);
+};
+
+// Convert to
+
+class DeblurFilter: public ImageOperation
+{
+    DoubleParameter *radius, *signalToNoiseRatio;
+
+public:
+    static std::string name;
+
+    DeblurFilter(bool on, double r, double snr);
+    ~DeblurFilter()
+    {
+        delete radius;
+        delete signalToNoiseRatio;
+    }
+
+    std::string getName(){ return name; };
+
+    std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {radius, signalToNoiseRatio}; return parameters; };
+
+    void computePSF(cv::Mat &outputImg, cv::Size filterSize);
+    void computeWnrFilter(const cv::Mat &input_h_PSF, cv::Mat &output_G, double nsr);
+    void fftShift(const cv::Mat &inputImg, cv::Mat &outputImg);
+    void filter2DFreq(const cv::Mat &inputImg, cv::Mat &outputImg, const cv::Mat &H);
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
 // Equalize histogram
 
-class EqualizeHist: public QWidget, public ImageOperation
+class EqualizeHist: public ImageOperation
 {
 public:
-    static QString name;
+    static std::string name;
 
     EqualizeHist(bool on);
 
-    QString getName(){ return name; };
+    std::string getName(){ return name; };
+    cv::Mat applyOperation(const cv::Mat &src);
+};
+
+// Gamma correction
+
+class GammaCorrection: public ImageOperation
+{
+    DoubleParameter *gamma;
+
+public:
+    static std::string name;
+
+    GammaCorrection(bool on, double g);
+    ~GammaCorrection(){ delete gamma; }
+
+    std::string getName(){ return name; };
+
+    std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {gamma}; return parameters; };
+
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
 // Gaussian blur
 
-class GaussianBlur: public QWidget, public ImageOperation
+class GaussianBlur: public ImageOperation
 {
-    int ksize;
-    double sigmaX, sigmaY;
+    IntParameter *ksize;
+    DoubleParameter *sigma;
 
 public:
-    static QString name;
+    static std::string name;
 
-    GaussianBlur(bool on, int k, double sx, double sy);
+    GaussianBlur(bool on, int k, double s);
+    ~GaussianBlur()
+    {
+        delete ksize;
+        delete sigma;
+    }
 
-    QString getName(){ return name; };
+    std::string getName(){ return name; };
 
-    std::vector<int> getIntParameters(){ std::vector<int> parameters = {ksize}; return parameters; };
-    std::vector<double> getDoubleParameters(){ std::vector<double> parameters = {sigmaX, sigmaY}; return parameters; };
+    std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {ksize}; return parameters; };
+    std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {sigma}; return parameters; };
 
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
 // Laplacian
 
-class Laplacian: public QWidget, public ImageOperation
+class Laplacian: public ImageOperation
 {
-    int ksize;
-    double scale, delta;
+    IntParameter *ksize;
+    DoubleParameter *scale, *delta;
 
 public:
-    static QString name;
+    static std::string name;
 
     Laplacian(bool on, int k, double s, double d);
+    ~Laplacian()
+    {
+        delete ksize;
+        delete scale;
+        delete delta;
+    }
 
-    QString getName(){ return name; };
+    std::string getName(){ return name; };
 
-    std::vector<int> getIntParameters(){ std::vector<int> parameters = {ksize}; return parameters; };
-    std::vector<double> getDoubleParameters(){ std::vector<double> parameters = {scale, delta}; return parameters; };
+    std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {ksize}; return parameters; };
+    std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {scale, delta}; return parameters; };
+
+    cv::Mat applyOperation(const cv::Mat &src);
+};
+
+// Median blur
+
+class MedianBlur: public ImageOperation
+{
+    IntParameter *ksize;
+
+public:
+    static std::string name;
+
+    MedianBlur(bool on, int size);
+    ~MedianBlur(){ delete ksize; }
+
+    std::string getName(){ return name; };
+
+    std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {ksize}; return parameters; };
 
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
 // Mix channels
 
-class MixChannels: public QWidget, public ImageOperation
+class MixChannels: public ImageOperation
 {
-    int blue, green, red;
-    int fromTo[6];
+    OptionsParameter<int> *blue, *green, *red;
 
 public:
-    static QString name;
+    static std::string name;
 
     MixChannels(bool on, int b, int g, int r);
+    ~MixChannels()
+    {
+        delete blue;
+        delete green;
+        delete red;
+    }
 
-    QString getName(){ return name; };
+    std::string getName(){ return name; };
 
-    std::vector<int> getIntParameters(){ std::vector<int> parameters = {blue, green, red}; return parameters; };
+    std::vector<OptionsParameter<int>*> getOptionsIntParameters(){ std::vector<OptionsParameter<int>*> parameters = {blue, green, red}; return parameters; };
 
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
 // Morphological transformations
 
-class MorphologyEx: public QWidget, public ImageOperation
+class MorphologyEx: public ImageOperation
 {
-    int ksize, iterations;
-    cv::MorphTypes morphType, morphTypes[7];
-    cv::MorphShapes morphShape, morphShapes[3];
+    IntParameter *ksize, *iterations;
+    OptionsParameter<cv::MorphTypes> *morphType;
+    OptionsParameter<cv::MorphShapes> *morphShape;
 
 public:
-    static QString name;
+    static std::string name;
 
     MorphologyEx(bool on, int k, int its, cv::MorphTypes t, cv::MorphShapes s);
+    ~MorphologyEx()
+    {
+        delete ksize;
+        delete morphType;
+        delete morphShape;
+    }
 
-    QString getName(){ return name; };
+    std::string getName(){ return name; };
 
-    std::vector<int> getIntParameters(){ std::vector<int> parameters = {ksize, iterations}; return parameters; };
-    std::vector<cv::MorphTypes> getMorphTypeParameters(){ std::vector<cv::MorphTypes> parameters = {morphType}; return parameters; };
-    std::vector<cv::MorphShapes> getMorphShapeParameters(){ std::vector<cv::MorphShapes> parameters = {morphShape}; return parameters; };
+    std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {ksize, iterations}; return parameters; };
+    std::vector<OptionsParameter<cv::MorphTypes>*> getMorphTypeParameters(){ std::vector<OptionsParameter<cv::MorphTypes>*> parameters = {morphType}; return parameters; };
+    std::vector<OptionsParameter<cv::MorphShapes>*> getMorphShapeParameters(){ std::vector<OptionsParameter<cv::MorphShapes>*> parameters = {morphShape}; return parameters; };
+
+    cv::Mat applyOperation(const cv::Mat &src);
+};
+
+// Radial remap
+
+class RadialRemap: public ImageOperation
+{
+    DoubleParameter *amplitude;
+    OptionsParameter<cv::InterpolationFlags> *flag;
+    double oldAmplitude;
+
+    cv::Size size;
+    cv::Mat mapX, mapY;
+    void updateMappingMatrices();
+
+public:
+    static std::string name;
+
+    RadialRemap(bool on, double a, cv::InterpolationFlags f);
+    ~RadialRemap()
+    {
+        delete amplitude;
+        delete flag;
+    }
+
+    std::string getName(){ return name; };
+
+    std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {amplitude}; return parameters; };
+    std::vector<OptionsParameter<cv::InterpolationFlags>*> getInterpolationFlagParameters(){ std::vector<OptionsParameter<cv::InterpolationFlags>*> parameters = {flag}; return parameters; };
 
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
 // Rotation
 
-class Rotation: public QWidget, public ImageOperation
+class Rotation: public ImageOperation
 {
-    double angle, scale;
-    cv::InterpolationFlags flag, flags[5];
+    DoubleParameter *angle, *scale;
+    OptionsParameter<cv::InterpolationFlags> *flag;
 
 public:
-    static QString name;
+    static std::string name;
 
     Rotation(bool on, double a, double s, cv::InterpolationFlags f);
+    ~Rotation()
+    {
+        delete angle;
+        delete scale;
+        delete flag;
+    }
 
-    QString getName(){ return name; };
+    std::string getName(){ return name; };
 
-    std::vector<double> getDoubleParameters(){ std::vector<double> parameters = {angle, scale}; return parameters; };
-    std::vector<cv::InterpolationFlags> getInterpolationFlagParameters(){ std::vector<cv::InterpolationFlags> parameters = {flag}; return parameters; };
+    std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {angle, scale}; return parameters; };
+    std::vector<OptionsParameter<cv::InterpolationFlags>*> getInterpolationFlagParameters(){ std::vector<OptionsParameter<cv::InterpolationFlags>*> parameters = {flag}; return parameters; };
 
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
 // Sharpen
 
-class Sharpen: public QWidget, public ImageOperation
+class Sharpen: public ImageOperation
 {
-    double sigma, threshold, amount;
+    DoubleParameter *sigma, *threshold, *amount;
 
 public:
-    static QString name;
+    static std::string name;
 
     Sharpen(bool on, double s, double t, double a);
+    ~Sharpen()
+    {
+        delete sigma;
+        delete threshold;
+        delete amount;
+    }
 
-    QString getName(){ return name; };
+    std::string getName(){ return name; };
 
-    std::vector<double> getDoubleParameters(){ std::vector<double> parameters = {sigma, threshold, amount}; return parameters; };
+    std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {sigma, threshold, amount}; return parameters; };
 
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
 // Shift hue
 
-class ShiftHue: public QWidget, public ImageOperation
+class ShiftHue: public ImageOperation
 {
-    int delta;
+    IntParameter *delta;
 
 public:
-    static QString name;
+    static std::string name;
 
     ShiftHue(bool on, int d);
+    ~ShiftHue(){ delete delta; }
 
-    QString getName(){ return name; };
+    std::string getName(){ return name; };
 
-    std::vector<int> getIntParameters(){ std::vector<int> parameters = {delta}; return parameters; };
+    std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {delta}; return parameters; };
 
     cv::Mat applyOperation(const cv::Mat &src);
 };

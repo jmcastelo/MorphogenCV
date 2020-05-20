@@ -30,6 +30,8 @@ HEADERS += \
     imageiterationplot.h \
     imageoperations.h \
     mainwidget.h \
+    parameter.h \
+    parameterwidget.h \
     qcustomplot.h
 
 INCLUDEPATH += /usr/include/opencv4

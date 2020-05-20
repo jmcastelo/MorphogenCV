@@ -17,19 +17,42 @@
 
 #include "generator.h"
 
+Pipeline::Pipeline(cv::Mat img): image(img)
+{
+    // Duplicate of GeneratorCV's
+    availableImageOperations = {
+        BilateralFilter::name,
+        GaussianBlur::name,
+        Blur::name,
+        MedianBlur::name,
+        Canny::name,
+        ConvertTo::name,
+        DeblurFilter::name,
+        EqualizeHist::name,
+        GammaCorrection::name,
+        Laplacian::name,
+        MixChannels::name,
+        MorphologyEx::name,
+        RadialRemap::name,
+        Rotation::name,
+        Sharpen::name,
+        ShiftHue::name
+    };
+}
+
+Pipeline::~Pipeline()
+{
+    for (auto operation: imageOperations)
+    {
+        delete operation;
+    }
+}
+
 void Pipeline::iterate()
 {
     for (auto operation: imageOperations)
         if (operation->isEnabled())
             image = operation->applyOperation(image);
-}
-
-Pipeline::~Pipeline()
-{
-    for (auto &operation: imageOperations)
-    {
-        delete operation;
-    }
 }
 
 void Pipeline::swapImageOperations(int operationIndex0, int operationIndex1)
@@ -53,105 +76,163 @@ void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationI
 {
     std::vector<ImageOperation*>::iterator it = imageOperations.begin();
 
-    if (newOperationIndex == 0)
+    std::string operationName = availableImageOperations[newOperationIndex];
+
+    if (operationName == BilateralFilter::name)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new BilateralFilter(false, 3, 50, 50));
+    }
+    else if (operationName == Blur::name)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new Blur(false, 3));
+    }
+    else if (operationName == Canny::name)
     {
         imageOperations.insert(it + currentOperationIndex + 1, new Canny(false, 100, 300, 3, false));
     }
-    else if (newOperationIndex == 1)
+    else if (operationName == ConvertTo::name)
     {
         imageOperations.insert(it + currentOperationIndex + 1, new ConvertTo(false, 1.0, 0.0));
     }
-    else if (newOperationIndex == 2)
+    else if (operationName == DeblurFilter::name)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new DeblurFilter(false, 1.0, 1000.0));
+    }
+    else if (operationName == EqualizeHist::name)
     {
         imageOperations.insert(it + currentOperationIndex + 1, new EqualizeHist(false));
     }
-    else if (newOperationIndex == 3)
+    else if (operationName == GammaCorrection::name)
     {
-        imageOperations.insert(it + currentOperationIndex + 1, new GaussianBlur(false, 3, 0.0, 0.0));
+        imageOperations.insert(it + currentOperationIndex + 1, new GammaCorrection(false, 1.0));
     }
-    else if (newOperationIndex == 4)
+    else if (operationName == GaussianBlur::name)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new GaussianBlur(false, 3, 1.0));
+    }
+    else if (operationName == Laplacian::name)
     {
         imageOperations.insert(it + currentOperationIndex + 1, new Laplacian(false, 3, 1.0, 0.0));
     }
-    else if (newOperationIndex == 5)
+    else if (operationName == MedianBlur::name)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new MedianBlur(false, 3));
+    }
+    else if (operationName == MixChannels::name)
     {
         imageOperations.insert(it + currentOperationIndex + 1, new MixChannels(false, 0, 1, 2));
     }
-    else if (newOperationIndex == 6)
+    else if (operationName == MorphologyEx::name)
     {
         imageOperations.insert(it + currentOperationIndex + 1, new MorphologyEx(false, 3, 1, cv::MORPH_ERODE, cv::MORPH_RECT));
     }
-    else if (newOperationIndex == 7)
+    else if (operationName == Rotation::name)
     {
         imageOperations.insert(it + currentOperationIndex + 1, new Rotation(false, 0.0, 1.0, cv::INTER_NEAREST));
     }
-    else if (newOperationIndex == 8)
+    else if (operationName == RadialRemap::name)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new RadialRemap(false, 0.0, cv::INTER_NEAREST));
+    }
+    else if (operationName == Sharpen::name)
     {
         imageOperations.insert(it + currentOperationIndex + 1, new Sharpen(false, 1.0, 5.0, 1.0));
     }
-    else if (newOperationIndex == 9)
+    else if (operationName == ShiftHue::name)
     {
         imageOperations.insert(it + currentOperationIndex + 1, new ShiftHue(false, 0));
     }
 }
 
-void Pipeline::loadImageOperation(QString operationName, bool enabled, std::vector<bool> boolParameters, std::vector<int> intParameters, std::vector<double> doubleParameters, std::vector<int> morphTypeParameters, std::vector<int> morphShapeParameters, std::vector<int> interpolationFlagParameters)
+void Pipeline::loadImageOperation(std::string operationName, bool enabled, std::vector<bool> boolParameters, std::vector<int> intParameters, std::vector<double> doubleParameters, std::vector<int> morphTypeParameters, std::vector<int> morphShapeParameters, std::vector<int> interpolationFlagParameters)
 {
-    if (operationName == "Canny")
+    if (operationName == BilateralFilter::name)
+    {
+        imageOperations.push_back(new BilateralFilter(enabled, intParameters[0], doubleParameters[0], doubleParameters[1]));
+    }
+    else if (operationName == Blur::name)
+    {
+        imageOperations.push_back(new Blur(enabled, intParameters[0]));
+    }
+    else if (operationName == Canny::name)
     {
         imageOperations.push_back(new Canny(enabled, doubleParameters[0], doubleParameters[1], intParameters[0], boolParameters[0]));
     }
-    else if (operationName == "Convert to")
+    else if (operationName == ConvertTo::name)
     {
         imageOperations.push_back(new ConvertTo(enabled, doubleParameters[0], doubleParameters[1]));
     }
-    else if (operationName == "Equalize histogram")
+    else if (operationName == DeblurFilter::name)
+    {
+        imageOperations.push_back(new DeblurFilter(enabled, doubleParameters[0], doubleParameters[1]));
+    }
+    else if (operationName == EqualizeHist::name)
     {
         imageOperations.push_back(new EqualizeHist(enabled));
     }
-    else if (operationName == "Gaussian blur")
+    else if (operationName == GammaCorrection::name)
     {
-        imageOperations.push_back(new GaussianBlur(enabled, intParameters[0], doubleParameters[0], doubleParameters[1]));
+        imageOperations.push_back(new GammaCorrection(enabled, doubleParameters[0]));
     }
-    else if (operationName == "Laplacian")
+    else if (operationName == GaussianBlur::name)
+    {
+        imageOperations.push_back(new GaussianBlur(enabled, intParameters[0], doubleParameters[0]));
+    }
+    else if (operationName == Laplacian::name)
     {
         imageOperations.push_back(new Laplacian(enabled, intParameters[0], doubleParameters[0], doubleParameters[1]));
     }
-    else if (operationName == "Mix channels")
+    else if (operationName == MedianBlur::name)
+    {
+        imageOperations.push_back(new MedianBlur(enabled, intParameters[0]));
+    }
+    else if (operationName == MixChannels::name)
     {
         imageOperations.push_back(new MixChannels(enabled, intParameters[0], intParameters[1], intParameters[2]));
     }
-    else if (operationName == "Morphology operation")
+    else if (operationName == MorphologyEx::name)
     {
         cv::MorphTypes morphType = static_cast<cv::MorphTypes>(morphTypeParameters[0]);
         cv::MorphShapes morphShape = static_cast<cv::MorphShapes>(morphShapeParameters[0]);
         imageOperations.push_back(new MorphologyEx(enabled, intParameters[0], intParameters[1], morphType, morphShape));
     }
-    else if (operationName == "Rotation")
+    else if (operationName == RadialRemap::name)
+    {
+        cv::InterpolationFlags flag = static_cast<cv::InterpolationFlags>(interpolationFlagParameters[0]);
+        imageOperations.push_back(new RadialRemap(enabled, doubleParameters[0], flag));
+    }
+    else if (operationName == Rotation::name)
     {
         cv::InterpolationFlags flag = static_cast<cv::InterpolationFlags>(interpolationFlagParameters[0]);
         imageOperations.push_back(new Rotation(enabled, doubleParameters[0], doubleParameters[1], flag));
     }
-    else if (operationName == "Sharpen")
+    else if (operationName == Sharpen::name)
     {
         imageOperations.push_back(new Sharpen(enabled, doubleParameters[0], doubleParameters[1], doubleParameters[2]));
     }
-    else if (operationName == "Shift hue")
+    else if (operationName == ShiftHue::name)
     {
-        imageOperations.push_back(new ShiftHue(enabled, doubleParameters[0]));
+        imageOperations.push_back(new ShiftHue(enabled, intParameters[0]));
     }
 }
 
 GeneratorCV::GeneratorCV()
 {
+    // Duplicate of Pipeline's
     availableImageOperations = {
+        BilateralFilter::name,
+        GaussianBlur::name,
+        Blur::name,
+        MedianBlur::name,
         Canny::name,
         ConvertTo::name,
+        DeblurFilter::name,
         EqualizeHist::name,
-        GaussianBlur::name,
+        GammaCorrection::name,
         Laplacian::name,
         MixChannels::name,
         MorphologyEx::name,
+        RadialRemap::name,
         Rotation::name,
         Sharpen::name,
         ShiftHue::name
@@ -187,7 +268,7 @@ GeneratorCV::GeneratorCV()
 
 GeneratorCV::~GeneratorCV()
 {
-    cv::destroyWindow("Out image");
+    cv::destroyAllWindows();
 }
 
 void GeneratorCV::setMask()
@@ -283,6 +364,54 @@ void GeneratorCV::computeHistogram()
     cv::calcHist(&bgrChannels[0], 1, 0, mask, blueHistogram, 1, &histogramSize, histogramRange, true, false);
     cv::calcHist(&bgrChannels[1], 1, 0, mask, greenHistogram, 1, &histogramSize, histogramRange, true, false);
     cv::calcHist(&bgrChannels[2], 1, 0, mask, redHistogram, 1, &histogramSize, histogramRange, true, false);
+}
+
+void GeneratorCV::computeDFT()
+{
+    cv::Mat outImageGray;
+    cv::cvtColor(outImage, outImageGray, cv::COLOR_BGR2GRAY);
+
+    cv::Mat padded;
+    int m = cv::getOptimalDFTSize(outImage.rows);
+    int n = cv::getOptimalDFTSize(outImage.cols);
+    cv::copyMakeBorder(outImageGray, padded, 0, m - outImageGray.rows, 0, n - outImageGray.cols, cv::BORDER_CONSTANT, cv::Scalar::all(0));
+
+    cv::Mat planes[] = {cv::Mat_<float>(padded), cv::Mat::zeros(padded.size(), CV_32F)};
+    cv::Mat complexOutImage;
+    cv::merge(planes, 2, complexOutImage);
+
+    cv::dft(complexOutImage, complexOutImage);
+
+    cv::split(complexOutImage, planes);
+    cv::magnitude(planes[0], planes[1], planes[0]);
+    cv::Mat magOutImage = planes[0];
+
+    magOutImage += cv::Scalar::all(1);
+    cv::log(magOutImage, magOutImage);
+
+    magOutImage = magOutImage(cv::Rect(0, 0, magOutImage.cols & -2, magOutImage.rows & -2));
+
+    int cx = magOutImage.cols / 2;
+    int cy = magOutImage.rows / 2;
+
+    cv::Mat q0(magOutImage, cv::Rect(0, 0, cx, cy));
+    cv::Mat q1(magOutImage, cv::Rect(cx, 0, cx, cy));
+    cv::Mat q2(magOutImage, cv::Rect(0 ,cy, cx, cy));
+    cv::Mat q3(magOutImage, cv::Rect(cx, cy, cx, cy));
+
+    cv::Mat tmp;
+
+    q0.copyTo(tmp);
+    q3.copyTo(q0);
+    tmp.copyTo(q3);
+
+    q1.copyTo(tmp);
+    q2.copyTo(q1);
+    tmp.copyTo(q2);
+
+    cv::normalize(magOutImage, magOutImage, 0, 1, cv::NORM_MINMAX);
+
+    cv::imshow("DFT Spectrum magnitude", magOutImage);
 }
 
 void GeneratorCV::showPixelSelectionCursor()

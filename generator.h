@@ -26,17 +26,18 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
 #include <QVector>
-#include <QString>
-#include <QWidget>
 
 class Pipeline
 {
+    std::vector<std::string> availableImageOperations;
+
 public:
     cv::Mat image;
-    double blendFactor;
     std::vector<ImageOperation*> imageOperations;
 
-    Pipeline(cv::Mat img): image(img){};
+    double blendFactor;
+
+    Pipeline(cv::Mat img);
     ~Pipeline();
 
     void iterate();
@@ -44,7 +45,7 @@ public:
     void swapImageOperations(int operationIndex0, int operationIndex1);
     void removeImageOperation(int operationIndex);
     void insertImageOperation(int newOperationIndex, int currentOperationIndex);
-    void loadImageOperation(QString operationName, bool enabled, std::vector<bool> boolParameters, std::vector<int> intParameters, std::vector<double> doubleParameters, std::vector<int> morphTypeParameters, std::vector<int> morphShapeParameters, std::vector<int> interpolationFlagParameters);
+    void loadImageOperation(std::string operationName, bool enabled, std::vector<bool> boolParameters, std::vector<int> intParameters, std::vector<double> doubleParameters, std::vector<int> morphTypeParameters, std::vector<int> morphShapeParameters, std::vector<int> interpolationFlagParameters);
 };
 
 class GeneratorCV
@@ -70,6 +71,9 @@ class GeneratorCV
 
     cv::Point selectedPixel;
 
+    std::vector<Pipeline*> parallelPipelines;
+    std::vector<Pipeline*> serialPipelines;
+
     void setMask();
     void computeHistogramMax();
     void initImageOperations();
@@ -79,7 +83,7 @@ class GeneratorCV
     void selectPixel(int x, int y);
 
 public:
-    std::vector<QString> availableImageOperations;
+    std::vector<std::string> availableImageOperations;
 
     std::vector<Pipeline*> pipelines;
 
@@ -91,9 +95,11 @@ public:
     void drawSeed(bool grayscale);
 
     void iterate();
+
     void computeBGRSum();
     void computeBGRPixel();
     void computeHistogram();
+    void computeDFT();
     void showPixelSelectionCursor();
     void showImage();
 
@@ -123,9 +129,8 @@ public:
     void removeImageOperation(int imageIndex, int operationIndex);
     void insertImageOperation(int imageIndex, int newOperationIndex, int currentOperationIndex);
 
-    QString getImageOperationName(int imageIndex, int operationIndex){ return pipelines[imageIndex]->imageOperations[operationIndex]->getName(); };
+    std::string getImageOperationName(int imageIndex, int operationIndex){ return pipelines[imageIndex]->imageOperations[operationIndex]->getName(); };
     int getImageOperationsSize(int imageIndex){ return pipelines.empty() ? 0 : pipelines[imageIndex]->imageOperations.size(); };
-    QWidget* getImageOperationParametersWidget(int imageIndex, int operationIndex){ return pipelines[imageIndex]->imageOperations[operationIndex]->getParametersWidget(); };
 
     void removePipeline(int pipelineIndex);
     void addPipeline();

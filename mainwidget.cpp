@@ -51,9 +51,9 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
     QTabWidget *mainTabWidget = new QTabWidget;
     mainTabWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    mainTabWidget->addTab(generalControlsWidget, "General controls");
-    mainTabWidget->addTab(imageManipulationWidget, "Image operations");
-    mainTabWidget->addTab(computationWidget, "Computation/plots");
+    mainTabWidget->addTab(generalControlsWidget, "General");
+    mainTabWidget->addTab(imageManipulationWidget, "Pipelines");
+    mainTabWidget->addTab(computationWidget, "Plots");
 
     // Plot tabs
 
@@ -78,6 +78,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     // Timer for iteration loop
 
     timer = new QTimer(this);
+    timer->setTimerType(Qt::PreciseTimer);
 
     connect(timer, &QTimer::timeout, this, &MainWidget::iterationLoop);
 }
@@ -341,6 +342,10 @@ void MainWidget::constructComputationControls()
     histogramPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     histogramPushButton->setCheckable(true);
 
+    dftPushButton = new QPushButton("Start plotting");
+    dftPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    dftPushButton->setCheckable(true);
+
     imageIterationPushButton = new QPushButton("Start plotting");
     imageIterationPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     imageIterationPushButton->setCheckable(true);
@@ -363,6 +368,7 @@ void MainWidget::constructComputationControls()
 
     QFormLayout *fullImageLayout = new QFormLayout;
     fullImageLayout->addRow("Histogram:", histogramPushButton);
+    fullImageLayout->addRow("DFT", dftPushButton);
     fullImageLayout->addRow("Color intensity plot:", imageIterationPushButton);
     fullImageLayout->addRow("Color-space plot:", colorSpacePushButton);
     fullImageLayout->addRow("X-Axis:", colorSpaceXAxisComboBox);
@@ -624,7 +630,7 @@ void MainWidget::initNewImageOperationComboBox()
 {
     for (auto op: generator->availableImageOperations)
     {
-        newImageOperationComboBox->addItem(op);
+        newImageOperationComboBox->addItem(QString::fromStdString(op));
     }
 }
 
@@ -635,7 +641,7 @@ void MainWidget::initImageOperationsListWidget(int imageIndex)
     for (int i = 0; i < generator->getImageOperationsSize(imageIndex); i++)
     {
         QListWidgetItem *newOperation = new QListWidgetItem;
-        newOperation->setText(generator->getImageOperationName(imageIndex, i));
+        newOperation->setText(QString::fromStdString(generator->getImageOperationName(imageIndex, i)));
         imageOperationsListWidget->insertItem(i, newOperation);
     }
 
@@ -674,9 +680,12 @@ void MainWidget::onImageOperationsListWidgetCurrentRowChanged(int currentRow)
     {
         int imageIndex = imageSelectComboBox->currentIndex();
 
-        QWidget *widget = generator->getImageOperationParametersWidget(imageIndex, currentRow);
-        parametersLayout->addWidget(widget);
-        widget->show();
+        if (operationsWidget)
+            delete operationsWidget;
+
+        operationsWidget = new OperationsWidget(generator->pipelines[imageIndex]->imageOperations[currentRow]);
+        parametersLayout->addWidget(operationsWidget);
+        operationsWidget->show();
 
         currentImageOperationIndex[imageIndex] = currentRow;
 
@@ -711,7 +720,7 @@ void MainWidget::insertImageOperation()
     generator->insertImageOperation(imageIndex, newOperationIndex, currentOperationIndex);
 
     QListWidgetItem *newOperation = new QListWidgetItem;
-    newOperation->setText(generator->getImageOperationName(imageIndex, currentOperationIndex + 1));
+    newOperation->setText(QString::fromStdString(generator->getImageOperationName(imageIndex, currentOperationIndex + 1)));
     imageOperationsListWidget->insertItem(currentOperationIndex + 1, newOperation);
     imageOperationsListWidget->setCurrentItem(newOperation);
 }
@@ -740,6 +749,11 @@ void MainWidget::iterationLoop()
         int yAxisIndex = colorSpaceYAxisComboBox->currentIndex();
 
         colorSpacePlot->setData(generator->getColorComponents(xAxisIndex), generator->getColorComponents(yAxisIndex));
+    }
+
+    if (dftPushButton->isChecked())
+    {
+        generator->computeDFT();
     }
 
     if (histogramPushButton->isChecked())

@@ -19,6 +19,7 @@
 #define MAINWIDGET_H
 
 #include "generator.h"
+#include "parameterwidget.h"
 #include "imageiterationplot.h"
 #include "configparser.h"
 #include <vector>
@@ -54,6 +55,8 @@ class MainWidget : public QWidget
     Q_OBJECT
 
     GeneratorCV *generator;
+
+    OperationsWidget *operationsWidget = nullptr;
 
     ImageIterationPlot *imageIterationPlot;
     ImageIterationPlot *pixelIterationPlot;
@@ -99,6 +102,7 @@ class MainWidget : public QWidget
     QVBoxLayout *parametersLayout;
 
     QPushButton *togglePlotsPushButton;
+    QPushButton *dftPushButton;
     QPushButton *imageIterationPushButton;
     QPushButton *pixelIterationPushButton;
     QPushButton *selectPixelPushButton;

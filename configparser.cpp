@@ -37,54 +37,60 @@ void ConfigurationParser::write()
         for (auto operation: pipeline->imageOperations)
         {
             stream.writeStartElement("operation");
-            stream.writeAttribute("name", operation->getName());
+            stream.writeAttribute("name", QString::fromStdString(operation->getName()));
             stream.writeAttribute("enabled", QString::number(operation->isEnabled()));
 
             for (auto parameter: operation->getBoolParameters())
             {
                 stream.writeStartElement("parameter");
+                stream.writeAttribute("name", QString::fromStdString(parameter->name));
                 stream.writeAttribute("type", "bool");
-                stream.writeCharacters(QString::number(parameter));
+                stream.writeCharacters(QString::number(parameter->value));
                 stream.writeEndElement();
             }
 
             for (auto parameter: operation->getIntParameters())
             {
                 stream.writeStartElement("parameter");
+                stream.writeAttribute("name", QString::fromStdString(parameter->name));
                 stream.writeAttribute("type", "int");
-                stream.writeCharacters(QString::number(parameter));
+                stream.writeCharacters(QString::number(parameter->value));
                 stream.writeEndElement();
             }
 
             for (auto parameter: operation->getDoubleParameters())
             {
                 stream.writeStartElement("parameter");
+                stream.writeAttribute("name", QString::fromStdString(parameter->name));
                 stream.writeAttribute("type", "double");
-                stream.writeCharacters(QString::number(parameter));
+                stream.writeCharacters(QString::number(parameter->value));
                 stream.writeEndElement();
             }
 
             for (auto parameter: operation->getMorphTypeParameters())
             {
                 stream.writeStartElement("parameter");
+                stream.writeAttribute("name", QString::fromStdString(parameter->name));
                 stream.writeAttribute("type", "morphtype");
-                stream.writeCharacters(QString::number(parameter));
+                stream.writeCharacters(QString::number(parameter->value));
                 stream.writeEndElement();
             }
 
             for (auto parameter: operation->getMorphShapeParameters())
             {
                 stream.writeStartElement("parameter");
+                stream.writeAttribute("name", QString::fromStdString(parameter->name));
                 stream.writeAttribute("type", "morphshape");
-                stream.writeCharacters(QString::number(parameter));
+                stream.writeCharacters(QString::number(parameter->value));
                 stream.writeEndElement();
             }
 
             for (auto parameter: operation->getInterpolationFlagParameters())
             {
                 stream.writeStartElement("parameter");
+                stream.writeAttribute("name", QString::fromStdString(parameter->name));
                 stream.writeAttribute("type", "interpolationflag");
-                stream.writeCharacters(QString::number(parameter));
+                stream.writeCharacters(QString::number(parameter->value));
                 stream.writeEndElement();
             }
 
@@ -159,7 +165,7 @@ void ConfigurationParser::read()
                             }
                         }
 
-                        generator->pipelines.back()->loadImageOperation(operationName, enabled, boolParameters, intParameters, doubleParameters, morphTypeParameters, morphShapeParameters, interpolationFlagParameters);
+                        generator->pipelines.back()->loadImageOperation(operationName.toStdString(), enabled, boolParameters, intParameters, doubleParameters, morphTypeParameters, morphShapeParameters, interpolationFlagParameters);
                     }
                     else
                     {
