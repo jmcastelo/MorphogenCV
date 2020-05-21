@@ -74,12 +74,12 @@ cv::Mat Canny::applyOperation(const cv::Mat &src)
 
 // Convert to
 
-std::string ConvertTo::name = "Contrast and brightness";
+std::string ConvertTo::name = "Contrast/brightness";
 
 ConvertTo::ConvertTo(bool on, double a, double b): ImageOperation(on)
 {
     alpha = new DoubleParameter("Gain", a, 0.0, 10.0);
-    beta = new DoubleParameter("Bias", b, -100.0, 100.0);
+    beta = new DoubleParameter("Bias", b, -255.0, 255.0);
 }
 
 cv::Mat ConvertTo::applyOperation(const cv::Mat &src)

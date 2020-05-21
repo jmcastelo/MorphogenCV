@@ -22,6 +22,7 @@
 #include "imageoperations.h"
 #include <vector>
 #include <string>
+#include <cmath>
 #include <QWidget>
 #include <QString>
 #include <QLineEdit>
@@ -30,6 +31,7 @@
 #include <QComboBox>
 #include <QCheckBox>
 #include <QPushButton>
+#include <QLabel>
 #include <QFormLayout>
 #include <QVBoxLayout>
 
@@ -68,7 +70,7 @@ public:
 
     BoolParameterWidget(BoolParameter *theBoolParameter, QWidget *parent = nullptr): QWidget(parent), boolParameter(theBoolParameter)
     {
-        checkBox = new QCheckBox(QString::fromStdString(boolParameter->name), this);
+        checkBox = new QCheckBox(QString::fromStdString(boolParameter->name));
         checkBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
         checkBox->setChecked(boolParameter->value);
 
@@ -94,7 +96,7 @@ public:
             if (optionsParameter->value == optionsParameter->values[i])
                 index = i;
 
-        comboBox = new QComboBox(this);
+        comboBox = new QComboBox;
         comboBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
         for (auto valueName: optionsParameter->valueNames)
             comboBox->addItem(QString::fromStdString(valueName));
@@ -116,7 +118,7 @@ public:
 
     IntParameterWidget(IntParameter *theIntParameter, QWidget *parent = nullptr): QWidget(parent), intParameter(theIntParameter)
     {
-        lineEdit = new CustomLineEdit(this);
+        lineEdit = new CustomLineEdit;
         lineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
         QIntValidator *validator = new QIntValidator(intParameter->min, intParameter->max, lineEdit);
@@ -140,7 +142,7 @@ public:
 
     IntOddParameterWidget(IntParameter *theIntParameter, QWidget *parent = nullptr): QWidget(parent), intParameter(theIntParameter)
     {
-        lineEdit = new CustomLineEdit(this);
+        lineEdit = new CustomLineEdit;
         lineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
         QIntValidator *validator = new QIntValidator(intParameter->min, intParameter->max, lineEdit);
@@ -179,7 +181,7 @@ public:
     {
         name = QString::fromStdString(doubleParameter->name);
 
-        lineEdit = new CustomLineEdit(this);
+        lineEdit = new CustomLineEdit;
         lineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
         QDoubleValidator *validator = new QDoubleValidator(doubleParameter->min, doubleParameter->max, 10, lineEdit);
@@ -238,10 +240,10 @@ public:
 
         for (auto element: kernelParameter->values)
         {
-            CustomLineEdit *lineEdit = new CustomLineEdit(this);
-            lineEdit->setFixedWidth(50);
+            CustomLineEdit *lineEdit = new CustomLineEdit;
+            lineEdit->setFixedWidth(80);
 
-            QDoubleValidator *validator = new QDoubleValidator(kernelParameter->min, kernelParameter->max, 3, lineEdit);
+            QDoubleValidator *validator = new QDoubleValidator(kernelParameter->min, kernelParameter->max, 10, lineEdit);
             lineEdit->setValidator(validator);
             lineEdit->setText(QString::number(element));
 
@@ -269,11 +271,14 @@ public:
         {
             float sum = 0.0;
             for (auto element: kernelParameter->values)
-                sum += element;
-            for (size_t i = 0; i < kernelParameter->values.size(); i++)
+                sum += fabs(element);
+            if (sum > 0)
             {
-                kernelParameter->values[i] /= sum;
-                lineEdits[i]->setText(QString::number(kernelParameter->values[i]));
+                for (size_t i = 0; i < kernelParameter->values.size(); i++)
+                {
+                    kernelParameter->values[i] /= sum;
+                    lineEdits[i]->setText(QString::number(kernelParameter->values[i]));
+                }
             }
         });
     }
@@ -293,6 +298,7 @@ public:
     OperationsWidget(ImageOperation *operation)
     {
         QVBoxLayout *vBoxLayout = new QVBoxLayout;
+        vBoxLayout->setAlignment(Qt::AlignCenter);
         QFormLayout *formLayout = new QFormLayout;
 
         for (auto parameter: operation->getIntParameters())
@@ -342,11 +348,12 @@ public:
         if (operation->getKernelParameter())
         {
             KernelParameterWidget *widget = new KernelParameterWidget(operation->getKernelParameter(), this);
+            vBoxLayout->addWidget(new QLabel(QString::fromStdString(operation->getKernelParameter()->name) + ":"));
             vBoxLayout->addLayout(widget->gridLayout);
             vBoxLayout->addWidget(widget->normalizePushButton);
         }
 
-        QCheckBox *enabledCheckBox = new QCheckBox("Enabled", this);
+        QCheckBox *enabledCheckBox = new QCheckBox("Enabled");
         enabledCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
         enabledCheckBox->setChecked(operation->isEnabled());
 

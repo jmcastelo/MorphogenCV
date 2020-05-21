@@ -759,11 +759,6 @@ void MainWidget::onRowsMoved(QModelIndex parent, int start, int end, QModelIndex
 
     int imageIndex = imageSelectComboBox->currentIndex();
 
-    if (row >= generator->getImageOperationsSize(imageIndex))
-    {
-        row--;
-    }
-
     generator->swapImageOperations(imageIndex, start, row);
 
     currentImageOperationIndex[imageIndex] = row;
