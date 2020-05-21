@@ -53,7 +53,7 @@ void Pipeline::iterate()
 {
     for (auto operation: imageOperations)
         if (operation->isEnabled())
-            image = operation->applyOperation(image);
+            operation->applyOperation(image);
 }
 
 void Pipeline::swapImageOperations(int operationIndex0, int operationIndex1)

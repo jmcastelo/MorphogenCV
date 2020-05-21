@@ -28,11 +28,9 @@ BilateralFilter::BilateralFilter(bool on, int d, double sc, double ss): ImageOpe
     sigmaSpace = new DoubleParameter("Sigma space", ss, 0.0, 300.0);
 }
 
-cv::Mat BilateralFilter::applyOperation(const cv::Mat &src)
+void BilateralFilter::applyOperation(cv::Mat &src)
 {
-    cv::Mat dst;
-    cv::bilateralFilter(src, dst, diameter->value, sigmaColor->value, sigmaSpace->value, cv::BORDER_ISOLATED);
-    return dst;
+    cv::bilateralFilter(src, src, diameter->value, sigmaColor->value, sigmaSpace->value, cv::BORDER_ISOLATED);
 }
 
 // Blur
@@ -44,11 +42,9 @@ Blur::Blur(bool on, int size): ImageOperation(on)
     ksize = new IntParameter("Kernel size", size, 1, 51, true);
 }
 
-cv::Mat Blur::applyOperation(const cv::Mat &src)
+void Blur::applyOperation(cv::Mat &src)
 {
-    cv::Mat dst;
-    cv::blur(src, dst, cv::Size(ksize->value, ksize->value), cv::Point(-1, -1), cv::BORDER_ISOLATED);
-    return dst;
+    cv::blur(src, src, cv::Size(ksize->value, ksize->value), cv::Point(-1, -1), cv::BORDER_ISOLATED);
 }
 
 // Canny
@@ -63,13 +59,23 @@ Canny::Canny(bool on, double th1, double th2, int size, bool g): ImageOperation(
     L2gradient = new BoolParameter("L2 gradient", g);
 }
 
-cv::Mat Canny::applyOperation(const cv::Mat &src)
+void Canny::applyOperation(cv::Mat &src)
 {
-    cv::Mat detectedEdges;
-    cv::Canny(src, detectedEdges, threshold1->value, threshold2->value, apertureSize->value, L2gradient->value);
-    cv::Mat dst = cv::Mat(src.rows, src.cols, src.type(), cv::Scalar(0));
-    src.copyTo(dst, detectedEdges);
-    return dst;
+    cv::Mat channels[3];
+    cv::split(src, channels);
+
+    cv::Mat dst[3];
+
+    for (int i = 0; i < 3; i++)
+    {
+        cv::Mat detectedEdges;
+        cv::Canny(channels[i], detectedEdges, threshold1->value, threshold2->value, apertureSize->value, L2gradient->value);
+        dst[i].create(channels[i].size(), channels[i].type());
+        dst[i] = cv::Scalar::all(0);
+        channels[i].copyTo(dst[i], detectedEdges);
+    }
+
+    cv::merge(channels, 3, src);
 }
 
 // Convert to
@@ -82,11 +88,9 @@ ConvertTo::ConvertTo(bool on, double a, double b): ImageOperation(on)
     beta = new DoubleParameter("Bias", b, -255.0, 255.0);
 }
 
-cv::Mat ConvertTo::applyOperation(const cv::Mat &src)
+void ConvertTo::applyOperation(cv::Mat &src)
 {
-    cv::Mat dst;
-    src.convertTo(dst, -1, alpha->value, beta->value);
-    return dst;
+    src.convertTo(src, -1, alpha->value, beta->value);
 }
 
 // Deblur filter
@@ -157,7 +161,7 @@ void DeblurFilter::filter2DFreq(const cv::Mat &inputImg, cv::Mat &outputImg, con
     outputImg = planes[0];
 }
 
-cv::Mat DeblurFilter::applyOperation(const cv::Mat &src)
+void DeblurFilter::applyOperation(cv::Mat &src)
 {
     cv::Rect roi = cv::Rect(0, 0, src.cols & -2, src.rows & -2);
 
@@ -177,8 +181,7 @@ cv::Mat DeblurFilter::applyOperation(const cv::Mat &src)
     cv::Mat dst;
     cv::merge(dstChannels, 3, dst);
     dst.convertTo(dst, CV_8UC3);
-    cv::normalize(dst, dst, 0, 255, cv::NORM_MINMAX);
-    return dst;
+    cv::normalize(dst, src, 0, 255, cv::NORM_MINMAX);
 }
 
 // Equalize histogram
@@ -187,21 +190,19 @@ std::string EqualizeHist::name = "Equalize histogram";
 
 EqualizeHist::EqualizeHist(bool on): ImageOperation(on){}
 
-cv::Mat EqualizeHist::applyOperation(const cv::Mat &src)
+void EqualizeHist::applyOperation(cv::Mat &src)
 {
-    cv::Mat dst;
-    cv::cvtColor(src, dst, cv::COLOR_BGR2YCrCb);
+    cv::cvtColor(src, src, cv::COLOR_BGR2YCrCb);
 
     std::vector<cv::Mat> channels;
-    cv::split(dst, channels);
+    cv::split(src, channels);
 
     cv::equalizeHist(channels[0], channels[0]);
 
-    cv::merge(channels, dst);
+    cv::merge(channels, src);
 
-    cv::cvtColor(dst, dst, cv::COLOR_YCrCb2BGR);
+    cv::cvtColor(src, src, cv::COLOR_YCrCb2BGR);
 
-    return dst;
 }
 
 // Filter 2D
@@ -221,11 +222,9 @@ void Filter2D::updateKernelMat()
     kernelMat.convertTo(kernelMat, CV_32F);
 }
 
-cv::Mat Filter2D::applyOperation(const cv::Mat &src)
+void Filter2D::applyOperation(cv::Mat &src)
 {
-    cv::Mat dst;
-    cv::filter2D(src, dst, -1, kernelMat, cv::Point(-1, -1), 0.0, cv::BORDER_DEFAULT);
-    return dst;
+    cv::filter2D(src, src, -1, kernelMat, cv::Point(-1, -1), 0.0, cv::BORDER_DEFAULT);
 }
 
 // Gamma correction
@@ -237,16 +236,14 @@ GammaCorrection::GammaCorrection(bool on, double g): ImageOperation(on)
     gamma = new DoubleParameter("Gamma", g, 0.0, 100.0);
 }
 
-cv::Mat GammaCorrection::applyOperation(const cv::Mat &src)
+void GammaCorrection::applyOperation(cv::Mat &src)
 {
     cv::Mat lookUpTable = cv::Mat(1, 256, CV_8U);
     uchar *p = lookUpTable.ptr();
     for (int i = 0; i < 256; i++)
         p[i] = cv::saturate_cast<uchar>(cv::pow(i / 255.0, gamma->value) * 255.0);
 
-    cv::Mat dst = src.clone();
-    cv::LUT(src, lookUpTable, dst);
-    return dst;
+    cv::LUT(src, lookUpTable, src);
 }
 
 // Gaussian blur
@@ -259,11 +256,9 @@ GaussianBlur::GaussianBlur(bool on, int k, double s): ImageOperation(on)
     sigma = new DoubleParameter("Sigma", s, 0.001, 50.0);
 }
 
-cv::Mat GaussianBlur::applyOperation(const cv::Mat &src)
+void GaussianBlur::applyOperation(cv::Mat &src)
 {
-    cv::Mat dst;
-    cv::GaussianBlur(src, dst, cv::Size(ksize->value, ksize->value), sigma->value, sigma->value, cv::BORDER_ISOLATED);
-    return dst;
+    cv::GaussianBlur(src, src, cv::Size(ksize->value, ksize->value), sigma->value, sigma->value, cv::BORDER_ISOLATED);
 }
 
 // Laplacian
@@ -277,7 +272,7 @@ Laplacian::Laplacian(bool on, int k, double s, double d): ImageOperation(on)
     delta = new DoubleParameter("Delta", d, -100.0, 100.0);
 }
 
-cv::Mat Laplacian::applyOperation(const cv::Mat &src)
+void Laplacian::applyOperation(cv::Mat &src)
 {
     cv::Mat channels[3];
     cv::split(src, channels);
@@ -287,13 +282,9 @@ cv::Mat Laplacian::applyOperation(const cv::Mat &src)
     cv::Laplacian(channels[1], lap[1], CV_16S, ksize->value, scale->value, delta->value, cv::BORDER_ISOLATED);
     cv::Laplacian(channels[2], lap[2], CV_16S, ksize->value, scale->value, delta->value, cv::BORDER_ISOLATED);
 
-    cv::Mat merged;
-    cv::merge(lap, 3, merged);
+    cv::merge(lap, 3, src);
 
-    cv::Mat dst;
-    cv::convertScaleAbs(merged, dst);
-
-    return dst;
+    cv::convertScaleAbs(src, src);
 }
 
 // Median blur
@@ -305,11 +296,9 @@ MedianBlur::MedianBlur(bool on, int size): ImageOperation(on)
     ksize = new IntParameter("Kernel size", size, 1, 51, true);
 }
 
-cv::Mat MedianBlur::applyOperation(const cv::Mat &src)
+void MedianBlur::applyOperation(cv::Mat &src)
 {
-    cv::Mat dst;
-    cv::medianBlur(src, dst, ksize->value);
-    return dst;
+    cv::medianBlur(src, src, ksize->value);
 }
 
 // Mix channels
@@ -326,12 +315,10 @@ MixChannels::MixChannels(bool on, int b, int g, int r): ImageOperation(on)
     red = new OptionsParameter<int>("Red", valueNames, values, r);
 }
 
-cv::Mat MixChannels::applyOperation(const cv::Mat &src)
+void MixChannels::applyOperation(cv::Mat &src)
 {
     int fromTo[] = {0, blue->value, 1, green->value, 2, red->value};
-    cv::Mat dst(src.rows, src.cols, src.type());
-    cv::mixChannels(&src, 1, &dst, 1, fromTo, 3);
-    return dst;
+    cv::mixChannels(&src, 1, &src, 1, fromTo, 3);
 }
 
 // Morphological operations
@@ -354,12 +341,10 @@ MorphologyEx::MorphologyEx(bool on, int k, int its, cv::MorphTypes type, cv::Mor
     morphShape = new OptionsParameter<cv::MorphShapes>("Shape", shapeValueNames, shapeValues, shape);
 }
 
-cv::Mat MorphologyEx::applyOperation(const cv::Mat &src)
+void MorphologyEx::applyOperation(cv::Mat &src)
 {
     cv::Mat element = cv::getStructuringElement(morphShape->value, cv::Size(ksize->value, ksize->value));
-    cv::Mat dst;
-    cv::morphologyEx(src, dst, morphType->value, element, cv::Point(-1, -1), iterations->value, cv::BORDER_ISOLATED);
-    return dst;
+    cv::morphologyEx(src, src, morphType->value, element, cv::Point(-1, -1), iterations->value, cv::BORDER_ISOLATED);
 }
 
 // Radial remap
@@ -462,7 +447,7 @@ void RadialRemap::updateMappingMatrices()
     }
 }
 
-cv::Mat RadialRemap::applyOperation(const cv::Mat &src)
+void RadialRemap::applyOperation(cv::Mat &src)
 {
     if (src.size() != size)
     {
@@ -479,9 +464,7 @@ cv::Mat RadialRemap::applyOperation(const cv::Mat &src)
         oldRadialFunction = radialFunction->value;
         updateMappingMatrices();
     }
-    cv::Mat dst;
-    cv::remap(src, dst, mapX, mapY, flag->value, cv::BORDER_TRANSPARENT);
-    return dst;
+    cv::remap(src, src, mapX, mapY, flag->value, cv::BORDER_TRANSPARENT);
 }
 
 // Rotation
@@ -499,13 +482,11 @@ Rotation::Rotation(bool on, double a, double s, cv::InterpolationFlags f): Image
     flag = new OptionsParameter<cv::InterpolationFlags>("Interpolation", valueNames, values, f);
 }
 
-cv::Mat Rotation::applyOperation(const cv::Mat &src)
+void Rotation::applyOperation(cv::Mat &src)
 {
     cv::Point center = cv::Point(src.cols / 2, src.rows / 2);
     cv::Mat rotationMat = cv::getRotationMatrix2D(center, angle->value, scale->value);
-    cv::Mat dst;
-    cv::warpAffine(src, dst, rotationMat, src.size(), flag->value);
-    return dst;
+    cv::warpAffine(src, src, rotationMat, src.size(), flag->value);
 }
 
 // Sharpen
@@ -519,14 +500,13 @@ Sharpen::Sharpen(bool on, double s, double t, double a): ImageOperation(on)
     amount = new DoubleParameter("Amount", a, 0.0, 10.0);
 }
 
-cv::Mat Sharpen::applyOperation(const cv::Mat &src)
+void Sharpen::applyOperation(cv::Mat &src)
 {
     cv::Mat blurred;
     cv::GaussianBlur(src, blurred, cv::Size(), sigma->value, sigma->value, cv::BORDER_ISOLATED);
     cv::Mat lowContrastMask = abs(src - blurred) < threshold->value;
-    cv::Mat dst = src * (1 + amount->value) + blurred * (-amount->value);
-    src.copyTo(dst, lowContrastMask);
-    return dst;
+    src = src * (1 + amount->value) + blurred * (-amount->value);
+    src.copyTo(src, lowContrastMask);
 }
 
 // Shift hue
@@ -538,15 +518,12 @@ ShiftHue::ShiftHue(bool on, int d): ImageOperation(on)
     delta = new IntParameter("Delta", d, -180, 180 ,false);
 }
 
-cv::Mat ShiftHue::applyOperation(const cv::Mat &src)
+void ShiftHue::applyOperation(cv::Mat &src)
 {
     cv::Mat hsv;
     cv::cvtColor(src, hsv, cv::COLOR_BGR2HSV);
 
     hsv.forEach<cv::Vec3b>([&](cv::Vec3b &pixel, const int*){ pixel[0] = (pixel[0] + delta->value) % 180; });
 
-    cv::Mat dst;
-    cv::cvtColor(hsv, dst, cv::COLOR_HSV2BGR);
-
-    return dst;
+    cv::cvtColor(hsv, src, cv::COLOR_HSV2BGR);
 }

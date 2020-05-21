@@ -43,7 +43,7 @@ public:
     virtual std::vector<OptionsParameter<cv::InterpolationFlags>*> getInterpolationFlagParameters(){ std::vector<OptionsParameter<cv::InterpolationFlags>*> parameters; return parameters; };
     virtual KernelParameter* getKernelParameter(){ return nullptr; }
 
-    virtual cv::Mat applyOperation(const cv::Mat &src) = 0;
+    virtual void applyOperation(cv::Mat &src) = 0;
 
     ImageOperation(bool on): enabled(on){};
     virtual ~ImageOperation(){};
@@ -72,7 +72,7 @@ public:
     std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {diameter}; return parameters; };
     std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {sigmaColor, sigmaSpace}; return parameters; };
 
-    cv::Mat applyOperation(const cv::Mat &src);
+    void applyOperation(cv::Mat &src);
 };
 
 // Blur
@@ -91,7 +91,7 @@ public:
 
     std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {ksize}; return parameters; };
 
-    cv::Mat applyOperation(const cv::Mat &src);
+    void applyOperation(cv::Mat &src);
 };
 
 // Canny
@@ -120,7 +120,7 @@ public:
     std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {apertureSize}; return parameters; };
     std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {threshold1, threshold2}; return parameters; };
 
-    cv::Mat applyOperation(const cv::Mat &src);
+    void applyOperation(cv::Mat &src);
 };
 
 // Convert to
@@ -143,7 +143,7 @@ public:
 
     std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {alpha, beta}; return parameters; };
 
-    cv::Mat applyOperation(const cv::Mat &src);
+    void applyOperation(cv::Mat &src);
 };
 
 // Convert to
@@ -170,7 +170,7 @@ public:
     void computeWnrFilter(const cv::Mat &input_h_PSF, cv::Mat &output_G, double nsr);
     void fftShift(const cv::Mat &inputImg, cv::Mat &outputImg);
     void filter2DFreq(const cv::Mat &inputImg, cv::Mat &outputImg, const cv::Mat &H);
-    cv::Mat applyOperation(const cv::Mat &src);
+    void applyOperation(cv::Mat &src);
 };
 
 // Equalize histogram
@@ -183,7 +183,8 @@ public:
     EqualizeHist(bool on);
 
     std::string getName(){ return name; };
-    cv::Mat applyOperation(const cv::Mat &src);
+
+    void applyOperation(cv::Mat &src);
 };
 
 // Filter 2D
@@ -205,7 +206,7 @@ public:
     KernelParameter* getKernelParameter(){ return kernel; }
 
     void updateKernelMat();
-    cv::Mat applyOperation(const cv::Mat &src);
+    void applyOperation(cv::Mat &src);
 };
 
 // Gamma correction
@@ -224,7 +225,7 @@ public:
 
     std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {gamma}; return parameters; };
 
-    cv::Mat applyOperation(const cv::Mat &src);
+    void applyOperation(cv::Mat &src);
 };
 
 // Gaussian blur
@@ -249,7 +250,7 @@ public:
     std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {ksize}; return parameters; };
     std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {sigma}; return parameters; };
 
-    cv::Mat applyOperation(const cv::Mat &src);
+    void applyOperation(cv::Mat &src);
 };
 
 // Laplacian
@@ -275,7 +276,7 @@ public:
     std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {ksize}; return parameters; };
     std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {scale, delta}; return parameters; };
 
-    cv::Mat applyOperation(const cv::Mat &src);
+    void applyOperation(cv::Mat &src);
 };
 
 // Median blur
@@ -294,7 +295,7 @@ public:
 
     std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {ksize}; return parameters; };
 
-    cv::Mat applyOperation(const cv::Mat &src);
+    void applyOperation(cv::Mat &src);
 };
 
 // Mix channels
@@ -318,7 +319,7 @@ public:
 
     std::vector<OptionsParameter<int>*> getOptionsIntParameters(){ std::vector<OptionsParameter<int>*> parameters = {blue, green, red}; return parameters; };
 
-    cv::Mat applyOperation(const cv::Mat &src);
+    void applyOperation(cv::Mat &src);
 };
 
 // Morphological transformations
@@ -346,7 +347,7 @@ public:
     std::vector<OptionsParameter<cv::MorphTypes>*> getMorphTypeParameters(){ std::vector<OptionsParameter<cv::MorphTypes>*> parameters = {morphType}; return parameters; };
     std::vector<OptionsParameter<cv::MorphShapes>*> getMorphShapeParameters(){ std::vector<OptionsParameter<cv::MorphShapes>*> parameters = {morphShape}; return parameters; };
 
-    cv::Mat applyOperation(const cv::Mat &src);
+    void applyOperation(cv::Mat &src);
 };
 
 // Radial remap
@@ -379,7 +380,7 @@ public:
     std::vector<OptionsParameter<int>*> getOptionsIntParameters(){ std::vector<OptionsParameter<int>*> parameters = {radialFunction}; return parameters; };
     std::vector<OptionsParameter<cv::InterpolationFlags>*> getInterpolationFlagParameters(){ std::vector<OptionsParameter<cv::InterpolationFlags>*> parameters = {flag}; return parameters; };
 
-    cv::Mat applyOperation(const cv::Mat &src);
+    void applyOperation(cv::Mat &src);
 };
 
 // Rotation
@@ -405,7 +406,7 @@ public:
     std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {angle, scale}; return parameters; };
     std::vector<OptionsParameter<cv::InterpolationFlags>*> getInterpolationFlagParameters(){ std::vector<OptionsParameter<cv::InterpolationFlags>*> parameters = {flag}; return parameters; };
 
-    cv::Mat applyOperation(const cv::Mat &src);
+    void applyOperation(cv::Mat &src);
 };
 
 // Sharpen
@@ -429,7 +430,7 @@ public:
 
     std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {sigma, threshold, amount}; return parameters; };
 
-    cv::Mat applyOperation(const cv::Mat &src);
+    void applyOperation(cv::Mat &src);
 };
 
 // Shift hue
@@ -448,7 +449,7 @@ public:
 
     std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {delta}; return parameters; };
 
-    cv::Mat applyOperation(const cv::Mat &src);
+    void applyOperation(cv::Mat &src);
 };
 
 #endif // IMAGEOPERATIONS_H
