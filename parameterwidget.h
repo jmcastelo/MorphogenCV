@@ -29,7 +29,9 @@
 #include <QDoubleValidator>
 #include <QComboBox>
 #include <QCheckBox>
+#include <QPushButton>
 #include <QFormLayout>
+#include <QVBoxLayout>
 
 // A custom QLineEdit that signals focus out and in
 
@@ -129,6 +131,39 @@ private:
     IntParameter *intParameter;
 };
 
+// Integer parameter widget
+
+class IntOddParameterWidget: public QWidget
+{
+public:
+    CustomLineEdit *lineEdit;
+
+    IntOddParameterWidget(IntParameter *theIntParameter, QWidget *parent = nullptr): QWidget(parent), intParameter(theIntParameter)
+    {
+        lineEdit = new CustomLineEdit(this);
+        lineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+        QIntValidator *validator = new QIntValidator(intParameter->min, intParameter->max, lineEdit);
+        lineEdit->setValidator(validator);
+        lineEdit->setText(QString::number(intParameter->value));
+
+        connect(lineEdit, &CustomLineEdit::returnPressed, [=]()
+        {
+            int value = lineEdit->text().toInt();
+            if (value > 0 && value % 2 == 0)
+            {
+                value--;
+                lineEdit->setText(QString::number(value));
+            }
+            intParameter->value = value;
+        });
+        connect(lineEdit, &CustomLineEdit::focusOut, [=](){ lineEdit->setText(QString::number(intParameter->value)); });
+    }
+
+private:
+    IntParameter *intParameter;
+};
+
 // Double parameter widget
 
 class DoubleParameterWidget: public QWidget
@@ -186,6 +221,68 @@ signals:
     void currentIndexChanged(int currentIndex);
 };
 
+// Kernel parameter widget
+
+class KernelParameterWidget: public QWidget
+{
+public:
+    QGridLayout *gridLayout;
+    QPushButton *normalizePushButton;
+
+    KernelParameterWidget(KernelParameter *theKernelParameter, QWidget *parent = nullptr): QWidget(parent), kernelParameter(theKernelParameter)
+    {
+        gridLayout = new QGridLayout;
+
+        int row = 0;
+        int col = 0;
+
+        for (auto element: kernelParameter->values)
+        {
+            CustomLineEdit *lineEdit = new CustomLineEdit(this);
+            lineEdit->setFixedWidth(50);
+
+            QDoubleValidator *validator = new QDoubleValidator(kernelParameter->min, kernelParameter->max, 3, lineEdit);
+            lineEdit->setValidator(validator);
+            lineEdit->setText(QString::number(element));
+
+            gridLayout->addWidget(lineEdit, row, col, Qt::AlignCenter);
+
+            col++;
+            if (col == 3)
+            {
+                row++;
+                col = 0;
+            }
+
+            lineEdits.push_back(lineEdit);
+        }
+        for (size_t i = 0; i < kernelParameter->values.size(); i++)
+        {
+            connect(lineEdits[i], &CustomLineEdit::returnPressed, [=](){ kernelParameter->values[i] = lineEdits[i]->text().toFloat(); });
+            connect(lineEdits[i], &CustomLineEdit::focusOut, [=](){ lineEdits[i]->setText(QString::number(kernelParameter->values[i])); });
+        }
+
+        normalizePushButton = new QPushButton("Normalize");
+        normalizePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+        connect(normalizePushButton, &QPushButton::clicked, [=]()
+        {
+            float sum = 0.0;
+            for (auto element: kernelParameter->values)
+                sum += element;
+            for (size_t i = 0; i < kernelParameter->values.size(); i++)
+            {
+                kernelParameter->values[i] /= sum;
+                lineEdits[i]->setText(QString::number(kernelParameter->values[i]));
+            }
+        });
+    }
+
+private:
+    KernelParameter *kernelParameter;
+    std::vector<CustomLineEdit*> lineEdits;
+};
+
 // Operations widget
 
 class OperationsWidget: public QWidget
@@ -195,43 +292,58 @@ public:
 
     OperationsWidget(ImageOperation *operation)
     {
+        QVBoxLayout *vBoxLayout = new QVBoxLayout;
         QFormLayout *formLayout = new QFormLayout;
 
         for (auto parameter: operation->getIntParameters())
         {
-            IntParameterWidget *widget = new IntParameterWidget(parameter, this);
-            formLayout->addRow(QString::fromStdString(parameter->name), widget->lineEdit);
+            if (parameter->isOdd)
+            {
+                IntOddParameterWidget *widget = new IntOddParameterWidget(parameter, this);
+                formLayout->addRow(QString::fromStdString(parameter->name) + ":", widget->lineEdit);
+            }
+            else
+            {
+                IntParameterWidget *widget = new IntParameterWidget(parameter, this);
+                formLayout->addRow(QString::fromStdString(parameter->name) + ":", widget->lineEdit);
+            }
         }
         for (auto parameter: operation->getDoubleParameters())
         {
             DoubleParameterWidget *widget = new DoubleParameterWidget(parameter, 100000, this);
             doubleParameterWidget.push_back(widget);
-            formLayout->addRow(QString::fromStdString(parameter->name), widget->lineEdit);
+            formLayout->addRow(QString::fromStdString(parameter->name + ":"), widget->lineEdit);
         }
         for (auto parameter: operation->getBoolParameters())
         {
             BoolParameterWidget *widget = new BoolParameterWidget(parameter, this);
-            formLayout->addRow(QString::fromStdString(parameter->name), widget->checkBox);
+            formLayout->addRow("", widget->checkBox);
         }
         for (auto parameter: operation->getOptionsIntParameters())
         {
             OptionsParameterWidget<int> *widget = new OptionsParameterWidget<int>(parameter, this);
-            formLayout->addRow(QString::fromStdString(parameter->name), widget->comboBox);
+            formLayout->addRow(QString::fromStdString(parameter->name + ":"), widget->comboBox);
         }
         for (auto parameter: operation->getInterpolationFlagParameters())
         {
             OptionsParameterWidget<cv::InterpolationFlags> *widget = new OptionsParameterWidget<cv::InterpolationFlags>(parameter, this);
-            formLayout->addRow(QString::fromStdString(parameter->name), widget->comboBox);
+            formLayout->addRow(QString::fromStdString(parameter->name + ":"), widget->comboBox);
         }
         for (auto parameter: operation->getMorphTypeParameters())
         {
             OptionsParameterWidget<cv::MorphTypes> *widget = new OptionsParameterWidget<cv::MorphTypes>(parameter, this);
-            formLayout->addRow(QString::fromStdString(parameter->name), widget->comboBox);
+            formLayout->addRow(QString::fromStdString(parameter->name + ":"), widget->comboBox);
         }
         for (auto parameter: operation->getMorphShapeParameters())
         {
             OptionsParameterWidget<cv::MorphShapes> *widget = new OptionsParameterWidget<cv::MorphShapes>(parameter, this);
-            formLayout->addRow(QString::fromStdString(parameter->name), widget->comboBox);
+            formLayout->addRow(QString::fromStdString(parameter->name + ":"), widget->comboBox);
+        }
+        if (operation->getKernelParameter())
+        {
+            KernelParameterWidget *widget = new KernelParameterWidget(operation->getKernelParameter(), this);
+            vBoxLayout->addLayout(widget->gridLayout);
+            vBoxLayout->addWidget(widget->normalizePushButton);
         }
 
         QCheckBox *enabledCheckBox = new QCheckBox("Enabled", this);
@@ -240,7 +352,9 @@ public:
 
         formLayout->addWidget(enabledCheckBox);
 
-        setLayout(formLayout);
+        vBoxLayout->addLayout(formLayout);
+
+        setLayout(vBoxLayout);
 
         connect(enabledCheckBox, &QCheckBox::stateChanged, [=](int state){ operation->enabled = (state == Qt::Checked); });
     }

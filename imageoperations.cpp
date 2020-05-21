@@ -23,7 +23,7 @@ std::string BilateralFilter::name = "Blur: bilateral";
 
 BilateralFilter::BilateralFilter(bool on, int d, double sc, double ss): ImageOperation(on)
 {
-    diameter = new IntParameter("Diameter", d, 0, 50);
+    diameter = new IntParameter("Diameter", d, 0, 50, false);
     sigmaColor = new DoubleParameter("Sigma color", sc, 0.0, 300.0);
     sigmaSpace = new DoubleParameter("Sigma space", ss, 0.0, 300.0);
 }
@@ -41,7 +41,7 @@ std::string Blur::name = "Blur: homogeneous";
 
 Blur::Blur(bool on, int size): ImageOperation(on)
 {
-    ksize = new IntParameter("Kernel size", size, 1, 100);
+    ksize = new IntParameter("Kernel size", size, 1, 51, true);
 }
 
 cv::Mat Blur::applyOperation(const cv::Mat &src)
@@ -59,7 +59,7 @@ Canny::Canny(bool on, double th1, double th2, int size, bool g): ImageOperation(
 {
     threshold1 = new DoubleParameter("Threshold 1", th1, 0.0, 300.0);
     threshold2 = new DoubleParameter("Threshold 2", th2, 0.0, 300.0);
-    apertureSize = new IntParameter("Aperture size", size, 3, 7);
+    apertureSize = new IntParameter("Aperture size", size, 1, 7, true);
     L2gradient = new BoolParameter("L2 gradient", g);
 }
 
@@ -78,7 +78,7 @@ std::string ConvertTo::name = "Contrast and brightness";
 
 ConvertTo::ConvertTo(bool on, double a, double b): ImageOperation(on)
 {
-    alpha = new DoubleParameter("Gain", a, -100.0, 100.0);
+    alpha = new DoubleParameter("Gain", a, 0.0, 10.0);
     beta = new DoubleParameter("Bias", b, -100.0, 100.0);
 }
 
@@ -204,6 +204,30 @@ cv::Mat EqualizeHist::applyOperation(const cv::Mat &src)
     return dst;
 }
 
+// Filter 2D
+
+std::string Filter2D::name = "Filter 2D";
+
+Filter2D::Filter2D(bool on, std::vector<float> v): ImageOperation(on)
+{
+    kernel = new KernelParameter("Kernel", v, -100.0, 100.0);
+
+    updateKernelMat();
+}
+
+void Filter2D::updateKernelMat()
+{
+    kernelMat = cv::Mat(kernel->values).reshape(0, 3);
+    kernelMat.convertTo(kernelMat, CV_32F);
+}
+
+cv::Mat Filter2D::applyOperation(const cv::Mat &src)
+{
+    cv::Mat dst;
+    cv::filter2D(src, dst, -1, kernelMat, cv::Point(-1, -1), 0.0, cv::BORDER_DEFAULT);
+    return dst;
+}
+
 // Gamma correction
 
 std::string GammaCorrection::name = "Gamma correction";
@@ -231,17 +255,14 @@ std::string GaussianBlur::name = "Blur: Gaussian";
 
 GaussianBlur::GaussianBlur(bool on, int k, double s): ImageOperation(on)
 {
-    ksize = new IntParameter("Kernel size", k, 0, 25);
-    sigma = new DoubleParameter("Sigma", s, 0.001, 1.0);
+    ksize = new IntParameter("Kernel size", k, 0, 51, true);
+    sigma = new DoubleParameter("Sigma", s, 0.001, 50.0);
 }
 
 cv::Mat GaussianBlur::applyOperation(const cv::Mat &src)
 {
-    int size = 2 * ksize->value - 1;
-    if (size == -1) size = 0;
-
     cv::Mat dst;
-    cv::GaussianBlur(src, dst, cv::Size(size, size), sigma->value, sigma->value, cv::BORDER_ISOLATED);
+    cv::GaussianBlur(src, dst, cv::Size(ksize->value, ksize->value), sigma->value, sigma->value, cv::BORDER_ISOLATED);
     return dst;
 }
 
@@ -251,18 +272,27 @@ std::string Laplacian::name = "Laplacian";
 
 Laplacian::Laplacian(bool on, int k, double s, double d): ImageOperation(on)
 {
-    ksize = new IntParameter("Kernel size", k, 0, 2);
+    ksize = new IntParameter("Kernel size", k, 1, 51, true);
     scale = new DoubleParameter("Scale", s, -100.0, 100.0);
     delta = new DoubleParameter("Delta", d, -100.0, 100.0);
 }
 
 cv::Mat Laplacian::applyOperation(const cv::Mat &src)
 {
-    int size = 2 * ksize->value + 1;
-    cv::Mat tmp;
-    cv::Laplacian(src, tmp, CV_16SC3, size, scale->value, delta->value, cv::BORDER_ISOLATED);
+    cv::Mat channels[3];
+    cv::split(src, channels);
+
+    cv::Mat lap[3];
+    cv::Laplacian(channels[0], lap[0], CV_16S, ksize->value, scale->value, delta->value, cv::BORDER_ISOLATED);
+    cv::Laplacian(channels[1], lap[1], CV_16S, ksize->value, scale->value, delta->value, cv::BORDER_ISOLATED);
+    cv::Laplacian(channels[2], lap[2], CV_16S, ksize->value, scale->value, delta->value, cv::BORDER_ISOLATED);
+
+    cv::Mat merged;
+    cv::merge(lap, 3, merged);
+
     cv::Mat dst;
-    cv::convertScaleAbs(tmp, dst);
+    cv::convertScaleAbs(merged, dst);
+
     return dst;
 }
 
@@ -272,14 +302,13 @@ std::string MedianBlur::name = "Blur: median";
 
 MedianBlur::MedianBlur(bool on, int size): ImageOperation(on)
 {
-    ksize = new IntParameter("Kernel size", size, 1, 25);
+    ksize = new IntParameter("Kernel size", size, 1, 51, true);
 }
 
 cv::Mat MedianBlur::applyOperation(const cv::Mat &src)
 {
-    int size = 2 * ksize->value + 1;
     cv::Mat dst;
-    cv::medianBlur(src, dst, size);
+    cv::medianBlur(src, dst, ksize->value);
     return dst;
 }
 
@@ -311,8 +340,8 @@ std::string MorphologyEx::name = "Morphology operation";
 
 MorphologyEx::MorphologyEx(bool on, int k, int its, cv::MorphTypes type, cv::MorphShapes shape): ImageOperation(on)
 {
-    ksize = new IntParameter("Kernel size", k, 1, 25);
-    iterations = new IntParameter("Iterations", its, 1, 100);
+    ksize = new IntParameter("Kernel size", k, 1, 51, true);
+    iterations = new IntParameter("Iterations", its, 1, 100, false);
 
     std::vector<std::string> typeValueNames = {"Erode", "Dilate", "Opening", "Closing", "Gradient", "Top hat", "Black hat"};
     std::vector<cv::MorphTypes> typeValues = {cv::MORPH_ERODE, cv::MORPH_DILATE, cv::MORPH_OPEN, cv::MORPH_CLOSE, cv::MORPH_GRADIENT, cv::MORPH_TOPHAT, cv::MORPH_BLACKHAT};
@@ -337,16 +366,22 @@ cv::Mat MorphologyEx::applyOperation(const cv::Mat &src)
 
 std::string RadialRemap::name = "Radial remap";
 
-RadialRemap::RadialRemap(bool on, double a, cv::InterpolationFlags f): ImageOperation(on)
+RadialRemap::RadialRemap(bool on, double a, int rf, cv::InterpolationFlags f): ImageOperation(on)
 {
-    amplitude = new DoubleParameter("Amplitude", a, -100.0, 100.0);
+    amplitude = new DoubleParameter("Amplitude", a, -5.0, 5.0);
 
-    std::vector<std::string> valueNames = {"Nearest neighbor", "Bilinear", "Bicubic", "Area", "Lanczos 8x8"};
-    std::vector<cv::InterpolationFlags> values = {cv::INTER_NEAREST, cv::INTER_LINEAR, cv::INTER_CUBIC, cv::INTER_AREA, cv::INTER_LANCZOS4};
+    std::vector<std::string> radialFunctionValueNames = {"Linear inc.", "Linear dec.", "Cosine inc.", "Cosine dec."};
+    std::vector<int> radialFuncionValues = {0, 1, 2, 3};
 
-    flag = new OptionsParameter<cv::InterpolationFlags>("Interpolation", valueNames, values, f);
+    radialFunction = new OptionsParameter<int>("Function", radialFunctionValueNames, radialFuncionValues, rf);
+
+    std::vector<std::string> flagValueNames = {"Nearest neighbor", "Bilinear", "Bicubic", "Area", "Lanczos 8x8"};
+    std::vector<cv::InterpolationFlags> flagValues = {cv::INTER_NEAREST, cv::INTER_LINEAR, cv::INTER_CUBIC, cv::INTER_AREA, cv::INTER_LANCZOS4};
+
+    flag = new OptionsParameter<cv::InterpolationFlags>("Interpolation", flagValueNames, flagValues, f);
 
     oldAmplitude = amplitude->value;
+    oldRadialFunction = radialFunction->value;
 
     updateMappingMatrices();
 }
@@ -362,20 +397,67 @@ void RadialRemap::updateMappingMatrices()
 
     float pi = 3.14159265359;
 
-    for (int i = 0; i < mapX.rows; i++)
+    if (radialFunction->value == 0) // Linear inc.
     {
-        for (int j = 0; j < mapX.cols; j++)
+        float f = amplitude->value / rMax;
+
+        for (int i = 0; i < mapX.rows; i++)
         {
-            float x = j - centerX;
-            float y = i - centerY;
-            float r = sqrtf(x * x + y * y);
-            float f = 0.0;
-            //if (r != 0.0) f = 0.5* amplitude * (1.0 + cosf(pi * r / rMax)) / r;
-            //if (r != 0.0) f = amplitude * (1.0 - r / rMax) / r;
-            //f = amplitude / rMax;
-            if (r != 0.0) f = amplitude->value * sinf(2.0 * pi * 7 * r / rMax) / r;
-            mapX.at<float>(i, j) = centerX + x * (1.0 + f);
-            mapY.at<float>(i, j) = centerY + y * (1.0 + f);
+            for (int j = 0; j < mapX.cols; j++)
+            {
+                float x = j - centerX;
+                float y = i - centerY;
+                mapX.at<float>(i, j) = centerX + x * (1.0 + f);
+                mapY.at<float>(i, j) = centerY + y * (1.0 + f);
+            }
+        }
+    }
+    else if (radialFunction->value == 1) // Linear dec.
+    {
+        for (int i = 0; i < mapX.rows; i++)
+        {
+            for (int j = 0; j < mapX.cols; j++)
+            {
+                float x = j - centerX;
+                float y = i - centerY;
+                float r = sqrtf(x * x + y * y);
+                float f = 0.0;
+                if (r != 0.0) f = amplitude->value * (1.0 / r - 1.0 / rMax);
+                mapX.at<float>(i, j) = centerX + x * (1.0 + f);
+                mapY.at<float>(i, j) = centerY + y * (1.0 + f);
+            }
+        }
+    }
+    else if (radialFunction->value == 2) // Cosine inc.
+    {
+        for (int i = 0; i < mapX.rows; i++)
+        {
+            for (int j = 0; j < mapX.cols; j++)
+            {
+                float x = j - centerX;
+                float y = i - centerY;
+                float r = sqrtf(x * x + y * y);
+                float f = 0.0;
+                if (r != 0.0) f = 0.5* amplitude->value * (1.0 - cosf(pi * r / rMax)) / r;
+                mapX.at<float>(i, j) = centerX + x * (1.0 + f);
+                mapY.at<float>(i, j) = centerY + y * (1.0 + f);
+            }
+        }
+    }
+    else if (radialFunction->value == 3) // Cosine dec.
+    {
+        for (int i = 0; i < mapX.rows; i++)
+        {
+            for (int j = 0; j < mapX.cols; j++)
+            {
+                float x = j - centerX;
+                float y = i - centerY;
+                float r = sqrtf(x * x + y * y);
+                float f = 0.0;
+                if (r != 0.0) f = 0.5* amplitude->value * (1.0 + cosf(pi * r / rMax)) / r;
+                mapX.at<float>(i, j) = centerX + x * (1.0 + f);
+                mapY.at<float>(i, j) = centerY + y * (1.0 + f);
+            }
         }
     }
 }
@@ -390,6 +472,11 @@ cv::Mat RadialRemap::applyOperation(const cv::Mat &src)
     if (amplitude->value != oldAmplitude)
     {
         oldAmplitude = amplitude->value;
+        updateMappingMatrices();
+    }
+    if (radialFunction->value != oldRadialFunction)
+    {
+        oldRadialFunction = radialFunction->value;
         updateMappingMatrices();
     }
     cv::Mat dst;
@@ -427,7 +514,7 @@ std::string Sharpen::name = "Sharpen";
 
 Sharpen::Sharpen(bool on, double s, double t, double a): ImageOperation(on)
 {
-    sigma = new DoubleParameter("Sigma", s, 0.0, 10.0);
+    sigma = new DoubleParameter("Sigma", s, 0.001, 10.0);
     threshold = new DoubleParameter("Threshold", t, 0.0, 100.0);
     amount = new DoubleParameter("Amount", a, 0.0, 10.0);
 }
@@ -442,11 +529,13 @@ cv::Mat Sharpen::applyOperation(const cv::Mat &src)
     return dst;
 }
 
+// Shift hue
+
 std::string ShiftHue::name = "Shift hue";
 
 ShiftHue::ShiftHue(bool on, int d): ImageOperation(on)
 {
-    delta = new IntParameter("Delta", d, -180, 180);
+    delta = new IntParameter("Delta", d, -180, 180 ,false);
 }
 
 cv::Mat ShiftHue::applyOperation(const cv::Mat &src)

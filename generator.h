@@ -45,7 +45,16 @@ public:
     void swapImageOperations(int operationIndex0, int operationIndex1);
     void removeImageOperation(int operationIndex);
     void insertImageOperation(int newOperationIndex, int currentOperationIndex);
-    void loadImageOperation(std::string operationName, bool enabled, std::vector<bool> boolParameters, std::vector<int> intParameters, std::vector<double> doubleParameters, std::vector<int> morphTypeParameters, std::vector<int> morphShapeParameters, std::vector<int> interpolationFlagParameters);
+    void loadImageOperation(
+            std::string operationName,
+            bool enabled,
+            std::vector<bool> boolParameters,
+            std::vector<int> intParameters,
+            std::vector<double> doubleParameters,
+            std::vector<int> morphTypeParameters,
+            std::vector<int> morphShapeParameters,
+            std::vector<int> interpolationFlagParameters,
+            std::vector<float> kernelElements);
 };
 
 class GeneratorCV

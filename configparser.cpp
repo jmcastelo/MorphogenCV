@@ -94,6 +94,22 @@ void ConfigurationParser::write()
                 stream.writeEndElement();
             }
 
+            if (operation->getKernelParameter())
+            {
+                stream.writeStartElement("parameter");
+                stream.writeAttribute("name", QString::fromStdString(operation->getKernelParameter()->name));
+                stream.writeAttribute("type", "kernel");
+
+                for (auto element: operation->getKernelParameter()->values)
+                {
+                    stream.writeStartElement("element");
+                    stream.writeCharacters(QString::number(element));
+                    stream.writeEndElement();
+                }
+
+                stream.writeEndElement();
+            }
+
             stream.writeEndElement();
         }
 
@@ -139,6 +155,7 @@ void ConfigurationParser::read()
                         std::vector<int> morphTypeParameters;
                         std::vector<int> morphShapeParameters;
                         std::vector<int> interpolationFlagParameters;
+                        std::vector<float> kernelElements;
 
                         while (xml.readNextStartElement())
                         {
@@ -158,6 +175,16 @@ void ConfigurationParser::read()
                                     morphShapeParameters.push_back(xml.readElementText().toInt());
                                 else if (parameterType == "interpolationflag")
                                     interpolationFlagParameters.push_back(xml.readElementText().toInt());
+                                else if (parameterType == "kernel")
+                                {
+                                    while (xml.readNextStartElement())
+                                    {
+                                        if (xml.name() == "element")
+                                            kernelElements.push_back(xml.readElementText().toFloat());
+                                        else
+                                            xml.skipCurrentElement();
+                                    }
+                                }
                             }
                             else
                             {
@@ -165,7 +192,16 @@ void ConfigurationParser::read()
                             }
                         }
 
-                        generator->pipelines.back()->loadImageOperation(operationName.toStdString(), enabled, boolParameters, intParameters, doubleParameters, morphTypeParameters, morphShapeParameters, interpolationFlagParameters);
+                        generator->pipelines.back()->loadImageOperation(
+                                    operationName.toStdString(),
+                                    enabled,
+                                    boolParameters,
+                                    intParameters,
+                                    doubleParameters,
+                                    morphTypeParameters,
+                                    morphShapeParameters,
+                                    interpolationFlagParameters,
+                                    kernelElements);
                     }
                     else
                     {

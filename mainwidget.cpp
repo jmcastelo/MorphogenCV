@@ -96,20 +96,7 @@ MainWidget::~MainWidget()
 
 void MainWidget::constructGeneralControls()
 {
-    pauseResumePushButton = new QPushButton("Start");
-    pauseResumePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    pauseResumePushButton->setCheckable(true);
-
-    QPushButton *loadConfigPushButton = new QPushButton("Load configuration");
-    loadConfigPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-
-    QPushButton *saveConfigPushButton = new QPushButton("Save configuration");
-    saveConfigPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-
-    QHBoxLayout *buttonsHBoxLayout = new QHBoxLayout;
-    buttonsHBoxLayout->setAlignment(Qt::AlignHCenter);
-    buttonsHBoxLayout->addWidget(loadConfigPushButton);
-    buttonsHBoxLayout->addWidget(saveConfigPushButton);
+    // Seed
 
     QPushButton *drawSeedPushButton = new QPushButton("Draw seed");
     drawSeedPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -121,15 +108,39 @@ void MainWidget::constructGeneralControls()
     bwSeedCheckBox->setChecked(true);
 
     QHBoxLayout *seedHBoxLayout = new QHBoxLayout;
-    seedHBoxLayout->setAlignment(Qt::AlignLeft);
+    //seedHBoxLayout->setAlignment(Qt::AlignLeft);
     seedHBoxLayout->addWidget(drawSeedPushButton);
     seedHBoxLayout->addWidget(coloredSeedCheckBox);
     seedHBoxLayout->addWidget(bwSeedCheckBox);
+
+    QGroupBox *seedGroupBox = new QGroupBox("Seed");
+    seedGroupBox->setLayout(seedHBoxLayout);
 
     QButtonGroup *seedButtonGroup = new QButtonGroup;
     seedButtonGroup->setExclusive(true);
     seedButtonGroup->addButton(coloredSeedCheckBox, 0);
     seedButtonGroup->addButton(bwSeedCheckBox, 1);
+
+    // Configurations
+
+    QPushButton *loadConfigPushButton = new QPushButton("Load configuration");
+    loadConfigPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    QPushButton *saveConfigPushButton = new QPushButton("Save configuration");
+    saveConfigPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    QHBoxLayout *configHBoxLayout = new QHBoxLayout;
+    configHBoxLayout->addWidget(loadConfigPushButton);
+    configHBoxLayout->addWidget(saveConfigPushButton);
+
+    QGroupBox *configGroupBox = new QGroupBox("Configurations");
+    configGroupBox->setLayout(configHBoxLayout);
+
+    // Main
+
+    pauseResumePushButton = new QPushButton("Start");
+    pauseResumePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    pauseResumePushButton->setCheckable(true);
 
     timerIntervalLineEdit = new QLineEdit;
     timerIntervalLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -149,6 +160,13 @@ void MainWidget::constructGeneralControls()
     formLayout->addRow("Time interval (ms):", timerIntervalLineEdit);
     formLayout->addRow("Image size (px):", imageSizeLineEdit);
 
+    QVBoxLayout *mainControlsVBoxLayout = new QVBoxLayout;
+    mainControlsVBoxLayout->addWidget(pauseResumePushButton);
+    mainControlsVBoxLayout->addLayout(formLayout);
+
+    QGroupBox *mainControlsGroupBox = new QGroupBox("Main");
+    mainControlsGroupBox->setLayout(mainControlsVBoxLayout);
+
     // Screenshots controls
 
     screenshotPushButton = new QPushButton("Take screenshot");
@@ -158,22 +176,25 @@ void MainWidget::constructGeneralControls()
 
     screenshotSeriesCheckBox = new QCheckBox("Series");
 
+    QHBoxLayout *takeScreenshotHBoxLayout = new QHBoxLayout;
+    takeScreenshotHBoxLayout->addWidget(screenshotPushButton);
+    takeScreenshotHBoxLayout->addWidget(screenshotSeriesCheckBox);
+
     selectScreenshotPathPushButton = new QPushButton("Select directory");
     selectScreenshotPathPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-
-    QLabel *screenshotFilenameLabel = new QLabel("Filename (no extension)");
 
     screenshotFilenameLineEdit = new QLineEdit;
     screenshotFilenameLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     screenshotFilenameLineEdit->setText(screenshotFilename);
 
+    QFormLayout *screenshotPathFormLayout = new QFormLayout;
+    screenshotPathFormLayout->addRow("Filename (no extension)", screenshotFilenameLineEdit);
+
     QVBoxLayout *screenshotVBoxLayout = new QVBoxLayout;
     screenshotVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-    screenshotVBoxLayout->addWidget(screenshotPushButton);
-    screenshotVBoxLayout->addWidget(screenshotSeriesCheckBox);
+    screenshotVBoxLayout->addLayout(takeScreenshotHBoxLayout);
     screenshotVBoxLayout->addWidget(selectScreenshotPathPushButton);
-    screenshotVBoxLayout->addWidget(screenshotFilenameLabel);
-    screenshotVBoxLayout->addWidget(screenshotFilenameLineEdit);
+    screenshotVBoxLayout->addLayout(screenshotPathFormLayout);
 
     QGroupBox *screenshotGroupBox = new QGroupBox("Screenshots");
     screenshotGroupBox->setLayout(screenshotVBoxLayout);
@@ -182,10 +203,9 @@ void MainWidget::constructGeneralControls()
 
     QVBoxLayout *generalControlsVBoxLayout = new QVBoxLayout;
     generalControlsVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
-    generalControlsVBoxLayout->addWidget(pauseResumePushButton);
-    generalControlsVBoxLayout->addLayout(buttonsHBoxLayout);
-    generalControlsVBoxLayout->addLayout(seedHBoxLayout);
-    generalControlsVBoxLayout->addLayout(formLayout);
+    generalControlsVBoxLayout->addWidget(seedGroupBox);
+    generalControlsVBoxLayout->addWidget(configGroupBox);
+    generalControlsVBoxLayout->addWidget(mainControlsGroupBox);
     generalControlsVBoxLayout->addWidget(screenshotGroupBox);
 
     // Widget to put in tab
@@ -383,7 +403,7 @@ void MainWidget::constructComputationControls()
 
     QFormLayout *fullImageLayout = new QFormLayout;
     fullImageLayout->addRow("Histogram:", histogramPushButton);
-    fullImageLayout->addRow("DFT", dftPushButton);
+    fullImageLayout->addRow("DFT:", dftPushButton);
     fullImageLayout->addRow("Color intensity plot:", imageIterationPushButton);
     fullImageLayout->addRow("Color-space plot:", colorSpacePushButton);
     fullImageLayout->addRow("X-Axis:", colorSpaceXAxisComboBox);
@@ -664,21 +684,23 @@ void MainWidget::initImageOperationsListWidget(int imageIndex)
     {
         currentImageOperationIndex[imageIndex] = -1;
 
-        removeImageOperationPushButton->setEnabled(false);
-
         if (!parametersLayout->isEmpty())
         {
             QWidget *widget = parametersLayout->itemAt(0)->widget();
             parametersLayout->removeWidget(widget);
             widget->hide();
         }
+
+        if (operationsWidget)
+        {
+            delete operationsWidget;
+            operationsWidget = nullptr;
+        }
     }
     else
     {
         QListWidgetItem *operation = imageOperationsListWidget->item(currentImageOperationIndex[imageIndex]);
         imageOperationsListWidget->setCurrentItem(operation);
-
-        removeImageOperationPushButton->setEnabled(true);
     }
 }
 
@@ -691,20 +713,23 @@ void MainWidget::onImageOperationsListWidgetCurrentRowChanged(int currentRow)
         widget->hide();
     }
 
-    if (currentRow >= 0)
+    selectedParameterSlider->disconnect();
+    selectedParameterSlider->setValue(0);
+    selectedParameterGroupBox->setTitle("No selected parameter");
+
+    if (currentRow >= 0) // currentRow = -1 if QListWidget empty
     {
         int imageIndex = imageSelectComboBox->currentIndex();
 
         if (operationsWidget)
+        {
             delete operationsWidget;
+            operationsWidget = nullptr;
+        }
 
         operationsWidget = new OperationsWidget(generator->pipelines[imageIndex]->imageOperations[currentRow]);
         parametersLayout->addWidget(operationsWidget);
         operationsWidget->show();
-
-        selectedParameterSlider->disconnect();
-        selectedParameterSlider->setValue(0);
-        selectedParameterGroupBox->setTitle("No selected parameter");
 
         for (auto widget: operationsWidget->doubleParameterWidget)
             connect(widget, &DoubleParameterWidget::focusIn, [=]()
@@ -723,8 +748,6 @@ void MainWidget::onImageOperationsListWidgetCurrentRowChanged(int currentRow)
             });
 
         currentImageOperationIndex[imageIndex] = currentRow;
-
-        removeImageOperationPushButton->setEnabled(true);
     }
 }
 
@@ -848,7 +871,7 @@ void MainWidget::togglePlots(bool checked)
 
     if (checked)
     {
-        resize(1100, height());
+        resize(1200, height());
     }
     else
     {

@@ -41,6 +41,7 @@ public:
     virtual std::vector<OptionsParameter<cv::MorphTypes>*> getMorphTypeParameters(){ std::vector<OptionsParameter<cv::MorphTypes>*> parameters; return parameters; };
     virtual std::vector<OptionsParameter<cv::MorphShapes>*> getMorphShapeParameters(){ std::vector<OptionsParameter<cv::MorphShapes>*> parameters; return parameters; };
     virtual std::vector<OptionsParameter<cv::InterpolationFlags>*> getInterpolationFlagParameters(){ std::vector<OptionsParameter<cv::InterpolationFlags>*> parameters; return parameters; };
+    virtual KernelParameter* getKernelParameter(){ return nullptr; }
 
     virtual cv::Mat applyOperation(const cv::Mat &src) = 0;
 
@@ -182,6 +183,28 @@ public:
     EqualizeHist(bool on);
 
     std::string getName(){ return name; };
+    cv::Mat applyOperation(const cv::Mat &src);
+};
+
+// Filter 2D
+
+class Filter2D: public ImageOperation
+{
+    KernelParameter *kernel;
+
+public:
+    static std::string name;
+
+    cv::Mat kernelMat;
+
+    Filter2D(bool on, std::vector<float> v);
+    ~Filter2D(){ delete kernel; }
+
+    std::string getName(){ return name; }
+
+    KernelParameter* getKernelParameter(){ return kernel; }
+
+    void updateKernelMat();
     cv::Mat applyOperation(const cv::Mat &src);
 };
 
@@ -331,8 +354,10 @@ public:
 class RadialRemap: public ImageOperation
 {
     DoubleParameter *amplitude;
+    OptionsParameter<int> *radialFunction;
     OptionsParameter<cv::InterpolationFlags> *flag;
     double oldAmplitude;
+    int oldRadialFunction;
 
     cv::Size size;
     cv::Mat mapX, mapY;
@@ -341,7 +366,7 @@ class RadialRemap: public ImageOperation
 public:
     static std::string name;
 
-    RadialRemap(bool on, double a, cv::InterpolationFlags f);
+    RadialRemap(bool on, double a, int rf, cv::InterpolationFlags f);
     ~RadialRemap()
     {
         delete amplitude;
@@ -351,6 +376,7 @@ public:
     std::string getName(){ return name; };
 
     std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {amplitude}; return parameters; };
+    std::vector<OptionsParameter<int>*> getOptionsIntParameters(){ std::vector<OptionsParameter<int>*> parameters = {radialFunction}; return parameters; };
     std::vector<OptionsParameter<cv::InterpolationFlags>*> getInterpolationFlagParameters(){ std::vector<OptionsParameter<cv::InterpolationFlags>*> parameters = {flag}; return parameters; };
 
     cv::Mat applyOperation(const cv::Mat &src);

@@ -50,11 +50,13 @@ class IntParameter
 public:
     std::string name;
     int value, min, max;
-    IntParameter(std::string theName, int theValue, int theMin, int theMax):
+    bool isOdd;
+    IntParameter(std::string theName, int theValue, int theMin, int theMax, bool odd):
         name(theName),
         value(theValue),
         min(theMin),
-        max(theMax)
+        max(theMax),
+        isOdd(odd)
     {}
 };
 
@@ -66,6 +68,20 @@ public:
     DoubleParameter(std::string theName, double theValue, double theMin, double theMax):
         name(theName),
         value(theValue),
+        min(theMin),
+        max(theMax)
+    {}
+};
+
+class KernelParameter
+{
+public:
+    std::string name;
+    std::vector<float> values;
+    float min, max;
+    KernelParameter(std::string theName, std::vector<float> theValues, float theMin, float theMax):
+        name(theName),
+        values(theValues),
         min(theMin),
         max(theMax)
     {}

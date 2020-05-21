@@ -29,6 +29,7 @@ Pipeline::Pipeline(cv::Mat img): image(img)
         ConvertTo::name,
         DeblurFilter::name,
         EqualizeHist::name,
+        Filter2D::name,
         GammaCorrection::name,
         Laplacian::name,
         MixChannels::name,
@@ -68,8 +69,11 @@ void Pipeline::swapImageOperations(int operationIndex0, int operationIndex1)
 
 void Pipeline::removeImageOperation(int operationIndex)
 {
-    std::vector<ImageOperation*>::iterator it = imageOperations.begin();
-    imageOperations.erase(it + operationIndex);
+    if (!imageOperations.empty())
+    {
+        std::vector<ImageOperation*>::iterator it = imageOperations.begin();
+        imageOperations.erase(it + operationIndex);
+    }
 }
 
 void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationIndex)
@@ -102,6 +106,11 @@ void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationI
     {
         imageOperations.insert(it + currentOperationIndex + 1, new EqualizeHist(false));
     }
+    else if (operationName == Filter2D::name)
+    {
+        std::vector<float> kernel = {0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0};
+        imageOperations.insert(it + currentOperationIndex + 1, new Filter2D(false, kernel));
+    }
     else if (operationName == GammaCorrection::name)
     {
         imageOperations.insert(it + currentOperationIndex + 1, new GammaCorrection(false, 1.0));
@@ -132,7 +141,7 @@ void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationI
     }
     else if (operationName == RadialRemap::name)
     {
-        imageOperations.insert(it + currentOperationIndex + 1, new RadialRemap(false, 0.0, cv::INTER_NEAREST));
+        imageOperations.insert(it + currentOperationIndex + 1, new RadialRemap(false, 0.0, 0, cv::INTER_NEAREST));
     }
     else if (operationName == Sharpen::name)
     {
@@ -144,7 +153,16 @@ void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationI
     }
 }
 
-void Pipeline::loadImageOperation(std::string operationName, bool enabled, std::vector<bool> boolParameters, std::vector<int> intParameters, std::vector<double> doubleParameters, std::vector<int> morphTypeParameters, std::vector<int> morphShapeParameters, std::vector<int> interpolationFlagParameters)
+void Pipeline::loadImageOperation(
+        std::string operationName,
+        bool enabled,
+        std::vector<bool> boolParameters,
+        std::vector<int> intParameters,
+        std::vector<double> doubleParameters,
+        std::vector<int> morphTypeParameters,
+        std::vector<int> morphShapeParameters,
+        std::vector<int> interpolationFlagParameters,
+        std::vector<float> kernelElements)
 {
     if (operationName == BilateralFilter::name)
     {
@@ -169,6 +187,10 @@ void Pipeline::loadImageOperation(std::string operationName, bool enabled, std::
     else if (operationName == EqualizeHist::name)
     {
         imageOperations.push_back(new EqualizeHist(enabled));
+    }
+    else if (operationName == Filter2D::name)
+    {
+        imageOperations.push_back(new Filter2D(enabled, kernelElements));
     }
     else if (operationName == GammaCorrection::name)
     {
@@ -199,7 +221,7 @@ void Pipeline::loadImageOperation(std::string operationName, bool enabled, std::
     else if (operationName == RadialRemap::name)
     {
         cv::InterpolationFlags flag = static_cast<cv::InterpolationFlags>(interpolationFlagParameters[0]);
-        imageOperations.push_back(new RadialRemap(enabled, doubleParameters[0], flag));
+        imageOperations.push_back(new RadialRemap(enabled, doubleParameters[0], intParameters[0], flag));
     }
     else if (operationName == Rotation::name)
     {
@@ -228,6 +250,7 @@ GeneratorCV::GeneratorCV()
         ConvertTo::name,
         DeblurFilter::name,
         EqualizeHist::name,
+        Filter2D::name,
         GammaCorrection::name,
         Laplacian::name,
         MixChannels::name,
@@ -568,7 +591,10 @@ void GeneratorCV::removePipeline(int pipelineIndex)
 void GeneratorCV::addPipeline()
 {
     pipelines.push_back(new Pipeline(outImage));
-    pipelines.back()->blendFactor = 0.0;
+    if (pipelines.size() == 1)
+        pipelines.back()->blendFactor = 1.0;
+    else
+        pipelines.back()->blendFactor = 0.0;
 }
 
 void GeneratorCV::loadPipeline(double blendFactor)
