@@ -121,7 +121,7 @@ void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationI
     }
     else if (operationName == Laplacian::name)
     {
-        imageOperations.insert(it + currentOperationIndex + 1, new Laplacian(false, 3, 1.0, 0.0));
+        imageOperations.insert(it + currentOperationIndex + 1, new Laplacian(false, 3));
     }
     else if (operationName == MedianBlur::name)
     {
@@ -202,7 +202,7 @@ void Pipeline::loadImageOperation(
     }
     else if (operationName == Laplacian::name)
     {
-        imageOperations.push_back(new Laplacian(enabled, intParameters[0], doubleParameters[0], doubleParameters[1]));
+        imageOperations.push_back(new Laplacian(enabled, intParameters[0]));
     }
     else if (operationName == MedianBlur::name)
     {

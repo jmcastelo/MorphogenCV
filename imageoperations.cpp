@@ -100,7 +100,7 @@ std::string DeblurFilter::name = "Deblur filter";
 DeblurFilter::DeblurFilter(bool on, double r, double snr): ImageOperation(on)
 {
     radius = new DoubleParameter("Radius", r, 0.0, 100.0);
-    signalToNoiseRatio = new DoubleParameter("Signal to noise ratio", snr, 1.0, 10000.0);
+    signalToNoiseRatio = new DoubleParameter("Signal to noise ratio", snr, 0.001, 10000.0);
 }
 
 void DeblurFilter::computePSF(cv::Mat &outputImg, cv::Size filterSize)
@@ -233,7 +233,7 @@ std::string GammaCorrection::name = "Gamma correction";
 
 GammaCorrection::GammaCorrection(bool on, double g): ImageOperation(on)
 {
-    gamma = new DoubleParameter("Gamma", g, 0.0, 100.0);
+    gamma = new DoubleParameter("Gamma", g, 0.0, 10.0);
 }
 
 void GammaCorrection::applyOperation(cv::Mat &src)
@@ -265,11 +265,9 @@ void GaussianBlur::applyOperation(cv::Mat &src)
 
 std::string Laplacian::name = "Laplacian";
 
-Laplacian::Laplacian(bool on, int k, double s, double d): ImageOperation(on)
+Laplacian::Laplacian(bool on, int k): ImageOperation(on)
 {
     ksize = new IntParameter("Kernel size", k, 1, 51, true);
-    scale = new DoubleParameter("Scale", s, -100.0, 100.0);
-    delta = new DoubleParameter("Delta", d, -100.0, 100.0);
 }
 
 void Laplacian::applyOperation(cv::Mat &src)
@@ -278,9 +276,9 @@ void Laplacian::applyOperation(cv::Mat &src)
     cv::split(src, channels);
 
     cv::Mat lap[3];
-    cv::Laplacian(channels[0], lap[0], CV_16S, ksize->value, scale->value, delta->value, cv::BORDER_ISOLATED);
-    cv::Laplacian(channels[1], lap[1], CV_16S, ksize->value, scale->value, delta->value, cv::BORDER_ISOLATED);
-    cv::Laplacian(channels[2], lap[2], CV_16S, ksize->value, scale->value, delta->value, cv::BORDER_ISOLATED);
+    cv::Laplacian(channels[0], lap[0], CV_16S, ksize->value, 1.0, 0.0, cv::BORDER_ISOLATED);
+    cv::Laplacian(channels[1], lap[1], CV_16S, ksize->value, 1.0, 0.0, cv::BORDER_ISOLATED);
+    cv::Laplacian(channels[2], lap[2], CV_16S, ksize->value, 1.0, 0.0, cv::BORDER_ISOLATED);
 
     cv::merge(lap, 3, src);
 
@@ -474,7 +472,7 @@ std::string Rotation::name = "Rotation";
 Rotation::Rotation(bool on, double a, double s, cv::InterpolationFlags f): ImageOperation(on)
 {
     angle = new DoubleParameter("Angle", a, -360.0, 360.0);
-    scale = new DoubleParameter("Scale", s, 0.0, 2.0);
+    scale = new DoubleParameter("Scale", s, 0.0, 10.0);
 
     std::vector<std::string> valueNames = {"Nearest neighbor", "Bilinear", "Bicubic", "Area", "Lanczos 8x8"};
     std::vector<cv::InterpolationFlags> values = {cv::INTER_NEAREST, cv::INTER_LINEAR, cv::INTER_CUBIC, cv::INTER_AREA, cv::INTER_LANCZOS4};

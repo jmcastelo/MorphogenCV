@@ -258,23 +258,19 @@ public:
 class Laplacian: public ImageOperation
 {
     IntParameter *ksize;
-    DoubleParameter *scale, *delta;
 
 public:
     static std::string name;
 
-    Laplacian(bool on, int k, double s, double d);
+    Laplacian(bool on, int k);
     ~Laplacian()
     {
         delete ksize;
-        delete scale;
-        delete delta;
     }
 
     std::string getName(){ return name; };
 
     std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {ksize}; return parameters; };
-    std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {scale, delta}; return parameters; };
 
     void applyOperation(cv::Mat &src);
 };

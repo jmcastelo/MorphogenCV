@@ -241,7 +241,7 @@ public:
         for (auto element: kernelParameter->values)
         {
             CustomLineEdit *lineEdit = new CustomLineEdit;
-            lineEdit->setFixedWidth(80);
+            lineEdit->setFixedWidth(75);
 
             QDoubleValidator *validator = new QDoubleValidator(kernelParameter->min, kernelParameter->max, 10, lineEdit);
             lineEdit->setValidator(validator);
