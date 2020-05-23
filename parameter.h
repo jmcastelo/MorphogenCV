@@ -64,12 +64,14 @@ class DoubleParameter
 {
 public:
     std::string name;
-    double value, min, max;
-    DoubleParameter(std::string theName, double theValue, double theMin, double theMax):
+    double value, min, max, inf, sup;
+    DoubleParameter(std::string theName, double theValue, double theMin, double theMax, double theInf, double theSup):
         name(theName),
         value(theValue),
         min(theMin),
-        max(theMax)
+        max(theMax),
+        inf(theInf),
+        sup(theSup)
     {}
 };
 

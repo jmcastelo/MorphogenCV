@@ -300,10 +300,32 @@ void MainWidget::constructImageManipulationControls()
     selectedParameterSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     selectedParameterSlider->setRange(0, 10000);
 
+    selectedParameterMinLineEdit = new CustomLineEdit;
+    selectedParameterMinLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    selectedParameterMinLineEdit->setPlaceholderText("Minimum");
+
+    selectedParameterMinValidator = new QDoubleValidator(selectedParameterMinLineEdit);
+    selectedParameterMinValidator->setDecimals(10);
+    selectedParameterMinLineEdit->setValidator(selectedParameterMinValidator);
+
+    selectedParameterMaxLineEdit = new CustomLineEdit;
+    selectedParameterMaxLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    selectedParameterMaxLineEdit->setPlaceholderText("Maximum");
+
+    selectedParameterMaxValidator = new QDoubleValidator(selectedParameterMaxLineEdit);
+    selectedParameterMaxValidator->setDecimals(10);
+    selectedParameterMaxLineEdit->setValidator(selectedParameterMaxValidator);
+
+    QHBoxLayout *minMaxHBoxLayout = new QHBoxLayout;
+    minMaxHBoxLayout->setAlignment(Qt::AlignJustify);
+    minMaxHBoxLayout->addWidget(selectedParameterMinLineEdit);
+    minMaxHBoxLayout->addWidget(selectedParameterMaxLineEdit);
+
     QVBoxLayout *selectedParameterVBoxLayout = new QVBoxLayout;
     selectedParameterVBoxLayout->addWidget(selectedParameterSlider);
+    selectedParameterVBoxLayout->addLayout(minMaxHBoxLayout);
 
-    selectedParameterGroupBox = new QGroupBox("No selected parameter");
+    selectedParameterGroupBox = new QGroupBox("No parameter selected");
     selectedParameterGroupBox->setLayout(selectedParameterVBoxLayout);
 
     // Image operations layout
@@ -715,7 +737,13 @@ void MainWidget::onImageOperationsListWidgetCurrentRowChanged(int currentRow)
 
     selectedParameterSlider->disconnect();
     selectedParameterSlider->setValue(0);
-    selectedParameterGroupBox->setTitle("No selected parameter");
+    selectedParameterGroupBox->setTitle("No parameter selected");
+
+    selectedParameterMinLineEdit->disconnect();
+    selectedParameterMinLineEdit->clear();
+
+    selectedParameterMaxLineEdit->disconnect();
+    selectedParameterMaxLineEdit->clear();
 
     if (currentRow >= 0) // currentRow = -1 if QListWidget empty
     {
@@ -732,23 +760,63 @@ void MainWidget::onImageOperationsListWidgetCurrentRowChanged(int currentRow)
         operationsWidget->show();
 
         for (auto widget: operationsWidget->doubleParameterWidget)
-            connect(widget, &DoubleParameterWidget::focusIn, [=]()
-            {
-                selectedParameterSlider->disconnect();
-                selectedParameterSlider->setRange(0, widget->indexMax);
-                selectedParameterSlider->setValue(widget->getIndex());
-                connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &DoubleParameterWidget::setValue);
-                connect(widget, &DoubleParameterWidget::currentIndexChanged, [=](int currentIndex)
-                {
-                    disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
-                    selectedParameterSlider->setValue(currentIndex);
-                    connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &DoubleParameterWidget::setValue);
-                });
-                selectedParameterGroupBox->setTitle("Selected parameter: " + widget->getName());
-            });
+            connect(widget, &DoubleParameterWidget::focusIn, [=](){ onDoubleParameterWidgetFocusIn(widget); });
 
         currentImageOperationIndex[imageIndex] = currentRow;
     }
+}
+
+void MainWidget::onDoubleParameterWidgetFocusIn(DoubleParameterWidget *widget)
+{
+    // Slider
+
+    selectedParameterSlider->disconnect();
+    selectedParameterSlider->setRange(0, widget->indexMax);
+    selectedParameterSlider->setValue(widget->getIndex());
+    connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &DoubleParameterWidget::setValue);
+
+    connect(widget, &DoubleParameterWidget::currentIndexChanged, [=](int currentIndex)
+    {
+        disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
+        selectedParameterSlider->setValue(currentIndex);
+        connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &DoubleParameterWidget::setValue);
+    });
+
+    // Minimum
+
+    selectedParameterMinLineEdit->disconnect();
+    selectedParameterMinLineEdit->setText(QString::number(widget->getMin()));
+
+    connect(selectedParameterMinLineEdit, &CustomLineEdit::returnPressed, [=]()
+    {
+        widget->setMin(selectedParameterMinLineEdit->text().toDouble());
+        widget->setIndex();
+    });
+    connect(selectedParameterMinLineEdit, &CustomLineEdit::focusOut, [=](){ selectedParameterMinLineEdit->setText(QString::number(widget->getMin())); });
+
+    // Maximum
+
+    selectedParameterMaxLineEdit->disconnect();
+    selectedParameterMaxLineEdit->setText(QString::number(widget->getMax()));
+
+    connect(selectedParameterMaxLineEdit, &CustomLineEdit::returnPressed, [=]()
+    {
+        widget->setMax(selectedParameterMaxLineEdit->text().toDouble());
+        widget->setIndex();
+    });
+    connect(selectedParameterMaxLineEdit, &CustomLineEdit::focusOut, [=](){ selectedParameterMaxLineEdit->setText(QString::number(widget->getMax())); });
+
+    // Validators
+
+    selectedParameterMinValidator->setBottom(widget->getInf());
+    selectedParameterMinValidator->setTop(widget->getMax());
+
+    selectedParameterMaxValidator->setBottom(widget->getMin());
+    selectedParameterMaxValidator->setTop(widget->getSup());
+
+    // Title
+
+    selectedParameterGroupBox->setTitle("Selected parameter: " + widget->getName());
 }
 
 void MainWidget::onRowsMoved(QModelIndex parent, int start, int end, QModelIndex destination, int row)

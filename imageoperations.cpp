@@ -24,8 +24,8 @@ std::string BilateralFilter::name = "Blur: bilateral";
 BilateralFilter::BilateralFilter(bool on, int d, double sc, double ss): ImageOperation(on)
 {
     diameter = new IntParameter("Diameter", d, 0, 50, false);
-    sigmaColor = new DoubleParameter("Sigma color", sc, 0.0, 300.0);
-    sigmaSpace = new DoubleParameter("Sigma space", ss, 0.0, 300.0);
+    sigmaColor = new DoubleParameter("Sigma color", sc, 0.0, 300.0, 0.0, 1.0e6);
+    sigmaSpace = new DoubleParameter("Sigma space", ss, 0.0, 300.0, 0.0, 1.0e6);
 }
 
 void BilateralFilter::applyOperation(cv::Mat &src)
@@ -53,8 +53,8 @@ std::string Canny::name = "Canny";
 
 Canny::Canny(bool on, double th1, double th2, int size, bool g): ImageOperation(on)
 {
-    threshold1 = new DoubleParameter("Threshold 1", th1, 0.0, 300.0);
-    threshold2 = new DoubleParameter("Threshold 2", th2, 0.0, 300.0);
+    threshold1 = new DoubleParameter("Threshold 1", th1, 0.0, 300.0, 0.0, 1.0e6);
+    threshold2 = new DoubleParameter("Threshold 2", th2, 0.0, 300.0, 0.0, 1.0e6);
     apertureSize = new IntParameter("Aperture size", size, 1, 7, true);
     L2gradient = new BoolParameter("L2 gradient", g);
 }
@@ -84,8 +84,8 @@ std::string ConvertTo::name = "Contrast/brightness";
 
 ConvertTo::ConvertTo(bool on, double a, double b): ImageOperation(on)
 {
-    alpha = new DoubleParameter("Gain", a, 0.0, 10.0);
-    beta = new DoubleParameter("Bias", b, -255.0, 255.0);
+    alpha = new DoubleParameter("Gain", a, 0.0, 10.0, -1.0e6, 1.0e6);
+    beta = new DoubleParameter("Bias", b, -255.0, 255.0, -1.0e6, 1.0e6);
 }
 
 void ConvertTo::applyOperation(cv::Mat &src)
@@ -99,8 +99,8 @@ std::string DeblurFilter::name = "Deblur filter";
 
 DeblurFilter::DeblurFilter(bool on, double r, double snr): ImageOperation(on)
 {
-    radius = new DoubleParameter("Radius", r, 0.0, 100.0);
-    signalToNoiseRatio = new DoubleParameter("Signal to noise ratio", snr, 0.001, 10000.0);
+    radius = new DoubleParameter("Radius", r, 0.0, 100.0, 0.0, 1000000.0);
+    signalToNoiseRatio = new DoubleParameter("Signal to noise ratio", snr, 0.001, 10000.0, 1.0e-6, 1.0e6);
 }
 
 void DeblurFilter::computePSF(cv::Mat &outputImg, cv::Size filterSize)
@@ -233,7 +233,7 @@ std::string GammaCorrection::name = "Gamma correction";
 
 GammaCorrection::GammaCorrection(bool on, double g): ImageOperation(on)
 {
-    gamma = new DoubleParameter("Gamma", g, 0.0, 10.0);
+    gamma = new DoubleParameter("Gamma", g, 0.0, 10.0, 0.0, 1.0e6);
 }
 
 void GammaCorrection::applyOperation(cv::Mat &src)
@@ -253,7 +253,7 @@ std::string GaussianBlur::name = "Blur: Gaussian";
 GaussianBlur::GaussianBlur(bool on, int k, double s): ImageOperation(on)
 {
     ksize = new IntParameter("Kernel size", k, 0, 51, true);
-    sigma = new DoubleParameter("Sigma", s, 0.001, 50.0);
+    sigma = new DoubleParameter("Sigma", s, 0.001, 50.0, 1.0e-6, 1.0e6);
 }
 
 void GaussianBlur::applyOperation(cv::Mat &src)
@@ -351,7 +351,7 @@ std::string RadialRemap::name = "Radial remap";
 
 RadialRemap::RadialRemap(bool on, double a, int rf, cv::InterpolationFlags f): ImageOperation(on)
 {
-    amplitude = new DoubleParameter("Amplitude", a, -5.0, 5.0);
+    amplitude = new DoubleParameter("Amplitude", a, -5.0, 5.0, -1.0e6, 1.0e6);
 
     std::vector<std::string> radialFunctionValueNames = {"Linear inc.", "Linear dec.", "Cosine inc.", "Cosine dec."};
     std::vector<int> radialFuncionValues = {0, 1, 2, 3};
@@ -471,8 +471,8 @@ std::string Rotation::name = "Rotation";
 
 Rotation::Rotation(bool on, double a, double s, cv::InterpolationFlags f): ImageOperation(on)
 {
-    angle = new DoubleParameter("Angle", a, -360.0, 360.0);
-    scale = new DoubleParameter("Scale", s, 0.0, 10.0);
+    angle = new DoubleParameter("Angle", a, -360.0, 360.0, -1.0e6, 1.0e6);
+    scale = new DoubleParameter("Scale", s, 0.0, 10.0, 0.0, 1.0e6);
 
     std::vector<std::string> valueNames = {"Nearest neighbor", "Bilinear", "Bicubic", "Area", "Lanczos 8x8"};
     std::vector<cv::InterpolationFlags> values = {cv::INTER_NEAREST, cv::INTER_LINEAR, cv::INTER_CUBIC, cv::INTER_AREA, cv::INTER_LANCZOS4};
@@ -493,9 +493,9 @@ std::string Sharpen::name = "Sharpen";
 
 Sharpen::Sharpen(bool on, double s, double t, double a): ImageOperation(on)
 {
-    sigma = new DoubleParameter("Sigma", s, 0.001, 10.0);
-    threshold = new DoubleParameter("Threshold", t, 0.0, 100.0);
-    amount = new DoubleParameter("Amount", a, 0.0, 10.0);
+    sigma = new DoubleParameter("Sigma", s, 0.001, 10.0, 1.0e-6, 1.0e6);
+    threshold = new DoubleParameter("Threshold", t, 0.0, 100.0, 0.0, 1.0e6);
+    amount = new DoubleParameter("Amount", a, 0.0, 10.0, -1.0e6, 1.0e6);
 }
 
 void Sharpen::applyOperation(cv::Mat &src)

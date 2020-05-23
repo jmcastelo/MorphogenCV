@@ -101,6 +101,10 @@ class MainWidget : public QWidget
     std::vector<int> currentImageOperationIndex;
 
     QSlider *selectedParameterSlider;
+    CustomLineEdit *selectedParameterMinLineEdit;
+    CustomLineEdit *selectedParameterMaxLineEdit;
+    QDoubleValidator *selectedParameterMinValidator;
+    QDoubleValidator *selectedParameterMaxValidator;
     QGroupBox *selectedParameterGroupBox;
 
     QVBoxLayout *parametersLayout;
@@ -154,6 +158,7 @@ class MainWidget : public QWidget
 
     void onImageOperationsListWidgetCurrentRowChanged(int currentRow);
     void onRowsMoved(QModelIndex parent, int start, int end, QModelIndex destination, int row);
+    void onDoubleParameterWidgetFocusIn(DoubleParameterWidget *widget);
 
     void insertImageOperation();
     void removeImageOperation();

@@ -214,6 +214,15 @@ public:
         return static_cast<int>(indexMax * (doubleParameter->value - doubleParameter->min) / (doubleParameter->max - doubleParameter->min));
     }
 
+    void setMin(double min){ doubleParameter->min = min; }
+    double getMin(){ return doubleParameter->min; }
+
+    void setMax(double max){ doubleParameter->max = max; }
+    double getMax(){ return doubleParameter->max; }
+
+    double getInf(){ return doubleParameter->inf; }
+    double getSup(){ return doubleParameter->sup; }
+
 private:
     DoubleParameter *doubleParameter;
     QString name;
