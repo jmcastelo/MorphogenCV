@@ -34,9 +34,13 @@ HEADERS += \
     parameterwidget.h \
     qcustomplot.h
 
-INCLUDEPATH += /usr/include/opencv4
+# Change path according to your system
+unix:INCLUDEPATH += /usr/include/opencv4
+win32:INCLUDEPATH += C:/opencv-dynamic-qt-dynamic-build/install/include
 
-LIBS += -lopencv_core -lopencv_imgproc -lopencv_imgcodecs -lopencv_highgui
+# Change path according to your system
+unix:LIBS += -lopencv_core -lopencv_imgproc -lopencv_imgcodecs -lopencv_highgui
+win32:LIBS += -LC:/opencv-dynamic-qt-dynamic-build/install/x64/mingw/lib -lopencv_core430.dll -lopencv_imgproc430.dll -lopencv_imgcodecs430.dll -lopencv_highgui430.dll
 
 QMAKE_CXXFLAGS_RELEASE += -O3
 
