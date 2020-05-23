@@ -571,11 +571,8 @@ void MainWidget::setTimerInterval()
 
 void MainWidget::setImageSize()
 {
-    bool stopTimer = timer->isActive();
-    if (stopTimer) timer->stop();
     generator->setImageSize(imageSizeLineEdit->text().toInt());
     histogramPlot->setYMax(generator->getHistogramMax());
-    if (stopTimer) timer->start(timerInterval);
 }
 
 void MainWidget::selectScreenshotPath()

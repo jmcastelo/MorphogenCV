@@ -85,7 +85,6 @@ class GeneratorCV
 
     void setMask();
     void computeHistogramMax();
-    void initImageOperations();
     void applyImageOperations();
     void blendImages();
     static void onMouse(int event, int x, int y, int, void* userdata);

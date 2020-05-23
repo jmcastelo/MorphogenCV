@@ -263,14 +263,6 @@ GeneratorCV::GeneratorCV()
 
     imageSize = 700;
 
-    cv::Mat img = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
-
-    pipelines.push_back(new Pipeline(img));
-    pipelines.push_back(new Pipeline(img));
-
-    pipelines[0]->blendFactor = 0.5;
-    pipelines[1]->blendFactor = 0.5;
-
     colorScaleFactor = 1.0 / (imageSize * imageSize * 255);
 
     histogramSize = 256;
@@ -282,7 +274,6 @@ GeneratorCV::GeneratorCV()
     setMask();
     computeHistogramMax();
     drawSeed(true);
-    initImageOperations();
 
     cv::namedWindow("Out image", cv::WINDOW_AUTOSIZE);
     cv::setMouseCallback("Out image", onMouse, this);
@@ -330,17 +321,6 @@ void GeneratorCV::drawSeed(bool grayscale)
     outImage = maskedSeed.clone();
 
     cv::imshow("Out image", maskedSeed);
-}
-
-void GeneratorCV::initImageOperations()
-{
-    pipelines[0]->imageOperations.clear();
-    pipelines[0]->imageOperations.push_back(new MorphologyEx(true, 3, 1, cv::MORPH_DILATE, cv::MORPH_ELLIPSE));
-    pipelines[0]->imageOperations.push_back(new Rotation(true, 36.0, 1.005, cv::INTER_LINEAR));
-
-    pipelines[1]->imageOperations.clear();
-    pipelines[1]->imageOperations.push_back(new ConvertTo(true, 0.85, 0.0));
-    pipelines[1]->imageOperations.push_back(new Sharpen(true, 1.0, 5.0, 1.0));
 }
 
 void GeneratorCV::blendImages()
@@ -599,7 +579,9 @@ void GeneratorCV::addPipeline()
 
 void GeneratorCV::loadPipeline(double blendFactor)
 {
-    pipelines.push_back(new Pipeline(outImage));
+    cv::Mat mat;
+    outImage.copyTo(mat, mask);
+    pipelines.push_back(new Pipeline(mat));
     pipelines.back()->blendFactor = blendFactor;
 }
 
