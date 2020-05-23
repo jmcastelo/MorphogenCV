@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pipelines>
+    <pipeline blendfactor="0.5">
+        <operation name="Morphology operation" enabled="1">
+            <parameter name="Kernel size" type="int">3</parameter>
+            <parameter name="Iterations" type="int">1</parameter>
+            <parameter name="Type" type="morphtype">1</parameter>
+            <parameter name="Shape" type="morphshape">2</parameter>
+        </operation>
+        <operation name="Rotation/scaling" enabled="1">
+            <parameter name="Angle" type="double">45</parameter>
+            <parameter name="Scale" type="double">1.005</parameter>
+            <parameter name="Interpolation" type="interpolationflag">1</parameter>
+        </operation>
+    </pipeline>
+    <pipeline blendfactor="0.5">
+        <operation name="Contrast/brightness" enabled="1">
+            <parameter name="Gain" type="double">0.85</parameter>
+            <parameter name="Bias" type="double">0</parameter>
+        </operation>
+        <operation name="Sharpen" enabled="1">
+            <parameter name="Sigma" type="double">1</parameter>
+            <parameter name="Threshold" type="double">5</parameter>
+            <parameter name="Amount" type="double">1</parameter>
+        </operation>
+    </pipeline>
+</pipelines>

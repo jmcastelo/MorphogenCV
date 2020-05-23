@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pipelines>
+    <pipeline blendfactor="0.333333">
+        <operation name="Sharpen" enabled="1">
+            <parameter name="Sigma" type="double">0.9</parameter>
+            <parameter name="Threshold" type="double">10</parameter>
+            <parameter name="Amount" type="double">0.9</parameter>
+        </operation>
+        <operation name="Rotation/scaling" enabled="1">
+            <parameter name="Angle" type="double">22.5</parameter>
+            <parameter name="Scale" type="double">1.03</parameter>
+            <parameter name="Interpolation" type="interpolationflag">2</parameter>
+        </operation>
+    </pipeline>
+    <pipeline blendfactor="0.333333">
+        <operation name="Blur: Gaussian" enabled="1">
+            <parameter name="Kernel size" type="int">0</parameter>
+            <parameter name="Sigma" type="double">0.5</parameter>
+        </operation>
+    </pipeline>
+    <pipeline blendfactor="0.333333">
+        <operation name="Shift hue" enabled="1">
+            <parameter name="Delta" type="int">1</parameter>
+        </operation>
+    </pipeline>
+</pipelines>

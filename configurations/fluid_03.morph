@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pipelines>
+    <pipeline blendfactor="0.333333">
+        <operation name="Contrast/brightness" enabled="1">
+            <parameter name="Gain" type="double">1.8904</parameter>
+            <parameter name="Bias" type="double">-100</parameter>
+        </operation>
+        <operation name="Blur: Gaussian" enabled="1">
+            <parameter name="Kernel size" type="int">3</parameter>
+            <parameter name="Sigma" type="double">4.8594</parameter>
+        </operation>
+        <operation name="Rotation/scaling" enabled="1">
+            <parameter name="Angle" type="double">60</parameter>
+            <parameter name="Scale" type="double">0.999</parameter>
+            <parameter name="Interpolation" type="interpolationflag">0</parameter>
+        </operation>
+    </pipeline>
+    <pipeline blendfactor="0.333333">
+        <operation name="Contrast/brightness" enabled="1">
+            <parameter name="Gain" type="double">0.9437</parameter>
+            <parameter name="Bias" type="double">3.644</parameter>
+        </operation>
+        <operation name="Filter 2D" enabled="1">
+            <parameter name="Kernel" type="kernel">
+                <element>1</element>
+                <element>2</element>
+                <element>1</element>
+                <element>2</element>
+                <element>-13</element>
+                <element>2</element>
+                <element>1</element>
+                <element>2</element>
+                <element>1</element>
+            </parameter>
+        </operation>
+    </pipeline>
+    <pipeline blendfactor="0.333333">
+        <operation name="Equalize histogram" enabled="1"/>
+    </pipeline>
+</pipelines>
