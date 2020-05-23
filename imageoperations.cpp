@@ -224,7 +224,7 @@ void Filter2D::updateKernelMat()
 
 void Filter2D::applyOperation(cv::Mat &src)
 {
-    cv::filter2D(src, src, -1, kernelMat, cv::Point(-1, -1), 0.0, cv::BORDER_DEFAULT);
+    cv::filter2D(src, src, -1, kernelMat, cv::Point(-1, -1), 0.0, cv::BORDER_ISOLATED);
 }
 
 // Gamma correction
@@ -291,7 +291,7 @@ std::string MedianBlur::name = "Blur: median";
 
 MedianBlur::MedianBlur(bool on, int size): ImageOperation(on)
 {
-    ksize = new IntParameter("Kernel size", size, 1, 51, true);
+    ksize = new IntParameter("Kernel size", size, 3, 51, true);
 }
 
 void MedianBlur::applyOperation(cv::Mat &src)
@@ -467,7 +467,7 @@ void RadialRemap::applyOperation(cv::Mat &src)
 
 // Rotation
 
-std::string Rotation::name = "Rotation";
+std::string Rotation::name = "Rotation/scaling";
 
 Rotation::Rotation(bool on, double a, double s, cv::InterpolationFlags f): ImageOperation(on)
 {
@@ -513,7 +513,7 @@ std::string ShiftHue::name = "Shift hue";
 
 ShiftHue::ShiftHue(bool on, int d): ImageOperation(on)
 {
-    delta = new IntParameter("Delta", d, -180, 180 ,false);
+    delta = new IntParameter("Delta", d, -180, 180, false);
 }
 
 void ShiftHue::applyOperation(cv::Mat &src)
