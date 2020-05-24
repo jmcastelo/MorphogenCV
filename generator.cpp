@@ -31,9 +31,11 @@ Pipeline::Pipeline(cv::Mat img): image(img)
         EqualizeHist::name,
         Filter2D::name,
         GammaCorrection::name,
+        InvertColors::name,
         Laplacian::name,
         MixChannels::name,
         MorphologyEx::name,
+        Pixelate::name,
         RadialRemap::name,
         Rotation::name,
         Sharpen::name,
@@ -119,6 +121,10 @@ void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationI
     {
         imageOperations.insert(it + currentOperationIndex + 1, new GaussianBlur(false, 3, 1.0));
     }
+    else if (operationName == InvertColors::name)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new InvertColors(false));
+    }
     else if (operationName == Laplacian::name)
     {
         imageOperations.insert(it + currentOperationIndex + 1, new Laplacian(false, 3));
@@ -135,13 +141,17 @@ void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationI
     {
         imageOperations.insert(it + currentOperationIndex + 1, new MorphologyEx(false, 3, 1, cv::MORPH_ERODE, cv::MORPH_RECT));
     }
-    else if (operationName == Rotation::name)
+    else if (operationName == Pixelate::name)
     {
-        imageOperations.insert(it + currentOperationIndex + 1, new Rotation(false, 0.0, 1.0, cv::INTER_NEAREST));
+        imageOperations.insert(it + currentOperationIndex + 1, new Pixelate(false, 1));
     }
     else if (operationName == RadialRemap::name)
     {
         imageOperations.insert(it + currentOperationIndex + 1, new RadialRemap(false, 0.0, 0, cv::INTER_NEAREST));
+    }
+    else if (operationName == Rotation::name)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new Rotation(false, 0.0, 1.0, cv::INTER_NEAREST));
     }
     else if (operationName == Sharpen::name)
     {
@@ -200,6 +210,10 @@ void Pipeline::loadImageOperation(
     {
         imageOperations.push_back(new GaussianBlur(enabled, intParameters[0], doubleParameters[0]));
     }
+    else if (operationName == InvertColors::name)
+    {
+        imageOperations.push_back(new InvertColors(enabled));
+    }
     else if (operationName == Laplacian::name)
     {
         imageOperations.push_back(new Laplacian(enabled, intParameters[0]));
@@ -217,6 +231,10 @@ void Pipeline::loadImageOperation(
         cv::MorphTypes morphType = static_cast<cv::MorphTypes>(morphTypeParameters[0]);
         cv::MorphShapes morphShape = static_cast<cv::MorphShapes>(morphShapeParameters[0]);
         imageOperations.push_back(new MorphologyEx(enabled, intParameters[0], intParameters[1], morphType, morphShape));
+    }
+    else if (operationName == Pixelate::name)
+    {
+        imageOperations.push_back(new Pixelate(enabled, intParameters[0]));
     }
     else if (operationName == RadialRemap::name)
     {
@@ -252,9 +270,11 @@ GeneratorCV::GeneratorCV()
         EqualizeHist::name,
         Filter2D::name,
         GammaCorrection::name,
+        InvertColors::name,
         Laplacian::name,
         MixChannels::name,
         MorphologyEx::name,
+        Pixelate::name,
         RadialRemap::name,
         Rotation::name,
         Sharpen::name,

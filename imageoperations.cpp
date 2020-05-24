@@ -261,6 +261,17 @@ void GaussianBlur::applyOperation(cv::Mat &src)
     cv::GaussianBlur(src, src, cv::Size(ksize->value, ksize->value), sigma->value, sigma->value, cv::BORDER_ISOLATED);
 }
 
+// Invert colors
+
+std::string InvertColors::name = "Invert colors";
+
+InvertColors::InvertColors(bool on): ImageOperation(on){}
+
+void InvertColors::applyOperation(cv::Mat &src)
+{
+    cv::bitwise_not(src, src);
+}
+
 // Laplacian
 
 std::string Laplacian::name = "Laplacian";
@@ -343,6 +354,39 @@ void MorphologyEx::applyOperation(cv::Mat &src)
 {
     cv::Mat element = cv::getStructuringElement(morphShape->value, cv::Size(ksize->value, ksize->value));
     cv::morphologyEx(src, src, morphType->value, element, cv::Point(-1, -1), iterations->value, cv::BORDER_ISOLATED);
+}
+
+// Pixelate
+
+std::string Pixelate::name = "Pixelate";
+
+Pixelate::Pixelate(bool on, int size): ImageOperation(on)
+{
+    pixelSize = new IntParameter("Pixel size", size, 1, 50, false);
+}
+
+void Pixelate::applyOperation(cv::Mat &src)
+{
+    cv::Mat dst(src.rows, src.cols, src.type());
+
+    cv::Rect square;
+
+    for (int row = 0; row < src.rows; row += pixelSize->value)
+    {
+        square.y = row;
+        square.height = row + pixelSize->value < src.rows ? pixelSize->value : src.rows - row;
+
+        for (int col = 0; col < src.cols; col += pixelSize->value)
+        {
+            square.x = col;
+            square.width = col + pixelSize->value < src.cols ? pixelSize->value : src.cols - col;
+
+            cv::Scalar meanColor = cv::mean(cv::Mat(src, square));
+            cv::rectangle(dst, square, meanColor, cv::FILLED);
+        }
+    }
+
+    src = dst.clone();
 }
 
 // Radial remap

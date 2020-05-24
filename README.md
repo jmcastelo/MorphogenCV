@@ -24,6 +24,7 @@ A list of supported operations follows:
 * Equalize histogram
 * Filter with 3x3 kernel
 * Gamma correction
+* Invert colors
 * Laplacian
 * Mix channels
 * Morphology operations
@@ -34,6 +35,7 @@ A list of supported operations follows:
     * Gradient
     * Top hat
     * Black hat
+* Pixelate
 * Radial remap
 * Rotation/scaling
 * Sharpen
@@ -181,6 +183,10 @@ Corrects the brightness of an image by using a non linear transformation between
 
 * **Gamma**: exponent of non linear mapping.
 
+### Invert colors
+
+Creates the negative of an image by bitwise not operator.
+
 ### Laplacian
 
 Calculates the Laplacian of an image. Works best for silhouette definition if applied after a blur operation. For more information see this [OpenCV tutorial](https://docs.opencv.org/master/d5/db5/tutorial_laplace_operator.html). [OpenCV function documentation.](https://docs.opencv.org/master/d4/d86/group__imgproc__filter.html#gad78703e4c8fe703d479c1860d76429e6)
@@ -209,6 +215,14 @@ A set of operations that process an image based on shapes. Morphological operati
 * **Shape**: Shape of the structuring element. Can be "Rectangle", "Cross" or "Ellipse".
 * **Kernel size**: Size of the structuring element. Must be positive and odd.
 * **Iterations**: Number of times erosion and dilation are applied.
+
+### Pixelate
+
+Applies pixelation to an image. The color of each new larger pixel is obtained as the mean of the old smaller pixels that are within the larger one.
+
+#### Parameters
+
+* **Pixel size**: Positive integer larger than 0.
 
 ### Radial remap
 

@@ -254,6 +254,19 @@ public:
     void applyOperation(cv::Mat &src);
 };
 
+// Invert colors
+
+class InvertColors: public ImageOperation
+{
+public:
+    static std::string name;
+
+    InvertColors(bool on);
+
+    std::string getName(){ return name; };
+    void applyOperation(cv::Mat &src);
+};
+
 // Laplacian
 
 class Laplacian: public ImageOperation
@@ -343,6 +356,25 @@ public:
     std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {ksize, iterations}; return parameters; };
     std::vector<OptionsParameter<cv::MorphTypes>*> getMorphTypeParameters(){ std::vector<OptionsParameter<cv::MorphTypes>*> parameters = {morphType}; return parameters; };
     std::vector<OptionsParameter<cv::MorphShapes>*> getMorphShapeParameters(){ std::vector<OptionsParameter<cv::MorphShapes>*> parameters = {morphShape}; return parameters; };
+
+    void applyOperation(cv::Mat &src);
+};
+
+// Pixelate
+
+class Pixelate: public ImageOperation
+{
+    IntParameter *pixelSize;
+
+public:
+    static std::string name;
+
+    Pixelate(bool on, int size);
+    ~Pixelate(){ delete pixelSize; }
+
+    std::string getName(){ return name; };
+
+    std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {pixelSize}; return parameters; };
 
     void applyOperation(cv::Mat &src);
 };
