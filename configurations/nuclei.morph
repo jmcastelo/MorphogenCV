@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pipelines>
+    <pipeline blendfactor="0.333333">
+        <operation name="Contrast/brightness" enabled="1">
+            <parameter name="Gain" type="double">1</parameter>
+            <parameter name="Bias" type="double">35</parameter>
+        </operation>
+        <operation name="Sharpen" enabled="1">
+            <parameter name="Sigma" type="double">4</parameter>
+            <parameter name="Threshold" type="double">5</parameter>
+            <parameter name="Amount" type="double">7</parameter>
+        </operation>
+        <operation name="Blur: Gaussian" enabled="1">
+            <parameter name="Kernel size" type="int">0</parameter>
+            <parameter name="Sigma" type="double">2.5</parameter>
+        </operation>
+        <operation name="Rotation/scaling" enabled="1">
+            <parameter name="Angle" type="double">45</parameter>
+            <parameter name="Scale" type="double">1.004</parameter>
+            <parameter name="Interpolation" type="interpolationflag">2</parameter>
+        </operation>
+    </pipeline>
+    <pipeline blendfactor="0.333333">
+        <operation name="Contrast/brightness" enabled="1">
+            <parameter name="Gain" type="double">1.8</parameter>
+            <parameter name="Bias" type="double">20</parameter>
+        </operation>
+        <operation name="Morphology operation" enabled="1">
+            <parameter name="Kernel size" type="int">7</parameter>
+            <parameter name="Iterations" type="int">2</parameter>
+            <parameter name="Type" type="morphtype">0</parameter>
+            <parameter name="Shape" type="morphshape">2</parameter>
+        </operation>
+        <operation name="Filter 2D" enabled="1">
+            <parameter name="Kernel" type="kernel">
+                <element>-2</element>
+                <element>-1</element>
+                <element>-2</element>
+                <element>-1</element>
+                <element>13</element>
+                <element>-1</element>
+                <element>-2</element>
+                <element>-1</element>
+                <element>-2</element>
+            </parameter>
+        </operation>
+    </pipeline>
+    <pipeline blendfactor="0.333333">
+        <operation name="Equalize histogram" enabled="1"/>
+        <operation name="Shift hue" enabled="0">
+            <parameter name="Delta" type="int">5</parameter>
+        </operation>
+    </pipeline>
+</pipelines>
