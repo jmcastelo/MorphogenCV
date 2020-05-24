@@ -500,16 +500,14 @@ void GeneratorCV::setImageSize(int size)
     colorScaleFactor = 1.0 / (imageSize * imageSize * 255);
 
     for (auto &pipeline: pipelines)
-    {
-        cv::Mat dst;
-        cv::resize(pipeline->image, dst, cv::Size(imageSize, imageSize));
-        pipeline->image = dst.clone();
-    }
+        cv::resize(pipeline->image, pipeline->image, cv::Size(imageSize, imageSize));
+
+    cv::resize(outImage, outImage, cv::Size(imageSize, imageSize));
 
     setMask();
     computeHistogramMax();
 
-    cv::imshow("Out image", pipelines[0]->image);
+    cv::imshow("Out image", outImage);
 
     selectedPixel = cv::Point(imageSize / 2, imageSize / 2);
 }
