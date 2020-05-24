@@ -28,6 +28,8 @@ Pipeline::Pipeline(cv::Mat img): image(img)
         Canny::name,
         ConvertTo::name,
         DeblurFilter::name,
+        DetailEnhance::name,
+        EdgePreservingFilter::name,
         EqualizeHist::name,
         Filter2D::name,
         GammaCorrection::name,
@@ -101,6 +103,14 @@ void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationI
     else if (operationName == DeblurFilter::name)
     {
         imageOperations.insert(it + currentOperationIndex + 1, new DeblurFilter(false, 1.0, 1000.0));
+    }
+    else if (operationName == DetailEnhance::name)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new DetailEnhance(false, 10.0, 0.15));
+    }
+    else if (operationName == EdgePreservingFilter::name)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new EdgePreservingFilter(false, 60.0, 0.4, cv::RECURS_FILTER));
     }
     else if (operationName == EqualizeHist::name)
     {
@@ -184,6 +194,14 @@ void Pipeline::loadImageOperation(
     {
         imageOperations.push_back(new DeblurFilter(enabled, doubleParameters[0], doubleParameters[1]));
     }
+    else if (operationName == DetailEnhance::name)
+    {
+        imageOperations.push_back(new DetailEnhance(enabled, doubleParameters[0], doubleParameters[1]));
+    }
+    else if (operationName == EdgePreservingFilter::name)
+    {
+        imageOperations.push_back(new EdgePreservingFilter(enabled, doubleParameters[0], doubleParameters[1], intParameters[0]));
+    }
     else if (operationName == EqualizeHist::name)
     {
         imageOperations.push_back(new EqualizeHist(enabled));
@@ -249,6 +267,8 @@ GeneratorCV::GeneratorCV()
         Canny::name,
         ConvertTo::name,
         DeblurFilter::name,
+        DetailEnhance::name,
+        EdgePreservingFilter::name,
         EqualizeHist::name,
         Filter2D::name,
         GammaCorrection::name,

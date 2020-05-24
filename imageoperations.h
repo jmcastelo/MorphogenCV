@@ -20,6 +20,7 @@
 
 #include "parameter.h"
 #include <opencv2/imgproc.hpp>
+#include <opencv2/photo.hpp>
 #include <vector>
 #include <string>
 #include <cmath>
@@ -146,7 +147,7 @@ public:
     void applyOperation(cv::Mat &src);
 };
 
-// Convert to
+// Deblur filter
 
 class DeblurFilter: public ImageOperation
 {
@@ -170,6 +171,55 @@ public:
     void computeWnrFilter(const cv::Mat &input_h_PSF, cv::Mat &output_G, double nsr);
     void fftShift(const cv::Mat &inputImg, cv::Mat &outputImg);
     void filter2DFreq(const cv::Mat &inputImg, cv::Mat &outputImg, const cv::Mat &H);
+    void applyOperation(cv::Mat &src);
+};
+
+// Detail enhance
+
+class DetailEnhance: public ImageOperation
+{
+    DoubleParameter *sigmaS, *sigmaR;
+
+public:
+    static std::string name;
+
+    DetailEnhance(bool on, double ss, double sr);
+    ~DetailEnhance()
+    {
+        delete sigmaS;
+        delete sigmaR;
+    }
+
+    std::string getName(){ return name; };
+
+    std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {sigmaS, sigmaR}; return parameters; };
+
+    void applyOperation(cv::Mat &src);
+};
+
+// Edge preserving filter
+
+class EdgePreservingFilter: public ImageOperation
+{
+    DoubleParameter *sigmaS, *sigmaR;
+    OptionsParameter<int> *flag;
+
+public:
+    static std::string name;
+
+    EdgePreservingFilter(bool on, double ss, double sr, int f);
+    ~EdgePreservingFilter()
+    {
+        delete sigmaS;
+        delete sigmaR;
+        delete flag;
+    }
+
+    std::string getName(){ return name; };
+
+    std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {sigmaS, sigmaR}; return parameters; };
+    std::vector<OptionsParameter<int>*> getOptionsIntParameters(){ std::vector<OptionsParameter<int>*> parameters = {flag}; return parameters; };
+
     void applyOperation(cv::Mat &src);
 };
 

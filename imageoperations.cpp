@@ -184,6 +184,41 @@ void DeblurFilter::applyOperation(cv::Mat &src)
     cv::normalize(dst, src, 0, 255, cv::NORM_MINMAX);
 }
 
+// Detail enhance
+
+std::string DetailEnhance::name = "Detail enhance";
+
+DetailEnhance::DetailEnhance(bool on, double ss, double sr): ImageOperation(on)
+{
+    sigmaS = new DoubleParameter("Sigma S", ss, 0.0, 200.0, 0.0, 200.0);
+    sigmaR = new DoubleParameter("Sigma R", sr, 0.0, 1.0, 0.0, 1.0);
+}
+
+void DetailEnhance::applyOperation(cv::Mat &src)
+{
+    cv::detailEnhance(src, src, sigmaS->value, sigmaR->value);
+}
+
+// Edge preserving filter
+
+std::string EdgePreservingFilter::name = "Edge-preserving filter";
+
+EdgePreservingFilter::EdgePreservingFilter(bool on, double ss, double sr, int f): ImageOperation(on)
+{
+    sigmaS = new DoubleParameter("Sigma S", ss, 0.0, 200.0, 0.0, 200.0);
+    sigmaR = new DoubleParameter("Sigma R", sr, 0.0, 1.0, 0.0, 1.0);
+
+    std::vector<std::string> flagNames = {"Recursive", "Normalized convolution"};
+    std::vector<int> flagValues = {cv::RECURS_FILTER, cv::NORMCONV_FILTER};
+
+    flag = new OptionsParameter<int>("Type", flagNames, flagValues, f);
+}
+
+void EdgePreservingFilter::applyOperation(cv::Mat &src)
+{
+    cv::edgePreservingFilter(src, src, flag->value, sigmaS->value, sigmaR->value);
+}
+
 // Equalize histogram
 
 std::string EqualizeHist::name = "Equalize histogram";
