@@ -77,14 +77,10 @@ class MainWidget : public QWidget
 
     QLineEdit *imageSizeLineEdit;
 
-    QString screenshotPath;
-    QString screenshotFilename;
-    QPushButton *screenshotPushButton;
-    QPushButton *selectScreenshotPathPushButton;
-    QLineEdit *screenshotFilenameLineEdit;
-    QCheckBox *screenshotSeriesCheckBox;
-    bool takeScreenshotSeries;
-    unsigned int screenshotIndex;
+    QPushButton *videoFilenamePushButton;
+    QPushButton *videoCapturePushButton;
+    QLineEdit *fpsLineEdit;
+    QLabel *videoCaptureElapsedTimeLabel;
 
     QLineEdit *blendFactorLineEdit;
 
@@ -142,11 +138,9 @@ class MainWidget : public QWidget
 
     void setImageSize();
 
-    void selectScreenshotPath();
-    void setScreenshotFilename(QString text);
-    void setTakeScreenshotSeries(int state);
-    void takeScreenshot();
-    void takeScreenshotSeriesElement();
+    void openVideoWriter();
+    void onVideoCapturePushButtonClicked(bool checked);
+    void setVideoCaptureElapsedTimeLabel();
 
     void initImageSelectComboBox(int imageIndex);
 

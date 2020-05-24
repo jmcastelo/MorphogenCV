@@ -23,8 +23,8 @@
 #include <string>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
-#include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
+#include <opencv2/videoio.hpp>
 #include <QVector>
 
 class Pipeline
@@ -80,8 +80,9 @@ class GeneratorCV
 
     cv::Point selectedPixel;
 
-    std::vector<Pipeline*> parallelPipelines;
-    std::vector<Pipeline*> serialPipelines;
+    int framesPerSecond;
+    int frameCount;
+    cv::VideoWriter videoWriter;
 
     void setMask();
     void computeHistogramMax();
@@ -111,7 +112,13 @@ public:
     void showPixelSelectionCursor();
     void showImage();
 
-    void writeImage(std::string filename);
+    void openVideoWriter(std::string name);
+    void writeVideoFrame();
+    void closeVideoWriter();
+
+    void setFramesPerSecond(int fps){ framesPerSecond = fps; }
+    int getFramesPerSecond(){ return framesPerSecond; }
+    int getFrameCount(){ return frameCount; }
 
     int getIterationNumber(){ return iteration; };
 

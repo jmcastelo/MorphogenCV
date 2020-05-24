@@ -27,11 +27,6 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
     timerInterval = 30; // ms
 
-    screenshotPath = "";
-    screenshotFilename = "screenshot";
-    takeScreenshotSeries = false;
-    screenshotIndex = 1;
-
     currentImageOperationIndex = {0, 0};
 
     // Plots
@@ -167,37 +162,40 @@ void MainWidget::constructGeneralControls()
     QGroupBox *mainControlsGroupBox = new QGroupBox("Main");
     mainControlsGroupBox->setLayout(mainControlsVBoxLayout);
 
-    // Screenshots controls
+    // Video capture
 
-    screenshotPushButton = new QPushButton("Take screenshot");
-    screenshotPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    screenshotPushButton->setEnabled(false);
-    screenshotPushButton->setCheckable(false);
+    videoFilenamePushButton = new QPushButton("Select output file");
+    videoFilenamePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
-    screenshotSeriesCheckBox = new QCheckBox("Series");
+    videoCapturePushButton = new QPushButton("Start");
+    videoCapturePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    videoCapturePushButton->setCheckable(true);
+    videoCapturePushButton->setEnabled(false);
 
-    QHBoxLayout *takeScreenshotHBoxLayout = new QHBoxLayout;
-    takeScreenshotHBoxLayout->addWidget(screenshotPushButton);
-    takeScreenshotHBoxLayout->addWidget(screenshotSeriesCheckBox);
+    fpsLineEdit = new QLineEdit;
+    fpsLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    QIntValidator *fpsValidator = new QIntValidator(1, 1000, fpsLineEdit);
+    fpsValidator->setLocale(QLocale::English);
+    fpsLineEdit->setValidator(fpsValidator);
+    fpsLineEdit->setText(QString::number(generator->getFramesPerSecond()));
 
-    selectScreenshotPathPushButton = new QPushButton("Select directory");
-    selectScreenshotPathPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    videoCaptureElapsedTimeLabel = new QLabel("00:00:00.000");
+    videoCaptureElapsedTimeLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
-    screenshotFilenameLineEdit = new QLineEdit;
-    screenshotFilenameLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    screenshotFilenameLineEdit->setText(screenshotFilename);
+    QHBoxLayout *videoHBoxLayout = new QHBoxLayout;
+    videoHBoxLayout->addWidget(videoFilenamePushButton);
+    videoHBoxLayout->addWidget(videoCapturePushButton);
 
-    QFormLayout *screenshotPathFormLayout = new QFormLayout;
-    screenshotPathFormLayout->addRow("Filename (no extension)", screenshotFilenameLineEdit);
+    QFormLayout *videoFormLayout = new QFormLayout;
+    videoFormLayout->addRow("Frames per second:", fpsLineEdit);
+    videoFormLayout->addRow("Elapsed time:", videoCaptureElapsedTimeLabel);
 
-    QVBoxLayout *screenshotVBoxLayout = new QVBoxLayout;
-    screenshotVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-    screenshotVBoxLayout->addLayout(takeScreenshotHBoxLayout);
-    screenshotVBoxLayout->addWidget(selectScreenshotPathPushButton);
-    screenshotVBoxLayout->addLayout(screenshotPathFormLayout);
+    QVBoxLayout *videoVBoxLayout = new QVBoxLayout;
+    videoVBoxLayout->addLayout(videoHBoxLayout);
+    videoVBoxLayout->addLayout(videoFormLayout);
 
-    QGroupBox *screenshotGroupBox = new QGroupBox("Screenshots");
-    screenshotGroupBox->setLayout(screenshotVBoxLayout);
+    QGroupBox *videoGroupBox = new QGroupBox("Video capture");
+    videoGroupBox->setLayout(videoVBoxLayout);
 
     // Main layout
 
@@ -206,7 +204,7 @@ void MainWidget::constructGeneralControls()
     generalControlsVBoxLayout->addWidget(seedGroupBox);
     generalControlsVBoxLayout->addWidget(configGroupBox);
     generalControlsVBoxLayout->addWidget(mainControlsGroupBox);
-    generalControlsVBoxLayout->addWidget(screenshotGroupBox);
+    generalControlsVBoxLayout->addWidget(videoGroupBox);
 
     // Widget to put in tab
 
@@ -222,10 +220,9 @@ void MainWidget::constructGeneralControls()
     connect(loadConfigPushButton, &QPushButton::clicked, this, &MainWidget::loadConfig);
     connect(timerIntervalLineEdit, &QLineEdit::returnPressed, this, &MainWidget::setTimerInterval);
     connect(imageSizeLineEdit, &QLineEdit::returnPressed, this, &MainWidget::setImageSize);
-    connect(selectScreenshotPathPushButton, &QPushButton::clicked, this, &MainWidget::selectScreenshotPath);
-    connect(screenshotFilenameLineEdit, &QLineEdit::textChanged, this, &MainWidget::setScreenshotFilename);
-    connect(screenshotSeriesCheckBox, &QCheckBox::stateChanged, this, &MainWidget::setTakeScreenshotSeries);
-    connect(screenshotPushButton, &QPushButton::clicked, this, &MainWidget::takeScreenshot);
+    connect(videoFilenamePushButton, &QPushButton::clicked, this, &MainWidget::openVideoWriter);
+    connect(videoCapturePushButton, &QPushButton::clicked, this, &MainWidget::onVideoCapturePushButtonClicked);
+    connect(fpsLineEdit, &QLineEdit::returnPressed, [=](){ generator->setFramesPerSecond(fpsLineEdit->text().toInt()); });
 }
 
 void MainWidget::constructImageManipulationControls()
@@ -575,54 +572,46 @@ void MainWidget::setImageSize()
     histogramPlot->setYMax(generator->getHistogramMax());
 }
 
-void MainWidget::selectScreenshotPath()
+void MainWidget::openVideoWriter()
 {
-    screenshotPath = QFileDialog::getExistingDirectory(this, "Open Directory", screenshotPath, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-    screenshotPushButton->setEnabled(!screenshotPath.isEmpty());
-}
+    QString videoPath = QFileDialog::getSaveFileName(this, "Output video file", "", "Videos (*.avi)");
 
-void MainWidget::setScreenshotFilename(QString text)
-{
-    screenshotFilename = text;
-    screenshotPushButton->setEnabled(!text.isEmpty() && !screenshotPath.isEmpty());
-}
-
-void MainWidget::setTakeScreenshotSeries(int state)
-{
-    takeScreenshotSeries = (state == Qt::Checked);
-    screenshotPushButton->setCheckable((state == Qt::Checked));
-}
-
-void MainWidget::takeScreenshot()
-{
-    if (!screenshotPushButton->isCheckable() && !screenshotPath.isEmpty() && !screenshotFilename.isEmpty())
+    if (!videoPath.isEmpty())
     {
-        QDir dir(screenshotPath);
-        QString absPath = dir.absoluteFilePath(screenshotFilename + ".jpg");
-
-        bool stopTimer = timer->isActive();
-        if (stopTimer) timer->stop();
-        generator->writeImage(absPath.toStdString());
-        if (stopTimer) timer->start(timerInterval);
+        generator->openVideoWriter(videoPath.toStdString());
+        fpsLineEdit->setEnabled(false);
+        videoCaptureElapsedTimeLabel->setText("00:00:00.000");
     }
 
-    if (screenshotPushButton->isCheckable())
+    videoCapturePushButton->setEnabled(!videoPath.isEmpty());
+}
+
+void MainWidget::onVideoCapturePushButtonClicked(bool checked)
+{
+    if (checked)
     {
-        screenshotIndex = 1;
+        imageSizeLineEdit->setEnabled(false);
+        videoFilenamePushButton->setEnabled(false);
+        videoCapturePushButton->setText("Stop");
+    }
+    else
+    {
+        generator->closeVideoWriter();
+        imageSizeLineEdit->setEnabled(true);
+        videoFilenamePushButton->setEnabled(true);
+        videoCapturePushButton->setText("Start");
+        videoCapturePushButton->setEnabled(false);
+        fpsLineEdit->setEnabled(true);
     }
 }
 
-void MainWidget::takeScreenshotSeriesElement()
+void MainWidget::setVideoCaptureElapsedTimeLabel()
 {
-    if (!screenshotPath.isEmpty() && !screenshotFilename.isEmpty())
-    {
-        QDir dir(screenshotPath);
-        QString absPath = dir.absoluteFilePath(screenshotFilename + QString("%1").arg(screenshotIndex, 5, 10, QChar('0')) + ".jpg");
+    int milliseconds = static_cast<int>(1000.0 * generator->getFrameCount() / generator->getFramesPerSecond());
 
-        generator->writeImage(absPath.toStdString());
+    QTime start(0, 0, 0, 0);
 
-        screenshotIndex++;
-    }
+    videoCaptureElapsedTimeLabel->setText(start.addMSecs(milliseconds).toString("hh:mm:ss.zzz"));
 }
 
 void MainWidget::initImageSelectComboBox(int imageIndex)
@@ -870,9 +859,7 @@ void MainWidget::iterationLoop()
     }
 
     if (dftPushButton->isChecked())
-    {
         generator->computeDFT();
-    }
 
     if (histogramPushButton->isChecked())
     {
@@ -889,14 +876,10 @@ void MainWidget::iterationLoop()
     // Single pixel computations/plots
 
     if (pixelIterationPushButton->isChecked() || colorSpacePixelPushButton->isChecked())
-    {
         generator->computeBGRPixel();
-    }
 
     if (pixelIterationPushButton->isChecked())
-    {
         pixelIterationPlot->addPoint(generator->getIterationNumber(), generator->getPixelComponent(0), generator->getPixelComponent(1), generator->getPixelComponent(2));
-    }
 
     if (colorSpacePixelPushButton->isChecked())
     {
@@ -909,19 +892,14 @@ void MainWidget::iterationLoop()
     // Show out image
 
     if (selectPixelPushButton->isChecked())
-    {
         generator->showPixelSelectionCursor();
-    }
     else
-    {
         generator->showImage();
-    }
 
-    // Take screenshot series
-
-    if (takeScreenshotSeries && screenshotPushButton->isChecked())
+    if (videoCapturePushButton->isChecked())
     {
-        takeScreenshotSeriesElement();
+        generator->writeVideoFrame();
+        setVideoCaptureElapsedTimeLabel();
     }
 }
 

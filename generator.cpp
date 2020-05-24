@@ -271,6 +271,8 @@ GeneratorCV::GeneratorCV()
 
     selectingPixel = false;
 
+    framesPerSecond = 30;
+
     setMask();
     computeHistogramMax();
     drawSeed(true);
@@ -282,6 +284,7 @@ GeneratorCV::GeneratorCV()
 
 GeneratorCV::~GeneratorCV()
 {
+    closeVideoWriter();
     cv::destroyAllWindows();
 }
 
@@ -431,6 +434,27 @@ void GeneratorCV::showImage()
     cv::imshow("Out image", outImage);
 }
 
+void GeneratorCV::openVideoWriter(std::string name)
+{
+    videoWriter.open(name, cv::VideoWriter::fourcc('P', 'I', 'M', '1'), framesPerSecond, cv::Size(imageSize, imageSize), true);
+    frameCount = 0;
+}
+
+void GeneratorCV::writeVideoFrame()
+{
+    if (videoWriter.isOpened())
+    {
+        videoWriter.write(outImage);
+        frameCount++;
+    }
+}
+
+void GeneratorCV::closeVideoWriter()
+{
+    if (videoWriter.isOpened())
+        videoWriter.release();
+}
+
 void GeneratorCV::onMouse(int event, int x, int y, int, void *userdata)
 {
     GeneratorCV *mw = reinterpret_cast<GeneratorCV*>(userdata);
@@ -447,12 +471,6 @@ void GeneratorCV::selectPixel(int x, int y)
     {
         selectedPixel = cv::Point(x, y);
     }
-}
-
-void GeneratorCV::writeImage(std::string filename)
-{
-    std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 100};
-    cv::imwrite(filename, outImage, params);
 }
 
 void GeneratorCV::setImageSize(int size)
