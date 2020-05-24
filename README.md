@@ -4,7 +4,7 @@ An interactive tool to simulate videofeedback, a phenomenon that consists of con
 
 ## Screenshots
 
-<img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_01.png"/> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_02.png"/> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_03.png"/> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_04.png"/> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_05.png"/> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_06.png"/>
+<p align="center"><img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_01.png"> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_02.png"> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_03.png"> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_04.png"> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_05.png"> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_06.png"></p>
 
 ## Pipelines
 
@@ -21,6 +21,8 @@ A list of supported operations follows:
 * Canny edge detection
 * Contrast/brightness adjustment
 * Deblur filter
+* Detail enhance
+* Edge-preserving filter
 * Equalize histogram
 * Filter with 3x3 kernel
 * Gamma correction
@@ -69,7 +71,7 @@ Pipelines can be created, selected and destroyed. Their blend factors can be cho
 
 #### Pipeline operations
 
-Operations can be inserted and removed from a pipeline, and their order inside their containing pipeline can be changed by drag and drop) Note that the order of operations usually determines the form and dynamics of the resulting global output image.
+Operations can be inserted and removed from a pipeline, and their order inside their containing pipeline can be changed by drag and drop. Note that the order of operations usually determines the form and dynamics of the resulting global output image.
 
 #### Parameters
 
@@ -160,6 +162,25 @@ Restores a blurred image by Wiener filter. For technical information see this [O
 
 * **Radius**: Radius of the point spread function.
 * **Signal to noise ratio**: of the input image.
+
+### Detail enhance
+
+Enhances the details of an image.
+
+#### Parameters
+
+* **Sigma S**: Range between 0 and 200.
+* **Sigma R**: Range between 0 and 1.
+
+### Edge-preserving filter
+
+Edge-preserving smoothing filter.
+
+#### Parameters
+
+* **Sigma S**: Range between 0 and 200.
+* **Sigma R**: Range between 0 and 1.
+* **Type**: "Recursive" or "Normalized convolution".
 
 ### Equalize histogram
 
