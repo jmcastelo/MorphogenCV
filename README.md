@@ -4,7 +4,7 @@ An interactive tool to simulate videofeedback, a phenomenon that consists of con
 
 ## Screenshots
 
-<img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_01.png"/> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_02.png"/> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_03.png"/> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_04.png"/> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_05.png"/>
+<img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_01.png"/> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_02.png"/> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_03.png"/> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_04.png"/> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_05.png"/> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_06.png"/>
 
 ## Pipelines
 
@@ -57,9 +57,9 @@ It is possible to save configurations of the pipelines, with all their operation
 
 The pipelines processing can be paused and resumed, and the time interval between succesive iterations can be chosen (in milliseconds). The images MorphogenCV employs are square and their size can be determined.
 
-#### Screenshots
+#### Video capture
 
-Before taking a screenshot or a series of screenshots (to be later made into a video by the user), a directory in the filesystem must be selected where to save the files, whose names can be chosen (no extension should be specified). A screenshot series is numbered with a suffix indicating the file number in order.
+Videos of the evolution of the patterns can be captured in AVI format. The number of frames per second can be chosen. MPEG-1 codec is used. On Windows, the `opencv_videoio_ffmpeg430_64.dll` library is needed for this utility to work.
 
 ### Pipelines tab
 
