@@ -39,8 +39,8 @@ unix:INCLUDEPATH += /usr/include/opencv4
 win32:INCLUDEPATH += C:/opencv-dynamic-qt-dynamic-build/install/include
 
 # Change path according to your system
-unix:LIBS += -lopencv_core -lopencv_imgproc -lopencv_photo -lopencv_highgui -lopencv_videoio
-win32:LIBS += -LC:/opencv-dynamic-qt-dynamic-build/install/x64/mingw/lib -lopencv_core430.dll -lopencv_imgproc430.dll -lopencv_photo430.dll -lopencv_highgui430.dll -lopencv_videoio430.dll
+unix:LIBS += -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_videoio
+win32:LIBS += -LC:/opencv-dynamic-qt-dynamic-build/install/x64/mingw/lib -lopencv_core430.dll -lopencv_imgproc430.dll -lopencv_highgui430.dll -lopencv_videoio430.dll
 
 QMAKE_CXXFLAGS_RELEASE += -O3
 

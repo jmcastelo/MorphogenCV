@@ -174,55 +174,6 @@ public:
     void applyOperation(cv::Mat &src);
 };
 
-// Detail enhance
-
-class DetailEnhance: public ImageOperation
-{
-    DoubleParameter *sigmaS, *sigmaR;
-
-public:
-    static std::string name;
-
-    DetailEnhance(bool on, double ss, double sr);
-    ~DetailEnhance()
-    {
-        delete sigmaS;
-        delete sigmaR;
-    }
-
-    std::string getName(){ return name; };
-
-    std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {sigmaS, sigmaR}; return parameters; };
-
-    void applyOperation(cv::Mat &src);
-};
-
-// Edge preserving filter
-
-class EdgePreservingFilter: public ImageOperation
-{
-    DoubleParameter *sigmaS, *sigmaR;
-    OptionsParameter<int> *flag;
-
-public:
-    static std::string name;
-
-    EdgePreservingFilter(bool on, double ss, double sr, int f);
-    ~EdgePreservingFilter()
-    {
-        delete sigmaS;
-        delete sigmaR;
-        delete flag;
-    }
-
-    std::string getName(){ return name; };
-
-    std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {sigmaS, sigmaR}; return parameters; };
-    std::vector<OptionsParameter<int>*> getOptionsIntParameters(){ std::vector<OptionsParameter<int>*> parameters = {flag}; return parameters; };
-
-    void applyOperation(cv::Mat &src);
-};
-
 // Equalize histogram
 
 class EqualizeHist: public ImageOperation

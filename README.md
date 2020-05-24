@@ -21,8 +21,6 @@ A list of supported operations follows:
 * Canny edge detection
 * Contrast/brightness adjustment
 * Deblur filter
-* Detail enhance
-* Edge-preserving filter
 * Equalize histogram
 * Filter with 3x3 kernel
 * Gamma correction
@@ -162,25 +160,6 @@ Restores a blurred image by Wiener filter. For technical information see this [O
 
 * **Radius**: Radius of the point spread function.
 * **Signal to noise ratio**: of the input image.
-
-### Detail enhance
-
-Enhances the details of an image.
-
-#### Parameters
-
-* **Sigma S**: Range between 0 and 200.
-* **Sigma R**: Range between 0 and 1.
-
-### Edge-preserving filter
-
-Edge-preserving smoothing filter.
-
-#### Parameters
-
-* **Sigma S**: Range between 0 and 200.
-* **Sigma R**: Range between 0 and 1.
-* **Type**: "Recursive" or "Normalized convolution".
 
 ### Equalize histogram
 
