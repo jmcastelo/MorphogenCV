@@ -854,28 +854,34 @@ void MainWidget::onRowsMoved(QModelIndex parent, int start, int end, QModelIndex
 
 void MainWidget::insertImageOperation()
 {
-    int imageIndex = imageSelectComboBox->currentIndex();
-    int newOperationIndex = newImageOperationComboBox->currentIndex();
-    int currentOperationIndex = imageOperationsListWidget->currentRow();
+    if (generator->getPipelinesSize() > 0)
+    {
+        int imageIndex = imageSelectComboBox->currentIndex();
+        int newOperationIndex = newImageOperationComboBox->currentIndex();
+        int currentOperationIndex = imageOperationsListWidget->currentRow();
 
-    generator->insertImageOperation(imageIndex, newOperationIndex, currentOperationIndex);
+        generator->insertImageOperation(imageIndex, newOperationIndex, currentOperationIndex);
 
-    QListWidgetItem *newOperation = new QListWidgetItem;
-    newOperation->setText(QString::fromStdString(generator->getImageOperationName(imageIndex, currentOperationIndex + 1)));
-    imageOperationsListWidget->insertItem(currentOperationIndex + 1, newOperation);
-    imageOperationsListWidget->setCurrentItem(newOperation);
+        QListWidgetItem *newOperation = new QListWidgetItem;
+        newOperation->setText(QString::fromStdString(generator->getImageOperationName(imageIndex, currentOperationIndex + 1)));
+        imageOperationsListWidget->insertItem(currentOperationIndex + 1, newOperation);
+        imageOperationsListWidget->setCurrentItem(newOperation);
+    }
 }
 
 void MainWidget::removeImageOperation()
 {
-    int imageIndex = imageSelectComboBox->currentIndex();
-    int operationIndex = imageOperationsListWidget->currentRow();
+    if (generator->getPipelinesSize() > 0)
+    {
+        int imageIndex = imageSelectComboBox->currentIndex();
+        int operationIndex = imageOperationsListWidget->currentRow();
 
-    imageOperationsListWidget->takeItem(operationIndex);
+        imageOperationsListWidget->takeItem(operationIndex);
 
-    generator->removeImageOperation(imageIndex, operationIndex);
+        generator->removeImageOperation(imageIndex, operationIndex);
 
-    currentImageOperationIndex[imageIndex] = operationIndex;
+        currentImageOperationIndex[imageIndex] = operationIndex;
+    }
 }
 
 void MainWidget::iterationLoop()
