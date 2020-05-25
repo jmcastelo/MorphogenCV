@@ -312,7 +312,7 @@ void GeneratorCV::setMask()
 {
     mask = cv::Mat::zeros(imageSize, imageSize, CV_8U);
     cv::Point center = cv::Point(imageSize / 2, imageSize / 2);
-    cv::circle(mask, center, imageSize / 2, cv::Scalar(255, 255, 255), -1, cv::FILLED);
+    cv::circle(mask, center, imageSize / 2 - 2, cv::Scalar(255, 255, 255), -1, cv::FILLED);
 }
 
 void GeneratorCV::computeHistogramMax()

@@ -30,7 +30,9 @@ BilateralFilter::BilateralFilter(bool on, int d, double sc, double ss): ImageOpe
 
 void BilateralFilter::applyOperation(cv::Mat &src)
 {
-    cv::bilateralFilter(src, src, diameter->value, sigmaColor->value, sigmaSpace->value, cv::BORDER_ISOLATED);
+    cv::Mat dst(src.rows, src.cols, src.type());
+    cv::bilateralFilter(src, dst, diameter->value, sigmaColor->value, sigmaSpace->value, cv::BORDER_ISOLATED);
+    src = dst.clone();
 }
 
 // Blur
@@ -55,7 +57,7 @@ Canny::Canny(bool on, double th1, double th2, int size, bool g): ImageOperation(
 {
     threshold1 = new DoubleParameter("Threshold 1", th1, 0.0, 300.0, 0.0, 1.0e6);
     threshold2 = new DoubleParameter("Threshold 2", th2, 0.0, 300.0, 0.0, 1.0e6);
-    apertureSize = new IntParameter("Aperture size", size, 1, 7, true);
+    apertureSize = new IntParameter("Aperture size", size, 3, 51, true);
     L2gradient = new BoolParameter("L2 gradient", g);
 }
 
