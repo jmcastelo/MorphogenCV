@@ -197,6 +197,11 @@ void MainWidget::constructGeneralControls()
     QGroupBox *videoGroupBox = new QGroupBox("Video capture");
     videoGroupBox->setLayout(videoVBoxLayout);
 
+    // About
+
+    QPushButton *aboutPushButton = new QPushButton("About");
+    aboutPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
     // Main layout
 
     QVBoxLayout *generalControlsVBoxLayout = new QVBoxLayout;
@@ -205,6 +210,7 @@ void MainWidget::constructGeneralControls()
     generalControlsVBoxLayout->addWidget(configGroupBox);
     generalControlsVBoxLayout->addWidget(mainControlsGroupBox);
     generalControlsVBoxLayout->addWidget(videoGroupBox);
+    generalControlsVBoxLayout->addWidget(aboutPushButton);
 
     // Widget to put in tab
 
@@ -223,6 +229,7 @@ void MainWidget::constructGeneralControls()
     connect(videoFilenamePushButton, &QPushButton::clicked, this, &MainWidget::openVideoWriter);
     connect(videoCapturePushButton, &QPushButton::clicked, this, &MainWidget::onVideoCapturePushButtonClicked);
     connect(fpsLineEdit, &QLineEdit::returnPressed, [=](){ generator->setFramesPerSecond(fpsLineEdit->text().toInt()); });
+    connect(aboutPushButton, &QPushButton::clicked, this, &MainWidget::about);
 }
 
 void MainWidget::constructImageManipulationControls()
@@ -941,4 +948,28 @@ void MainWidget::closeEvent(QCloseEvent *event)
     timer->stop();
     delete generator;
     event->accept();
+}
+
+void MainWidget::about()
+{
+    QMessageBox *aboutBox = new QMessageBox(this);
+
+    aboutBox->setTextFormat(Qt::RichText);
+
+    aboutBox->setWindowTitle("About");
+
+    QStringList lines;
+    lines.append("<h2>MorphogenCV 1.0</h2>");
+    lines.append("<h4>Videofeedback simulation software.</h4>");
+    lines.append("Looking for help? Please visit:<br>");
+    lines.append("<a href='https://github.com/jmcastelo/MorphogenCV'>https://github.com/jmcastelo/MorphogenCV</a><br><br>");
+    lines.append("Let the pixels come alive!");
+
+    QString text = lines.join("");
+
+    aboutBox->setText(text);
+
+    aboutBox->setInformativeText("Copyright 2020 José María Castelo Ares\njose.maria.castelo@gmail.com\nLicense: GPLv3");
+
+    aboutBox->exec();
 }

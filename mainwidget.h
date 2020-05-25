@@ -50,6 +50,8 @@
 #include <QStandardItemModel>
 #include <QStandardItem>
 #include <QSlider>
+#include <QMessageBox>
+#include <QStringList>
 
 class MainWidget : public QWidget
 {
@@ -164,6 +166,8 @@ class MainWidget : public QWidget
     void colorSpaceAxisChanged(int axisIndex, QComboBox *axisComboBox);
 
     void closeEvent(QCloseEvent *event);
+
+    void about();
 
 public:
     MainWidget(QWidget *parent = nullptr);
