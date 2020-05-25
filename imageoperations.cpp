@@ -57,7 +57,7 @@ Canny::Canny(bool on, double th1, double th2, int size, bool g): ImageOperation(
 {
     threshold1 = new DoubleParameter("Threshold 1", th1, 0.0, 300.0, 0.0, 1.0e6);
     threshold2 = new DoubleParameter("Threshold 2", th2, 0.0, 300.0, 0.0, 1.0e6);
-    apertureSize = new IntParameter("Aperture size", size, 3, 51, true);
+    apertureSize = new IntParameter("Aperture size", size, 3, 7, true);
     L2gradient = new BoolParameter("L2 gradient", g);
 }
 
