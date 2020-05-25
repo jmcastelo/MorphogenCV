@@ -766,6 +766,7 @@ void MainWidget::onDoubleParameterWidgetFocusIn(DoubleParameterWidget *widget)
     selectedParameterSlider->disconnect();
     selectedParameterSlider->setRange(0, widget->indexMax);
     selectedParameterSlider->setValue(widget->getIndex());
+
     connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &DoubleParameterWidget::setValue);
 
     connect(widget, &DoubleParameterWidget::currentIndexChanged, [=](int currentIndex)
@@ -773,6 +774,32 @@ void MainWidget::onDoubleParameterWidgetFocusIn(DoubleParameterWidget *widget)
         disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
         selectedParameterSlider->setValue(currentIndex);
         connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &DoubleParameterWidget::setValue);
+    });
+
+    // Value changed: check if within min/max range and adjust controls
+
+    connect(widget, &DoubleParameterWidget::currentValueChanged, [=](double currentValue)
+    {
+        if (currentValue < widget->getMin())
+        {
+            widget->setMin(currentValue);
+
+            selectedParameterMinLineEdit->setText(QString::number(currentValue));
+
+            disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
+            selectedParameterSlider->setValue(widget->getIndex());
+            connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &DoubleParameterWidget::setValue);
+        }
+        else if (currentValue > widget->getMax())
+        {
+            widget->setMax(currentValue);
+
+            selectedParameterMaxLineEdit->setText(QString::number(currentValue));
+
+            disconnect(selectedParameterSlider, &QAbstractSlider::valueChanged, nullptr, nullptr);
+            selectedParameterSlider->setValue(widget->getIndex());
+            connect(selectedParameterSlider, &QAbstractSlider::valueChanged, widget, &DoubleParameterWidget::setValue);
+        }
     });
 
     // Minimum

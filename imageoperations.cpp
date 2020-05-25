@@ -101,7 +101,7 @@ std::string DeblurFilter::name = "Deblur filter";
 
 DeblurFilter::DeblurFilter(bool on, double r, double snr): ImageOperation(on)
 {
-    radius = new DoubleParameter("Radius", r, 0.0, 100.0, 0.0, 1000000.0);
+    radius = new DoubleParameter("Radius", r, 0.0, 20.0, 0.0, 1.0e6);
     signalToNoiseRatio = new DoubleParameter("Signal to noise ratio", snr, 0.001, 10000.0, 1.0e-6, 1.0e6);
 }
 
@@ -338,7 +338,7 @@ std::string MorphologyEx::name = "Morphology operation";
 
 MorphologyEx::MorphologyEx(bool on, int k, int its, cv::MorphTypes type, cv::MorphShapes shape): ImageOperation(on)
 {
-    ksize = new IntParameter("Kernel size", k, 1, 51, true);
+    ksize = new IntParameter("Kernel size", k, 3, 51, true);
     iterations = new IntParameter("Iterations", its, 1, 100, false);
 
     std::vector<std::string> typeValueNames = {"Erode", "Dilate", "Opening", "Closing", "Gradient", "Top hat", "Black hat"};
@@ -518,7 +518,7 @@ std::string Rotation::name = "Rotation/scaling";
 Rotation::Rotation(bool on, double a, double s, cv::InterpolationFlags f): ImageOperation(on)
 {
     angle = new DoubleParameter("Angle", a, -360.0, 360.0, -1.0e6, 1.0e6);
-    scale = new DoubleParameter("Scale", s, 0.0, 10.0, 0.0, 1.0e6);
+    scale = new DoubleParameter("Scale", s, 0.0, 2.0, 0.0, 1.0e6);
 
     std::vector<std::string> valueNames = {"Nearest neighbor", "Bilinear", "Bicubic", "Area", "Lanczos 8x8"};
     std::vector<cv::InterpolationFlags> values = {cv::INTER_NEAREST, cv::INTER_LINEAR, cv::INTER_CUBIC, cv::INTER_AREA, cv::INTER_LANCZOS4};

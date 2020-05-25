@@ -184,12 +184,17 @@ public:
         lineEdit = new CustomLineEdit;
         lineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
-        QDoubleValidator *validator = new QDoubleValidator(doubleParameter->min, doubleParameter->max, 10, lineEdit);
+        QDoubleValidator *validator = new QDoubleValidator(doubleParameter->inf, doubleParameter->sup, 10, lineEdit);
         validator->setLocale(QLocale::English);
         lineEdit->setValidator(validator);
         lineEdit->setText(QString::number(doubleParameter->value));
 
-        connect(lineEdit, &CustomLineEdit::returnPressed, [=](){ doubleParameter->value = lineEdit->text().toDouble(); setIndex(); });
+        connect(lineEdit, &CustomLineEdit::returnPressed, [=]()
+        {
+            doubleParameter->value = lineEdit->text().toDouble();
+            emit currentValueChanged(doubleParameter->value);
+            setIndex();
+        });
         connect(lineEdit, &CustomLineEdit::focusOut, [=](){ lineEdit->setText(QString::number(doubleParameter->value)); });
         connect(lineEdit, &CustomLineEdit::focusIn, [=](){ emit focusIn(); });
     }
@@ -229,6 +234,7 @@ private:
 
 signals:
     void focusIn();
+    void currentValueChanged(double currentValue);
     void currentIndexChanged(int currentIndex);
 };
 
