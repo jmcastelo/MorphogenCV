@@ -2,6 +2,10 @@
 
 An interactive tool to simulate videofeedback, a phenomenon that consists of connecting a videocamera to a television in such a way that the television shows whatever the camera is capturing, and pointing the camera to the television. Thus a feedback loop is established. Out of this arrangement intriguing shapes and patterns of light emerge that evolve in time and space. In them chaos and order can coexist, sometimes one imposing its forms on the other. The use of MorphogenCV is to generate these patterns or forms, which may seem to be endowed with life.
 
+### Download
+
+[The latest release](https://github.com/jmcastelo/MorphogenCV/releases/download/v1.0/MorphogenCV_v1.0.zip) is available to download.
+
 ## Screenshots
 
 <p align="center"><img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_01.png"> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_02.png"> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_03.png"> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_04.png"> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_05.png"> <img width="128" height="128" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/screenshots/screenshot_06.png"></p>
