@@ -63,21 +63,11 @@ Canny::Canny(bool on, double th1, double th2, int size, bool g): ImageOperation(
 
 void Canny::applyOperation(cv::Mat &src)
 {
-    cv::Mat channels[3];
-    cv::split(src, channels);
-
-    cv::Mat dst[3];
-
-    for (int i = 0; i < 3; i++)
-    {
-        cv::Mat detectedEdges;
-        cv::Canny(channels[i], detectedEdges, threshold1->value, threshold2->value, apertureSize->value, L2gradient->value);
-        dst[i].create(channels[i].size(), channels[i].type());
-        dst[i] = cv::Scalar::all(0);
-        channels[i].copyTo(dst[i], detectedEdges);
-    }
-
-    cv::merge(channels, 3, src);
+    cv::Mat detectedEdges;
+    cv::Canny(src, detectedEdges, threshold1->value, threshold2->value, apertureSize->value, L2gradient->value);
+    cv::Mat dst;
+    src.copyTo(dst, detectedEdges);
+    src = dst.clone();
 }
 
 // Convert to
