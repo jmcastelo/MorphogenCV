@@ -367,7 +367,7 @@ void MainWidget::constructImageManipulationControls()
     {
         Q_UNUSED(checked)
         generator->addPipeline();
-        initPipelineControls(pipelinesButtonGroup->checkedId());
+        initPipelineControls(generator->getPipelinesSize() - 1);
     });
     connect(removePipelinePushButton, &QPushButton::clicked, [=](bool checked)
     {
