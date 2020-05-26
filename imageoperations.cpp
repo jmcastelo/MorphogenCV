@@ -76,8 +76,8 @@ std::string ConvertTo::name = "Contrast/brightness";
 
 ConvertTo::ConvertTo(bool on, double a, double b): ImageOperation(on)
 {
-    alpha = new DoubleParameter("Gain", a, 0.0, 10.0, -1.0e6, 1.0e6);
-    beta = new DoubleParameter("Bias", b, -255.0, 255.0, -1.0e6, 1.0e6);
+    alpha = new DoubleParameter("Gain", a, 0.0, 5.0, -1.0e6, 1.0e6);
+    beta = new DoubleParameter("Bias", b, -100.0, 100.0, -1.0e6, 1.0e6);
 }
 
 void ConvertTo::applyOperation(cv::Mat &src)
@@ -245,7 +245,7 @@ std::string GaussianBlur::name = "Blur: Gaussian";
 GaussianBlur::GaussianBlur(bool on, int k, double s): ImageOperation(on)
 {
     ksize = new IntParameter("Kernel size", k, 0, 51, true);
-    sigma = new DoubleParameter("Sigma", s, 0.001, 50.0, 1.0e-6, 1.0e6);
+    sigma = new DoubleParameter("Sigma", s, 0.001, 3.0, 1.0e-6, 1.0e6);
 }
 
 void GaussianBlur::applyOperation(cv::Mat &src)
