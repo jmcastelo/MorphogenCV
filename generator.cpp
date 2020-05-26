@@ -650,6 +650,11 @@ void GeneratorCV::setPipelineBlendFactor(int pipelineIndex, double factor)
         if (i != pipelineIndex)
             pipelines[i]->blendFactor *= scale;
 
+    if (factor < 0.0)
+        factor = 0.0;
+    if (factor > 1.0)
+        factor = 1.0;
+
     pipelines[pipelineIndex]->blendFactor = factor;
 }
 

@@ -670,13 +670,15 @@ void MainWidget::initPipelineControls(int selectedPipelineIndex)
 
         // New pipeline blend factor line edit
 
-        QLineEdit *blendFactorLineEdit = new QLineEdit;
+        CustomLineEdit *blendFactorLineEdit = new CustomLineEdit;
         blendFactorLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
         QDoubleValidator *blendFactorValidator = new QDoubleValidator(0.0, 1.0, 10, blendFactorLineEdit);
         blendFactorValidator->setLocale(QLocale::English);
+        blendFactorLineEdit->setValidator(blendFactorValidator);
         blendFactorLineEdit->setText(QString::number(generator->getPipelineBlendFactor(pipelineIndex)));
 
-        connect(blendFactorLineEdit, &QLineEdit::returnPressed, [=](){ setPipelineBlendFactorLineEditText(pipelineIndex); });
+        connect(blendFactorLineEdit, &CustomLineEdit::returnPressed, [=](){ setPipelineBlendFactorLineEditText(pipelineIndex); });
+        connect(blendFactorLineEdit, &CustomLineEdit::focusOut, [=](){ blendFactorLineEdit->setText(QString::number(generator->getPipelineBlendFactor(pipelineIndex))); });
 
         pipelineBlendFactorLineEdit.push_back(blendFactorLineEdit);
 
