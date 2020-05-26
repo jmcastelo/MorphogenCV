@@ -563,9 +563,9 @@ QVector<double> GeneratorCV::getColorComponents(int colorIndex)
     return components;
 }
 
-void GeneratorCV::swapImageOperations(int imageIndex, int operationIndex0, int operationIndex1)
+void GeneratorCV::swapImageOperations(int pipelineIndex, int operationIndex0, int operationIndex1)
 {
-    pipelines[imageIndex]->swapImageOperations(operationIndex0, operationIndex1);
+    pipelines[pipelineIndex]->swapImageOperations(operationIndex0, operationIndex1);
 }
 
 void GeneratorCV::removeImageOperation(int pipelineIndex, int operationIndex)

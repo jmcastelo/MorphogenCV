@@ -27,6 +27,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QFormLayout>
+#include <QGridLayout>
 #include <QLabel>
 #include <QImage>
 #include <QPixmap>
@@ -84,16 +85,17 @@ class MainWidget : public QWidget
     QLineEdit *fpsLineEdit;
     QLabel *videoCaptureElapsedTimeLabel;
 
-    QLineEdit *blendFactorLineEdit;
-
-    QComboBox *imageSelectComboBox;
-
     QComboBox *newImageOperationComboBox;
     QPushButton *insertImageOperationPushButton;
     QPushButton *removeImageOperationPushButton;
 
-    QFormLayout *pipelineBlendFactorsLayout;
+    QGridLayout *pipelinesGridLayout;
+    QLabel *pipelinesLabel;
+    QLabel *blendFactorsLabel;
+    QButtonGroup *pipelinesButtonGroup;
+    std::vector<QPushButton*> pipelinePushButton;
     std::vector<QLineEdit*> pipelineBlendFactorLineEdit;
+    QPushButton *equalizeBlendFactorsPushButton;
 
     QListWidget *imageOperationsListWidget;
     std::vector<int> currentImageOperationIndex;
@@ -144,9 +146,8 @@ class MainWidget : public QWidget
     void onVideoCapturePushButtonClicked(bool checked);
     void setVideoCaptureElapsedTimeLabel();
 
-    void initImageSelectComboBox(int imageIndex);
+    void initPipelineControls(int selectedPipelineIndex);
 
-    void initPipelineBlendFactorsLayout();
     void setPipelineBlendFactorLineEditText(int pipelineIndex);
 
     void initNewImageOperationComboBox();

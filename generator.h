@@ -140,12 +140,12 @@ public:
 
     QVector<double> getColorComponents(int colorIndex);
 
-    void swapImageOperations(int imageIndex, int operationIndex0, int operationIndex1);
-    void removeImageOperation(int imageIndex, int operationIndex);
-    void insertImageOperation(int imageIndex, int newOperationIndex, int currentOperationIndex);
+    void swapImageOperations(int pipelineIndex, int operationIndex0, int operationIndex1);
+    void removeImageOperation(int pipelineIndex, int operationIndex);
+    void insertImageOperation(int pipelineIndex, int newOperationIndex, int currentOperationIndex);
 
-    std::string getImageOperationName(int imageIndex, int operationIndex){ return pipelines[imageIndex]->imageOperations[operationIndex]->getName(); };
-    int getImageOperationsSize(int imageIndex){ return pipelines.empty() ? 0 : pipelines[imageIndex]->imageOperations.size(); };
+    std::string getImageOperationName(int pipelineIndex, int operationIndex){ return pipelines[pipelineIndex]->imageOperations[operationIndex]->getName(); };
+    int getImageOperationsSize(int pipelineIndex){ return pipelines.empty() ? 0 : pipelines[pipelineIndex]->imageOperations.size(); };
 
     void removePipeline(int pipelineIndex);
     void addPipeline();
