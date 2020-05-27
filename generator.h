@@ -22,6 +22,7 @@
 #include <vector>
 #include <string>
 #include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/videoio.hpp>
@@ -60,6 +61,7 @@ public:
 class GeneratorCV
 {
     cv::Mat mask;
+    cv::Mat seedImage;
     cv::Mat outImage;
     std::vector<cv::Mat> previousFrames;
 
@@ -106,7 +108,10 @@ public:
     GeneratorCV();
     ~GeneratorCV();
 
-    void drawSeed(bool grayscale);
+    void drawRandomSeed(bool grayscale);
+
+    void drawSeedImage();
+    void loadSeedImage(std::string filename);
 
     void iterate();
 

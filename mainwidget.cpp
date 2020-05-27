@@ -211,8 +211,8 @@ void MainWidget::constructDrawControls()
 {
     // Seed
 
-    QPushButton *drawSeedPushButton = new QPushButton("Draw");
-    drawSeedPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    QPushButton *drawRandomSeedPushButton = new QPushButton("Draw random");
+    drawRandomSeedPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     coloredSeedCheckBox = new QCheckBox("Color");
     coloredSeedCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -222,13 +222,29 @@ void MainWidget::constructDrawControls()
     bwSeedCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     bwSeedCheckBox->setChecked(true);
 
-    QHBoxLayout *seedHBoxLayout = new QHBoxLayout;
-    seedHBoxLayout->addWidget(drawSeedPushButton);
-    seedHBoxLayout->addWidget(coloredSeedCheckBox);
-    seedHBoxLayout->addWidget(bwSeedCheckBox);
+    QHBoxLayout *randomSeedHBoxLayout = new QHBoxLayout;
+    randomSeedHBoxLayout->setAlignment(Qt::AlignLeft);
+    randomSeedHBoxLayout->addWidget(drawRandomSeedPushButton);
+    randomSeedHBoxLayout->addWidget(coloredSeedCheckBox);
+    randomSeedHBoxLayout->addWidget(bwSeedCheckBox);
+
+    QPushButton *drawSeedImagePushButton = new QPushButton("Draw image");
+    drawSeedImagePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    QPushButton *loadSeedImagePushButton = new QPushButton("Load image");
+    loadSeedImagePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    QHBoxLayout *seedImageHBoxLayout = new QHBoxLayout;
+    seedImageHBoxLayout->setAlignment(Qt::AlignLeft);
+    seedImageHBoxLayout->addWidget(drawSeedImagePushButton);
+    seedImageHBoxLayout->addWidget(loadSeedImagePushButton);
+
+    QVBoxLayout *seedVBoxLayout = new QVBoxLayout;
+    seedVBoxLayout->addLayout(randomSeedHBoxLayout);
+    seedVBoxLayout->addLayout(seedImageHBoxLayout);
 
     QGroupBox *seedGroupBox = new QGroupBox("Seed");
-    seedGroupBox->setLayout(seedHBoxLayout);
+    seedGroupBox->setLayout(seedVBoxLayout);
 
     QButtonGroup *seedButtonGroup = new QButtonGroup(this);
     seedButtonGroup->setExclusive(true);
@@ -273,7 +289,14 @@ void MainWidget::constructDrawControls()
 
     // Signals + Slots
 
-    connect(drawSeedPushButton, &QPushButton::clicked, [=](){ generator->drawSeed(bwSeedCheckBox->isChecked()); });
+    connect(drawRandomSeedPushButton, &QPushButton::clicked, [=](){ generator->drawRandomSeed(bwSeedCheckBox->isChecked()); });
+    connect(drawSeedImagePushButton, &QPushButton::clicked, [=](){ generator->drawSeedImage(); });
+    connect(loadSeedImagePushButton, &QPushButton::clicked, [=]()
+    {
+        QString filename = QFileDialog::getOpenFileName(this, "Load image", "", "Images (*.bmp *.jpeg *.jpg *.png *.tiff *.tif)");
+        if (!filename.isEmpty())
+            generator->loadSeedImage(filename.toStdString());
+    });
     connect(previousFramesSizeLineEdit, &CustomLineEdit::returnPressed, [=](){ generator->setPreviousFramesSize(previousFramesSizeLineEdit->text().toInt()); });
     connect(previousFramesSizeLineEdit, &CustomLineEdit::focusOut, [=](){ previousFramesSizeLineEdit->setText(QString::number(generator->getPreviousFramesSize())); });
     connect(previousFramesBlendFactorLineEdit, &CustomLineEdit::returnPressed, [=](){ generator->setPreviousFramesBlendFactor(previousFramesBlendFactorLineEdit->text().toDouble()); });

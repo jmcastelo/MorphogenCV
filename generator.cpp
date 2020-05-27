@@ -308,7 +308,7 @@ GeneratorCV::GeneratorCV()
 
     setMask();
     computeHistogramMax();
-    drawSeed(true);
+    drawRandomSeed(true);
 
     cv::namedWindow("Out image", cv::WINDOW_AUTOSIZE);
     cv::setMouseCallback("Out image", onMouse, this);
@@ -337,26 +337,50 @@ void GeneratorCV::computeHistogramMax()
     histogramMax = pixelCount * 5.0 / 100.0;
 }
 
-void GeneratorCV::drawSeed(bool grayscale)
+void GeneratorCV::drawRandomSeed(bool grayscale)
 {
-    cv::Mat seedImage = cv::Mat(imageSize, imageSize, CV_8UC3);
-    cv::randu(seedImage, cv::Scalar::all(0), cv::Scalar::all(255));
+    cv::Mat randomSeedImage = cv::Mat(imageSize, imageSize, CV_8UC3);
+    cv::randu(randomSeedImage, cv::Scalar::all(0), cv::Scalar::all(255));
 
     if (grayscale)
     {
-        cv::cvtColor(seedImage, seedImage, cv::COLOR_BGR2GRAY);
-        cv::cvtColor(seedImage, seedImage, cv::COLOR_GRAY2BGR);
+        cv::cvtColor(randomSeedImage, randomSeedImage, cv::COLOR_BGR2GRAY);
+        cv::cvtColor(randomSeedImage, randomSeedImage, cv::COLOR_GRAY2BGR);
     }
 
     cv::Mat maskedSeed = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
-    seedImage.copyTo(maskedSeed, mask);
+    randomSeedImage.copyTo(maskedSeed, mask);
 
-    for (auto &pipeline: pipelines)
+    for (auto pipeline: pipelines)
         pipeline->image = maskedSeed.clone();
 
     outImage = maskedSeed.clone();
 
     cv::imshow("Out image", maskedSeed);
+}
+
+void GeneratorCV::loadSeedImage(std::string filename)
+{
+    seedImage = cv::imread(filename);
+
+    if (seedImage.size() != cv::Size(imageSize, imageSize))
+        cv::resize(seedImage, seedImage, cv::Size(imageSize, imageSize));
+
+    cv::Mat maskedSeed = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
+    seedImage.copyTo(maskedSeed, mask);
+}
+
+void GeneratorCV::drawSeedImage()
+{
+    if (!seedImage.empty())
+    {
+        for (auto pipeline: pipelines)
+            pipeline->image = seedImage.clone();
+
+        outImage = seedImage.clone();
+
+        cv::imshow("Out image", seedImage);
+    }
 }
 
 void GeneratorCV::blendImages()
@@ -544,6 +568,9 @@ void GeneratorCV::setImageSize(int size)
         cv::resize(pipeline->image, pipeline->image, cv::Size(imageSize, imageSize));
 
     cv::resize(outImage, outImage, cv::Size(imageSize, imageSize));
+
+    if (!seedImage.empty())
+        cv::resize(seedImage, seedImage, cv::Size(imageSize, imageSize));
 
     setMask();
     computeHistogramMax();
