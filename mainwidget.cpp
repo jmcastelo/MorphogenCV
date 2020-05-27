@@ -89,6 +89,7 @@ MainWidget::~MainWidget()
     delete pixelIterationPlot;
     delete colorSpacePlot;
     delete colorSpacePixelPlot;
+    delete generator;
 }
 
 void MainWidget::constructGeneralControls()
@@ -1087,7 +1088,7 @@ void MainWidget::colorSpaceAxisChanged(int axisIndex, QComboBox *axisComboBox)
 void MainWidget::closeEvent(QCloseEvent *event)
 {
     timer->stop();
-    delete generator;
+    generator->destroyAllWindows();
     event->accept();
 }
 

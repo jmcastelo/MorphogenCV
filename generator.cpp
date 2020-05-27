@@ -317,6 +317,14 @@ GeneratorCV::GeneratorCV()
 
 GeneratorCV::~GeneratorCV()
 {
+    for (auto pipeline: pipelines)
+        delete pipeline;
+
+    pipelines.clear();
+}
+
+void GeneratorCV::destroyAllWindows()
+{
     closeVideoWriter();
     cv::destroyAllWindows();
 }
@@ -692,6 +700,16 @@ void GeneratorCV::loadPipeline(double blendFactor)
 
 void GeneratorCV::setPipelineBlendFactor(int pipelineIndex, double factor)
 {
+    // Keep within range
+
+    if (factor < 0.0)
+        factor = 0.0;
+    if (factor > 1.0)
+        factor = 1.0;
+
+    if (pipelines.size() == 1)
+        factor = 1.0;
+
     double sumBlendFactors = 0.0;
 
     for (int i = 0; i < static_cast<int>(pipelines.size()); i++)
@@ -718,11 +736,6 @@ void GeneratorCV::setPipelineBlendFactor(int pipelineIndex, double factor)
     for (int i = 0; i < static_cast<int>(pipelines.size()); i++)
         if (i != pipelineIndex)
             pipelines[i]->blendFactor *= scale;
-
-    if (factor < 0.0)
-        factor = 0.0;
-    if (factor > 1.0)
-        factor = 1.0;
 
     pipelines[pipelineIndex]->blendFactor = factor;
 }

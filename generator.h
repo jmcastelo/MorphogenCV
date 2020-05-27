@@ -108,6 +108,8 @@ public:
     GeneratorCV();
     ~GeneratorCV();
 
+    void destroyAllWindows();
+
     void drawRandomSeed(bool grayscale);
 
     void drawSeedImage();
