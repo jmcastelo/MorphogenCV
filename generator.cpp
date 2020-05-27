@@ -303,12 +303,18 @@ GeneratorCV::GeneratorCV()
     previousFramesBlendFactor = 0.0;
 
     selectingPixel = false;
+    drawingPointer = false;
+
+    pointerRadius = 5;
+    pointerThickness = -1;
+    pointerColor = cv::Scalar(255, 255, 255);
 
     framesPerSecond = 30;
 
     setMask();
     computeHistogramMax();
     drawRandomSeed(true);
+    clearPointerCanvas();
 
     cv::namedWindow("Out image", cv::WINDOW_AUTOSIZE);
     cv::setMouseCallback("Out image", onMouse, this);
@@ -424,6 +430,8 @@ void GeneratorCV::iterate()
     blendImages();
 
     blendPreviousImages();
+
+    drawPointerCanvas();
 
     for (auto &pipeline: pipelines)
         pipeline->image = outImage.clone();
@@ -549,22 +557,45 @@ void GeneratorCV::setPreviousFramesSize(int n)
     }
 }
 
-void GeneratorCV::onMouse(int event, int x, int y, int, void *userdata)
+void GeneratorCV::onMouse(int event, int x, int y, int flags, void *userdata)
 {
     GeneratorCV *mw = reinterpret_cast<GeneratorCV*>(userdata);
+    mw->processMouse(event, x, y, flags);
+}
 
-    if (event == cv::EVENT_LBUTTONDOWN)
+void GeneratorCV::processMouse(int event, int x, int y, int flags)
+{
+    if (event == cv::EVENT_LBUTTONDOWN || (event == cv::EVENT_MOUSEMOVE && flags == cv::EVENT_FLAG_LBUTTON))
     {
-        mw->selectPixel(x, y);
+        if (selectingPixel)
+            selectedPixel = cv::Point(x, y);
+
+        if (drawingPointer && !selectingPixel)
+            drawPointer(x, y);
     }
 }
 
-void GeneratorCV::selectPixel(int x, int y)
+void GeneratorCV::drawPointer(int x, int y)
 {
-    if (selectingPixel)
-    {
-        selectedPixel = cv::Point(x, y);
-    }
+    cv::circle(pointerCanvas, cv::Point(x, y), pointerRadius, pointerColor, pointerThickness, cv::FILLED);
+    cv::Mat dst = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
+    pointerCanvas.copyTo(dst, mask);
+    pointerCanvas = dst.clone();
+}
+
+void GeneratorCV::drawCenteredPointer()
+{
+    drawPointer(imageSize / 2, imageSize / 2);
+}
+
+void GeneratorCV::drawPointerCanvas()
+{
+    cv::addWeighted(outImage, 1.0, pointerCanvas, 1.0, 0.0, outImage);
+}
+
+void GeneratorCV::clearPointerCanvas()
+{
+    pointerCanvas = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
 }
 
 void GeneratorCV::setImageSize(int size)
@@ -580,6 +611,8 @@ void GeneratorCV::setImageSize(int size)
 
     if (!seedImage.empty())
         cv::resize(seedImage, seedImage, cv::Size(imageSize, imageSize));
+
+    cv::resize(pointerCanvas, pointerCanvas, cv::Size(imageSize, imageSize));
 
     setMask();
     computeHistogramMax();

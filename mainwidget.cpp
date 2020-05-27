@@ -252,6 +252,56 @@ void MainWidget::constructDrawControls()
     seedButtonGroup->addButton(coloredSeedCheckBox, 0);
     seedButtonGroup->addButton(bwSeedCheckBox, 1);
 
+    // Pointer
+
+    QPushButton *drawPointerPushButton = new QPushButton("Draw");
+    drawPointerPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    drawPointerPushButton->setCheckable(true);
+
+    QPushButton *clearPointerCanvasPushButton = new QPushButton("Clear");
+    clearPointerCanvasPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    QHBoxLayout *pointerButtonsHBoxLayout1 = new QHBoxLayout;
+    pointerButtonsHBoxLayout1->addWidget(drawPointerPushButton);
+    pointerButtonsHBoxLayout1->addWidget(clearPointerCanvasPushButton);
+
+    CustomLineEdit *pointerRadiusLineEdit = new CustomLineEdit;
+    pointerRadiusLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    QIntValidator *pointerRadiusValidator = new QIntValidator(1, generator->getImageSize() / 2, pointerRadiusLineEdit);
+    pointerRadiusValidator->setLocale(QLocale::English);
+    pointerRadiusLineEdit->setValidator(pointerRadiusValidator);
+    pointerRadiusLineEdit->setText(QString::number(generator->getPointerRadius()));
+
+    CustomLineEdit *pointerThicknessLineEdit = new CustomLineEdit;
+    pointerThicknessLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    QIntValidator *pointerThicknessValidator = new QIntValidator(-1, 100, pointerRadiusLineEdit);
+    pointerThicknessValidator->setLocale(QLocale::English);
+    pointerThicknessLineEdit->setValidator(pointerThicknessValidator);
+    pointerThicknessLineEdit->setText(QString::number(generator->getPointerThickness()));
+
+    QFormLayout *pointerFormLayout = new QFormLayout;
+    pointerFormLayout->addRow("Radius:", pointerRadiusLineEdit);
+    pointerFormLayout->addRow("Thickness:", pointerThicknessLineEdit);
+
+    QPushButton *pickPointerColorPushButton = new QPushButton("Pick color");
+    pickPointerColorPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    QPushButton *drawCenteredPointerPushButton = new QPushButton("Center");
+    drawCenteredPointerPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    QHBoxLayout *pointerButtonsHBoxLayout2 = new QHBoxLayout;
+    pointerButtonsHBoxLayout2->addWidget(pickPointerColorPushButton);
+    pointerButtonsHBoxLayout2->addWidget(drawCenteredPointerPushButton);
+
+    QVBoxLayout *pointerVBoxLayout = new QVBoxLayout;
+    pointerVBoxLayout->setAlignment(Qt::AlignHCenter);
+    pointerVBoxLayout->addLayout(pointerButtonsHBoxLayout1);
+    pointerVBoxLayout->addLayout(pointerFormLayout);
+    pointerVBoxLayout->addLayout(pointerButtonsHBoxLayout2);
+
+    QGroupBox *pointerGroupBox = new QGroupBox("Pointer");
+    pointerGroupBox->setLayout(pointerVBoxLayout);
+
     // Blend previous frames
 
     CustomLineEdit *previousFramesSizeLineEdit = new CustomLineEdit;
@@ -280,6 +330,7 @@ void MainWidget::constructDrawControls()
     QVBoxLayout *drawVBoxLayout = new QVBoxLayout;
     drawVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
     drawVBoxLayout->addWidget(seedGroupBox);
+    drawVBoxLayout->addWidget(pointerGroupBox);
     drawVBoxLayout->addWidget(blendPreviousFramesGroupBox);
 
     // Widget to put in tab
@@ -298,6 +349,18 @@ void MainWidget::constructDrawControls()
         if (!filename.isEmpty())
             generator->loadSeedImage(filename.toStdString());
     });
+    connect(drawPointerPushButton, &QPushButton::clicked, [=](bool checked){ generator->drawingPointer = checked; });
+    connect(clearPointerCanvasPushButton, &QPushButton::clicked, [=](){ generator->clearPointerCanvas(); });
+    connect(pickPointerColorPushButton, &QPushButton::clicked, [=]()
+    {
+        QColor color = QColorDialog::getColor(Qt::white, this, "Pick pointer color");
+        generator->setPointerColor(color.red(), color.green(), color.blue());
+    });
+    connect(drawCenteredPointerPushButton, &QPushButton::clicked, [=](){ generator->drawCenteredPointer(); });
+    connect(pointerRadiusLineEdit, &CustomLineEdit::returnPressed, [=](){ generator->setPointerRadius(pointerRadiusLineEdit->text().toInt()); });
+    connect(pointerRadiusLineEdit, &CustomLineEdit::focusOut, [=](){ pointerRadiusLineEdit->setText(QString::number(generator->getPointerRadius())); });
+    connect(pointerThicknessLineEdit, &CustomLineEdit::returnPressed, [=](){ generator->setPointerThickness(pointerThicknessLineEdit->text().toInt()); });
+    connect(pointerThicknessLineEdit, &CustomLineEdit::focusOut, [=](){ pointerThicknessLineEdit->setText(QString::number(generator->getPointerThickness())); });
     connect(previousFramesSizeLineEdit, &CustomLineEdit::returnPressed, [=](){ generator->setPreviousFramesSize(previousFramesSizeLineEdit->text().toInt()); });
     connect(previousFramesSizeLineEdit, &CustomLineEdit::focusOut, [=](){ previousFramesSizeLineEdit->setText(QString::number(generator->getPreviousFramesSize())); });
     connect(previousFramesBlendFactorLineEdit, &CustomLineEdit::returnPressed, [=](){ generator->setPreviousFramesBlendFactor(previousFramesBlendFactorLineEdit->text().toDouble()); });

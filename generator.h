@@ -86,6 +86,12 @@ class GeneratorCV
 
     cv::Point selectedPixel;
 
+    cv::Mat pointerCanvas;
+    cv::Point pointer;
+    int pointerRadius;
+    int pointerThickness;
+    cv::Scalar pointerColor;
+
     int framesPerSecond;
     int frameCount;
     cv::VideoWriter videoWriter;
@@ -95,8 +101,10 @@ class GeneratorCV
     void applyImageOperations();
     void blendImages();
     void blendPreviousImages();
-    static void onMouse(int event, int x, int y, int, void* userdata);
-    void selectPixel(int x, int y);
+    static void onMouse(int event, int x, int y, int flags, void* userdata);
+    void processMouse(int event, int x, int y, int flags);
+    void drawPointer(int x, int y);
+    void drawPointerCanvas();
 
 public:
     std::vector<std::string> availableImageOperations;
@@ -104,6 +112,7 @@ public:
     std::vector<Pipeline*> pipelines;
 
     bool selectingPixel;
+    bool drawingPointer;
 
     GeneratorCV();
     ~GeneratorCV();
@@ -123,6 +132,15 @@ public:
     void computeDFT();
     void showPixelSelectionCursor();
     void showImage();
+
+    void clearPointerCanvas();
+    void drawCenteredPointer();
+    void setPointerRadius(int radius){ if (radius > 0 && radius < imageSize / 2) pointerRadius = radius;}
+    int getPointerRadius(){ return pointerRadius; }
+    void setPointerThickness(int thickness){ if (thickness >= -1) pointerThickness = thickness; }
+    int getPointerThickness(){ return pointerThickness; }
+
+    void setPointerColor(int red, int green, int blue){ pointerColor = cv::Scalar(blue, green, red); }
 
     void openVideoWriter(std::string name);
     void writeVideoFrame();

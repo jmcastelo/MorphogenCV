@@ -53,6 +53,8 @@
 #include <QSlider>
 #include <QMessageBox>
 #include <QStringList>
+#include <QColor>
+#include <QColorDialog>
 
 class MainWidget : public QWidget
 {
