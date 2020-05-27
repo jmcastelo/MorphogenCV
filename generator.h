@@ -87,6 +87,7 @@ class GeneratorCV
     cv::Point selectedPixel;
 
     cv::Mat pointerCanvas;
+    bool pointerCanvasDrawn;
     cv::Point pointer;
     int pointerRadius;
     int pointerThickness;

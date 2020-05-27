@@ -303,8 +303,9 @@ GeneratorCV::GeneratorCV()
     previousFramesBlendFactor = 0.0;
 
     selectingPixel = false;
-    drawingPointer = false;
 
+    drawingPointer = false;
+    pointerCanvasDrawn = false;
     pointerRadius = 5;
     pointerThickness = -1;
     pointerColor = cv::Scalar(255, 255, 255);
@@ -431,7 +432,8 @@ void GeneratorCV::iterate()
 
     blendPreviousImages();
 
-    drawPointerCanvas();
+    if (pointerCanvasDrawn)
+        drawPointerCanvas();
 
     for (auto &pipeline: pipelines)
         pipeline->image = outImage.clone();
@@ -581,6 +583,7 @@ void GeneratorCV::drawPointer(int x, int y)
     cv::Mat dst = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
     pointerCanvas.copyTo(dst, mask);
     pointerCanvas = dst.clone();
+    pointerCanvasDrawn = true;
 }
 
 void GeneratorCV::drawCenteredPointer()
@@ -590,12 +593,25 @@ void GeneratorCV::drawCenteredPointer()
 
 void GeneratorCV::drawPointerCanvas()
 {
-    cv::addWeighted(outImage, 1.0, pointerCanvas, 1.0, 0.0, outImage);
+    cv::Mat pointerCanvasGray;
+    cv::cvtColor(pointerCanvas, pointerCanvasGray, cv::COLOR_BGR2GRAY);
+    cv::Mat mask;
+    cv::threshold(pointerCanvasGray, mask, 10, 255, cv::THRESH_BINARY);
+    cv::Mat maskInverse;
+    cv::bitwise_not(mask, maskInverse);
+
+    cv::Mat outImageMasked;
+    cv::bitwise_and(outImage, outImage, outImageMasked, maskInverse);
+    cv::Mat pointerCanvasMasked;
+    cv::bitwise_and(pointerCanvas, pointerCanvas, pointerCanvasMasked, mask);
+
+    cv::add(outImageMasked, pointerCanvasMasked, outImage);
 }
 
 void GeneratorCV::clearPointerCanvas()
 {
     pointerCanvas = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
+    pointerCanvasDrawn = false;
 }
 
 void GeneratorCV::setImageSize(int size)
