@@ -157,6 +157,7 @@ public:
     int getFramesPerSecond(){ return framesPerSecond; }
     int getFrameCount(){ return frameCount; }
 
+    void resetIterationNumer() { iteration = 0; }
     int getIterationNumber(){ return iteration; };
 
     int getHistogramMax(){ return histogramMax; };

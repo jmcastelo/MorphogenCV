@@ -18,20 +18,20 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     configparser.cpp \
     generator.cpp \
-    imageiterationplot.cpp \
     imageoperations.cpp \
     main.cpp \
     mainwidget.cpp \
+    plots.cpp \
     qcustomplot.cpp
 
 HEADERS += \
     configparser.h \
     generator.h \
-    imageiterationplot.h \
     imageoperations.h \
     mainwidget.h \
     parameter.h \
     parameterwidget.h \
+    plots.h \
     qcustomplot.h
 
 # Change path according to your system

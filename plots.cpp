@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with MorphogenCV.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "imageiterationplot.h"
+#include "plots.h"
 
 // Image iteration plot
 
@@ -23,7 +23,7 @@ ImageIterationPlot::ImageIterationPlot(QString title, double yMin, double yMax)
 {
     itMin = 1000;
 
-    plot = new QCustomPlot(this);
+    plot = new QCustomPlot;
 
     plot->xAxis->setLabel("Iteration");
     plot->yAxis->setLabel("Intensity");
@@ -48,11 +48,6 @@ ImageIterationPlot::ImageIterationPlot(QString title, double yMin, double yMax)
 
     plot->addGraph();
     plot->graph(2)->setPen(QPen(Qt::red));
-}
-
-ImageIterationPlot::~ImageIterationPlot()
-{
-    delete plot;
 }
 
 void ImageIterationPlot::addPoint(double it, double blue, double green, double red)
@@ -84,7 +79,7 @@ void ImageIterationPlot::clearGraphsData()
 
 HistogramPlot::HistogramPlot(QString title, double xMin, double xMax)
 {
-    plot = new QCustomPlot(this);
+    plot = new QCustomPlot;
 
     plot->xAxis->setLabel("Intensity");
     plot->yAxis->setLabel("Count");
@@ -111,11 +106,6 @@ HistogramPlot::HistogramPlot(QString title, double xMin, double xMax)
     plot->graph(2)->setPen(QPen(Qt::red));
 }
 
-HistogramPlot::~HistogramPlot()
-{
-    delete plot;
-}
-
 void HistogramPlot::setYMax(double yMax)
 {
     plot->yAxis->setRange(0.0, yMax);
@@ -134,7 +124,7 @@ void HistogramPlot::setData(const QVector<double> &bins, const QVector<double> &
 
 ScatterPlot::ScatterPlot(QString title, double xMin, double xMax, double yMin, double yMax)
 {
-    plot = new QCustomPlot(this);
+    plot = new QCustomPlot;
 
     plot->xAxis->setLabel("Blue");
     plot->yAxis->setLabel("Green");
@@ -159,11 +149,6 @@ ScatterPlot::ScatterPlot(QString title, double xMin, double xMax, double yMin, d
     plot->graph(0)->setAdaptiveSampling(false);
 }
 
-ScatterPlot::~ScatterPlot()
-{
-    delete plot;
-}
-
 void ScatterPlot::setAxesLabels(QString xLabel, QString yLabel)
 {
     plot->xAxis->setLabel(xLabel);
@@ -180,7 +165,7 @@ void ScatterPlot::setData(const QVector<double> &x, const QVector<double> &y)
 
 CurvePlot::CurvePlot(QString title, double xMin, double xMax, double yMin, double yMax)
 {
-    plot = new QCustomPlot(this);
+    plot = new QCustomPlot;
 
     plot->xAxis->setLabel("Blue");
     plot->yAxis->setLabel("Green");
@@ -199,11 +184,6 @@ CurvePlot::CurvePlot(QString title, double xMin, double xMax, double yMin, doubl
     plot->plotLayout()->addElement(0, 0, text);
 
     curve = new QCPCurve(plot->xAxis, plot->yAxis);
-}
-
-CurvePlot::~CurvePlot()
-{
-    delete plot;
 }
 
 void CurvePlot::setAxesLabels(QString xLabel, QString yLabel)

@@ -48,7 +48,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     // Main tabs
 
     QTabWidget *mainTabWidget = new QTabWidget;
-    mainTabWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    mainTabWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     mainTabWidget->addTab(generalControlsWidget, "General");
     mainTabWidget->addTab(drawWidget, "Draw");
     mainTabWidget->addTab(imageManipulationWidget, "Pipelines");
@@ -57,6 +57,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     // Plot tabs
 
     plotsTabWidget = new QTabWidget;
+    plotsTabWidget->setGeometry(0, 0, 800, 600);
     plotsTabWidget->addTab(histogramPlot->plot, "Histogram");
     plotsTabWidget->addTab(imageIterationPlot->plot, "Full image color intensity");
     plotsTabWidget->addTab(pixelIterationPlot->plot, "Single pixel color intensity");
@@ -64,15 +65,21 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     plotsTabWidget->addTab(colorSpacePixelPlot->plot, "Single pixel color-space");
     plotsTabWidget->hide();
 
+    // Status bar
+
+    statusBar = new QStatusBar;
+    statusBar->setFont(QFont("sans", 8));
+    statusBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    statusBar->showMessage(QString("%1 Iterations | %2 ms / iteration | %3 ms / pipelines").arg(generator->getIterationNumber()).arg(0).arg(0));
+
     // Main layout
 
-    QHBoxLayout *mainHBoxLayout = new QHBoxLayout;
+    QVBoxLayout *mainVBoxLayout = new QVBoxLayout;
+    mainVBoxLayout->addWidget(mainTabWidget);
+    mainVBoxLayout->addWidget(statusBar);
 
-    mainHBoxLayout->addWidget(mainTabWidget);
-    mainHBoxLayout->addWidget(plotsTabWidget);
-
-    setLayout(mainHBoxLayout);
-    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    setLayout(mainVBoxLayout);
+    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     // Timer for iteration loop
 
@@ -84,11 +91,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
 MainWidget::~MainWidget()
 {
-    delete histogramPlot;
-    delete imageIterationPlot;
-    delete pixelIterationPlot;
-    delete colorSpacePlot;
-    delete colorSpacePixelPlot;
+    delete plotsTabWidget;
     delete generator;
 }
 
@@ -443,7 +446,7 @@ void MainWidget::constructImageManipulationControls()
     // Selected real parameter
 
     selectedParameterSlider = new QSlider(Qt::Horizontal);
-    selectedParameterSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    selectedParameterSlider->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     selectedParameterSlider->setRange(0, 10000);
 
     selectedParameterMinLineEdit = new CustomLineEdit;
@@ -625,7 +628,7 @@ void MainWidget::constructComputationControls()
 
     // Signals + Slots
 
-    connect(togglePlotsPushButton, &QPushButton::clicked, this, &MainWidget::togglePlots);
+    connect(togglePlotsPushButton, &QPushButton::clicked, [=](bool checked){ plotsTabWidget->setVisible(checked); });
     connect(imageIterationPushButton, &QPushButton::clicked, [=](bool checked){ if (checked) imageIterationPlot->clearGraphsData(); });
     connect(pixelIterationPushButton, &QPushButton::clicked, [=](bool checked){ if (checked) pixelIterationPlot->clearGraphsData(); });
     connect(colorSpacePixelPushButton, &QPushButton::clicked, [=](bool checked){ if (checked) colorSpacePixelPlot->clearCurveData(); });
@@ -700,6 +703,12 @@ void MainWidget::loadConfig()
             currentImageOperationIndex[i] = 0;
 
         initPipelineControls(0);
+
+        generator->resetIterationNumer();
+
+        imageIterationPlot->clearGraphsData();
+        pixelIterationPlot->clearGraphsData();
+        colorSpacePixelPlot->clearCurveData();
     }
 }
 
@@ -1058,7 +1067,9 @@ void MainWidget::removeImageOperation()
 
 void MainWidget::iterationLoop()
 {
+    auto start = std::chrono::steady_clock::now();
     generator->iterate();
+    auto end = std::chrono::steady_clock::now();
 
     // Full image computations/plots
 
@@ -1113,20 +1124,15 @@ void MainWidget::iterationLoop()
         generator->writeVideoFrame();
         setVideoCaptureElapsedTimeLabel();
     }
-}
 
-void MainWidget::togglePlots(bool checked)
-{
-    plotsTabWidget->setVisible(checked);
+    auto now = std::chrono::steady_clock::now();
+    auto iterationTime = std::chrono::duration_cast<std::chrono::milliseconds>(now - timePoint).count();
+    timePoint = now;
 
-    if (checked)
-    {
-        resize(1200, height());
-    }
-    else
-    {
-        adjustSize();
-    }
+    auto pipelineTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+    statusBar->clearMessage();
+    statusBar->showMessage(QString("%1 Iterations | %2 ms / iteration | %3 ms / pipelines").arg(generator->getIterationNumber()).arg(iterationTime).arg(pipelineTime));
 }
 
 void MainWidget::colorSpaceAxisChanged(int axisIndex, QComboBox *axisComboBox)
@@ -1152,6 +1158,7 @@ void MainWidget::closeEvent(QCloseEvent *event)
 {
     timer->stop();
     generator->destroyAllWindows();
+    plotsTabWidget->hide();
     event->accept();
 }
 

@@ -596,7 +596,7 @@ void GeneratorCV::drawPointerCanvas()
     cv::Mat pointerCanvasGray;
     cv::cvtColor(pointerCanvas, pointerCanvasGray, cv::COLOR_BGR2GRAY);
     cv::Mat mask;
-    cv::threshold(pointerCanvasGray, mask, 10, 255, cv::THRESH_BINARY);
+    cv::threshold(pointerCanvasGray, mask, 1, 255, cv::THRESH_BINARY);
     cv::Mat maskInverse;
     cv::bitwise_not(mask, maskInverse);
 

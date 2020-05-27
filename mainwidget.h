@@ -20,9 +20,10 @@
 
 #include "generator.h"
 #include "parameterwidget.h"
-#include "imageiterationplot.h"
+#include "plots.h"
 #include "configparser.h"
 #include <vector>
+#include <chrono>
 #include <QWidget>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -55,6 +56,7 @@
 #include <QStringList>
 #include <QColor>
 #include <QColorDialog>
+#include <QStatusBar>
 
 class MainWidget : public QWidget
 {
@@ -69,6 +71,10 @@ class MainWidget : public QWidget
     HistogramPlot *histogramPlot;
     ScatterPlot *colorSpacePlot;
     CurvePlot *colorSpacePixelPlot;
+
+    QStatusBar *statusBar;
+
+    std::chrono::steady_clock::time_point timePoint;
 
     QPushButton *pauseResumePushButton;
 
@@ -167,7 +173,6 @@ class MainWidget : public QWidget
     void applyImageOperations();
     void iterationLoop();
 
-    void togglePlots(bool checked);
     void colorSpaceAxisChanged(int axisIndex, QComboBox *axisComboBox);
 
     void closeEvent(QCloseEvent *event);
