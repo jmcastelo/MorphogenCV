@@ -41,6 +41,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     // Qt
 
     constructGeneralControls();
+    constructDrawControls();
     constructImageManipulationControls();
     constructComputationControls();
 
@@ -49,6 +50,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     QTabWidget *mainTabWidget = new QTabWidget;
     mainTabWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     mainTabWidget->addTab(generalControlsWidget, "General");
+    mainTabWidget->addTab(drawWidget, "Draw");
     mainTabWidget->addTab(imageManipulationWidget, "Pipelines");
     mainTabWidget->addTab(computationWidget, "Plots");
 
@@ -91,36 +93,12 @@ MainWidget::~MainWidget()
 
 void MainWidget::constructGeneralControls()
 {
-    // Seed
-
-    QPushButton *drawSeedPushButton = new QPushButton("Draw seed");
-    drawSeedPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-
-    coloredSeedCheckBox = new QCheckBox("Color");
-    coloredSeedCheckBox->setChecked(false);
-
-    bwSeedCheckBox = new QCheckBox("Grays");
-    bwSeedCheckBox->setChecked(true);
-
-    QHBoxLayout *seedHBoxLayout = new QHBoxLayout;
-    seedHBoxLayout->addWidget(drawSeedPushButton);
-    seedHBoxLayout->addWidget(coloredSeedCheckBox);
-    seedHBoxLayout->addWidget(bwSeedCheckBox);
-
-    QGroupBox *seedGroupBox = new QGroupBox("Seed");
-    seedGroupBox->setLayout(seedHBoxLayout);
-
-    QButtonGroup *seedButtonGroup = new QButtonGroup(this);
-    seedButtonGroup->setExclusive(true);
-    seedButtonGroup->addButton(coloredSeedCheckBox, 0);
-    seedButtonGroup->addButton(bwSeedCheckBox, 1);
-
     // Configurations
 
-    QPushButton *loadConfigPushButton = new QPushButton("Load configuration");
+    QPushButton *loadConfigPushButton = new QPushButton("Load");
     loadConfigPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
-    QPushButton *saveConfigPushButton = new QPushButton("Save configuration");
+    QPushButton *saveConfigPushButton = new QPushButton("Save");
     saveConfigPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     QHBoxLayout *configHBoxLayout = new QHBoxLayout;
@@ -205,7 +183,6 @@ void MainWidget::constructGeneralControls()
 
     QVBoxLayout *generalControlsVBoxLayout = new QVBoxLayout;
     generalControlsVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
-    generalControlsVBoxLayout->addWidget(seedGroupBox);
     generalControlsVBoxLayout->addWidget(configGroupBox);
     generalControlsVBoxLayout->addWidget(mainControlsGroupBox);
     generalControlsVBoxLayout->addWidget(videoGroupBox);
@@ -219,7 +196,6 @@ void MainWidget::constructGeneralControls()
 
     // Signals + Slots
 
-    connect(drawSeedPushButton, &QPushButton::clicked, [=](){ generator->drawSeed(bwSeedCheckBox->isChecked()); });
     connect(pauseResumePushButton, &QPushButton::clicked, this, &MainWidget::pauseResumeSystem);
     connect(saveConfigPushButton, &QPushButton::clicked, this, &MainWidget::saveConfig);
     connect(loadConfigPushButton, &QPushButton::clicked, this, &MainWidget::loadConfig);
@@ -229,6 +205,79 @@ void MainWidget::constructGeneralControls()
     connect(videoCapturePushButton, &QPushButton::clicked, this, &MainWidget::onVideoCapturePushButtonClicked);
     connect(fpsLineEdit, &QLineEdit::returnPressed, [=](){ generator->setFramesPerSecond(fpsLineEdit->text().toInt()); });
     connect(aboutPushButton, &QPushButton::clicked, this, &MainWidget::about);
+}
+
+void MainWidget::constructDrawControls()
+{
+    // Seed
+
+    QPushButton *drawSeedPushButton = new QPushButton("Draw");
+    drawSeedPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    coloredSeedCheckBox = new QCheckBox("Color");
+    coloredSeedCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    coloredSeedCheckBox->setChecked(false);
+
+    bwSeedCheckBox = new QCheckBox("Grays");
+    bwSeedCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    bwSeedCheckBox->setChecked(true);
+
+    QHBoxLayout *seedHBoxLayout = new QHBoxLayout;
+    seedHBoxLayout->addWidget(drawSeedPushButton);
+    seedHBoxLayout->addWidget(coloredSeedCheckBox);
+    seedHBoxLayout->addWidget(bwSeedCheckBox);
+
+    QGroupBox *seedGroupBox = new QGroupBox("Seed");
+    seedGroupBox->setLayout(seedHBoxLayout);
+
+    QButtonGroup *seedButtonGroup = new QButtonGroup(this);
+    seedButtonGroup->setExclusive(true);
+    seedButtonGroup->addButton(coloredSeedCheckBox, 0);
+    seedButtonGroup->addButton(bwSeedCheckBox, 1);
+
+    // Blend previous frames
+
+    CustomLineEdit *previousFramesSizeLineEdit = new CustomLineEdit;
+    previousFramesSizeLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    QIntValidator *previousFramesSizeValidator = new QIntValidator(0, 100, previousFramesSizeLineEdit);
+    previousFramesSizeValidator->setLocale(QLocale::English);
+    previousFramesSizeLineEdit->setValidator(previousFramesSizeValidator);
+    previousFramesSizeLineEdit->setText(QString::number(generator->getPreviousFramesSize()));
+
+    CustomLineEdit *previousFramesBlendFactorLineEdit = new CustomLineEdit;
+    previousFramesBlendFactorLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    QDoubleValidator *previousFramesBlendFactorValidator = new QDoubleValidator(0.0, 1.0, 10, previousFramesBlendFactorLineEdit);
+    previousFramesBlendFactorValidator->setLocale(QLocale::English);
+    previousFramesBlendFactorLineEdit->setValidator(previousFramesBlendFactorValidator);
+    previousFramesBlendFactorLineEdit->setText(QString::number(generator->getPreviousFramesBlendFactor()));
+
+    QFormLayout *blendPreviousFramesLayout = new QFormLayout;
+    blendPreviousFramesLayout->addRow("Number of frames:", previousFramesSizeLineEdit);
+    blendPreviousFramesLayout->addRow("Blend factor:", previousFramesBlendFactorLineEdit);
+
+    QGroupBox *blendPreviousFramesGroupBox = new QGroupBox("Blend last frames");
+    blendPreviousFramesGroupBox->setLayout(blendPreviousFramesLayout);
+
+    // Main layout
+
+    QVBoxLayout *drawVBoxLayout = new QVBoxLayout;
+    drawVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
+    drawVBoxLayout->addWidget(seedGroupBox);
+    drawVBoxLayout->addWidget(blendPreviousFramesGroupBox);
+
+    // Widget to put in tab
+
+    drawWidget = new QWidget;
+    drawWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    drawWidget->setLayout(drawVBoxLayout);
+
+    // Signals + Slots
+
+    connect(drawSeedPushButton, &QPushButton::clicked, [=](){ generator->drawSeed(bwSeedCheckBox->isChecked()); });
+    connect(previousFramesSizeLineEdit, &CustomLineEdit::returnPressed, [=](){ generator->setPreviousFramesSize(previousFramesSizeLineEdit->text().toInt()); });
+    connect(previousFramesSizeLineEdit, &CustomLineEdit::focusOut, [=](){ previousFramesSizeLineEdit->setText(QString::number(generator->getPreviousFramesSize())); });
+    connect(previousFramesBlendFactorLineEdit, &CustomLineEdit::returnPressed, [=](){ generator->setPreviousFramesBlendFactor(previousFramesBlendFactorLineEdit->text().toDouble()); });
+    connect(previousFramesBlendFactorLineEdit, &CustomLineEdit::focusOut, [=](){ previousFramesBlendFactorLineEdit->setText(QString::number(generator->getPreviousFramesBlendFactor())); });
 }
 
 void MainWidget::constructImageManipulationControls()

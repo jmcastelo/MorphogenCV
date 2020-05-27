@@ -299,6 +299,9 @@ GeneratorCV::GeneratorCV()
 
     iteration = 0;
 
+    previousFramesSize = 0;
+    previousFramesBlendFactor = 0.0;
+
     selectingPixel = false;
 
     framesPerSecond = 30;
@@ -366,12 +369,28 @@ void GeneratorCV::blendImages()
     blendImage.copyTo(outImage, mask);
 }
 
+void GeneratorCV::blendPreviousImages()
+{
+    for (auto previousFrame: previousFrames)
+        cv::addWeighted(outImage, 1.0, previousFrame, previousFramesBlendFactor, 0.0, outImage);
+
+    if (previousFramesSize > 0)
+    {
+        if (!previousFrames.empty() && static_cast<int>(previousFrames.size()) == previousFramesSize)
+            previousFrames.erase(previousFrames.begin());
+
+        previousFrames.push_back(outImage);
+    }
+}
+
 void GeneratorCV::iterate()
 {
     for (auto pipeline: pipelines)
         pipeline->iterate();
 
     blendImages();
+
+    blendPreviousImages();
 
     for (auto &pipeline: pipelines)
         pipeline->image = outImage.clone();
@@ -483,6 +502,18 @@ void GeneratorCV::closeVideoWriter()
 {
     if (videoWriter.isOpened())
         videoWriter.release();
+}
+
+void GeneratorCV::setPreviousFramesSize(int n)
+{
+    if (n >= 0)
+    {
+        if (n < previousFramesSize)
+            for (int i = 0; i < previousFramesSize - n; i++)
+                previousFrames.erase(previousFrames.begin() + i);
+
+        previousFramesSize = n;
+    }
 }
 
 void GeneratorCV::onMouse(int event, int x, int y, int, void *userdata)

@@ -126,10 +126,12 @@ class MainWidget : public QWidget
     QTabWidget *plotsTabWidget;
 
     QWidget *generalControlsWidget;
+    QWidget *drawWidget;
     QWidget *imageManipulationWidget;
     QWidget *computationWidget;
 
     void constructGeneralControls();
+    void constructDrawControls();
     void constructImageManipulationControls();
     void constructComputationControls();
 
