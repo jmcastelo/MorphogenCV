@@ -368,6 +368,7 @@ void GeneratorCV::loadSeedImage(std::string filename)
 
     cv::Mat maskedSeed = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
     seedImage.copyTo(maskedSeed, mask);
+    seedImage = maskedSeed.clone();
 }
 
 void GeneratorCV::drawSeedImage()
