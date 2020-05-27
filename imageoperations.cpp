@@ -24,8 +24,14 @@ std::string BilateralFilter::name = "Blur: bilateral";
 BilateralFilter::BilateralFilter(bool on, int d, double sc, double ss): ImageOperation(on)
 {
     diameter = new IntParameter("Diameter", d, 0, 50, false);
-    sigmaColor = new DoubleParameter("Sigma color", sc, 0.0, 300.0, 0.0, 1.0e6);
-    sigmaSpace = new DoubleParameter("Sigma space", ss, 0.0, 300.0, 0.0, 1.0e6);
+
+    double minSigmaColor, maxSigmaColor;
+    adjustMinMax(sc, 0.0, 300.0, minSigmaColor, maxSigmaColor);
+    sigmaColor = new DoubleParameter("Sigma color", sc, minSigmaColor, maxSigmaColor, 0.0, 1.0e6);
+
+    double minSigmaSpace, maxSigmaSpace;
+    adjustMinMax(ss, 0.0, 300.0, minSigmaSpace, maxSigmaSpace);
+    sigmaSpace = new DoubleParameter("Sigma space", ss, minSigmaSpace, maxSigmaSpace, 0.0, 1.0e6);
 }
 
 void BilateralFilter::applyOperation(cv::Mat &src)
@@ -55,8 +61,14 @@ std::string Canny::name = "Canny";
 
 Canny::Canny(bool on, double th1, double th2, int size, bool g): ImageOperation(on)
 {
-    threshold1 = new DoubleParameter("Threshold 1", th1, 0.0, 300.0, 0.0, 1.0e6);
-    threshold2 = new DoubleParameter("Threshold 2", th2, 0.0, 300.0, 0.0, 1.0e6);
+    double minThreshold1, maxThreshold1;
+    adjustMinMax(th1, 0.0, 300.0, minThreshold1, maxThreshold1);
+    threshold1 = new DoubleParameter("Threshold 1", th1, minThreshold1, maxThreshold1, 0.0, 1.0e6);
+
+    double minThreshold2, maxThreshold2;
+    adjustMinMax(th2, 0.0, 300.0, minThreshold2, maxThreshold2);
+    threshold2 = new DoubleParameter("Threshold 2", th2, minThreshold2, maxThreshold2, 0.0, 1.0e6);
+
     apertureSize = new IntParameter("Aperture size", size, 3, 7, true);
     L2gradient = new BoolParameter("L2 gradient", g);
 }
@@ -76,8 +88,13 @@ std::string ConvertTo::name = "Contrast/brightness";
 
 ConvertTo::ConvertTo(bool on, double a, double b): ImageOperation(on)
 {
-    alpha = new DoubleParameter("Gain", a, 0.0, 5.0, -1.0e6, 1.0e6);
-    beta = new DoubleParameter("Bias", b, -100.0, 100.0, -1.0e6, 1.0e6);
+    double minAlpha, maxAlpha;
+    adjustMinMax(a, 0.0, 5.0, minAlpha, maxAlpha);
+    alpha = new DoubleParameter("Gain", a, minAlpha, maxAlpha, -1.0e6, 1.0e6);
+
+    double minBeta, maxBeta;
+    adjustMinMax(b, -100.0, 100.0, minBeta, maxBeta);
+    beta = new DoubleParameter("Bias", b, minBeta, maxBeta, -1.0e6, 1.0e6);
 }
 
 void ConvertTo::applyOperation(cv::Mat &src)
@@ -91,8 +108,13 @@ std::string DeblurFilter::name = "Deblur filter";
 
 DeblurFilter::DeblurFilter(bool on, double r, double snr): ImageOperation(on)
 {
-    radius = new DoubleParameter("Radius", r, 0.0, 20.0, 0.0, 1.0e6);
-    signalToNoiseRatio = new DoubleParameter("Signal to noise ratio", snr, 0.001, 10000.0, 1.0e-6, 1.0e6);
+    double minRadius, maxRadius;
+    adjustMinMax(r, 0.0, 20.0, minRadius, maxRadius);
+    radius = new DoubleParameter("Radius", r, minRadius, maxRadius, 0.0, 1.0e6);
+
+    double minSNR, maxSNR;
+    adjustMinMax(snr, 0.001, 200.0, minSNR, maxSNR);
+    signalToNoiseRatio = new DoubleParameter("Signal to noise ratio", snr, minSNR, maxSNR, 1.0e-6, 1.0e6);
 }
 
 void DeblurFilter::computePSF(cv::Mat &outputImg, cv::Size filterSize)
@@ -203,7 +225,7 @@ std::string Filter2D::name = "Filter 2D";
 
 Filter2D::Filter2D(bool on, std::vector<float> v): ImageOperation(on)
 {
-    kernel = new KernelParameter("Kernel", v, -100.0, 100.0);
+    kernel = new KernelParameter("Kernel", v, -1000.0, 1000.0);
 
     updateKernelMat();
 }
@@ -225,7 +247,9 @@ std::string GammaCorrection::name = "Gamma correction";
 
 GammaCorrection::GammaCorrection(bool on, double g): ImageOperation(on)
 {
-    gamma = new DoubleParameter("Gamma", g, 0.0, 10.0, 0.0, 1.0e6);
+    double minGamma, maxGamma;
+    adjustMinMax(g, 0.0, 10.0, minGamma, maxGamma);
+    gamma = new DoubleParameter("Gamma", g, minGamma, maxGamma, 0.0, 1.0e6);
 }
 
 void GammaCorrection::applyOperation(cv::Mat &src)
@@ -245,7 +269,10 @@ std::string GaussianBlur::name = "Blur: Gaussian";
 GaussianBlur::GaussianBlur(bool on, int k, double s): ImageOperation(on)
 {
     ksize = new IntParameter("Kernel size", k, 0, 51, true);
-    sigma = new DoubleParameter("Sigma", s, 0.001, 3.0, 1.0e-6, 1.0e6);
+
+    double minSigma, maxSigma;
+    adjustMinMax(s, 0.001, 5.0, minSigma, maxSigma);
+    sigma = new DoubleParameter("Sigma", s, minSigma, maxSigma, 1.0e-6, 1.0e6);
 }
 
 void GaussianBlur::applyOperation(cv::Mat &src)
@@ -387,7 +414,9 @@ std::string RadialRemap::name = "Radial remap";
 
 RadialRemap::RadialRemap(bool on, double a, int rf, cv::InterpolationFlags f): ImageOperation(on)
 {
-    amplitude = new DoubleParameter("Amplitude", a, -5.0, 5.0, -1.0e6, 1.0e6);
+    double minAmplitude, maxAmplitude;
+    adjustMinMax(a, -5.0, 5.0, minAmplitude, maxAmplitude);
+    amplitude = new DoubleParameter("Amplitude", a, minAmplitude, maxAmplitude, -1.0e6, 1.0e6);
 
     std::vector<std::string> radialFunctionValueNames = {"Linear inc.", "Linear dec.", "Cosine inc.", "Cosine dec."};
     std::vector<int> radialFuncionValues = {0, 1, 2, 3};
@@ -507,8 +536,13 @@ std::string Rotation::name = "Rotation/scaling";
 
 Rotation::Rotation(bool on, double a, double s, cv::InterpolationFlags f): ImageOperation(on)
 {
-    angle = new DoubleParameter("Angle", a, -360.0, 360.0, -1.0e6, 1.0e6);
-    scale = new DoubleParameter("Scale", s, 0.0, 2.0, 0.0, 1.0e6);
+    double minAngle, maxAngle;
+    adjustMinMax(a, -360, 360, minAngle, maxAngle);
+    angle = new DoubleParameter("Angle", a, minAngle, maxAngle, -1.0e6, 1.0e6);
+
+    double minScale, maxScale;
+    adjustMinMax(s, 0.0, 2.0, minScale, maxScale);
+    scale = new DoubleParameter("Scale", s, minScale, maxScale, 0.0, 1.0e6);
 
     std::vector<std::string> valueNames = {"Nearest neighbor", "Bilinear", "Bicubic", "Area", "Lanczos 8x8"};
     std::vector<cv::InterpolationFlags> values = {cv::INTER_NEAREST, cv::INTER_LINEAR, cv::INTER_CUBIC, cv::INTER_AREA, cv::INTER_LANCZOS4};
@@ -529,17 +563,12 @@ std::string Saturate::name = "Saturate";
 
 Saturate::Saturate(bool on, double g, double b): ImageOperation(on)
 {
-    double minGain = 0.0;
-    if (g < minGain) minGain = g;
-    double maxGain = 5.0;
-    if (g > maxGain) maxGain = g;
-
-    double minBias = -100.0;
-    if (b < minBias) minBias = b;
-    double maxBias = 100.0;
-    if (b > maxBias) maxBias = b;
-
+    double minGain, maxGain;
+    adjustMinMax(g, 0.0, 5.0, minGain, maxGain);
     gain = new DoubleParameter("Gain", g, minGain, maxGain, -1.0e6, 1.0e6);
+
+    double minBias, maxBias;
+    adjustMinMax(b, -100.0, 100.0, minBias, maxBias);
     bias = new DoubleParameter("Bias", b, minBias, maxBias, -1.0e6, 1.0e6);
 }
 
@@ -564,9 +593,17 @@ std::string Sharpen::name = "Sharpen";
 
 Sharpen::Sharpen(bool on, double s, double t, double a): ImageOperation(on)
 {
-    sigma = new DoubleParameter("Sigma", s, 0.001, 10.0, 1.0e-6, 1.0e6);
-    threshold = new DoubleParameter("Threshold", t, 0.0, 100.0, 0.0, 1.0e6);
-    amount = new DoubleParameter("Amount", a, 0.0, 10.0, -1.0e6, 1.0e6);
+    double minSigma, maxSigma;
+    adjustMinMax(s, 0.001, 10.0, minSigma, maxSigma);
+    sigma = new DoubleParameter("Sigma", s, minSigma, maxSigma, 1.0e-6, 1.0e6);
+
+    double minThreshold, maxThreshold;
+    adjustMinMax(t, 0.0, 100.0, minThreshold, maxThreshold);
+    threshold = new DoubleParameter("Threshold", t, minThreshold, maxThreshold, 0.0, 1.0e6);
+
+    double minAmount, maxAmount;
+    adjustMinMax(a, 0.0, 10.0, minAmount, maxAmount);
+    amount = new DoubleParameter("Amount", a, minAmount, maxAmount, -1.0e6, 1.0e6);
 }
 
 void Sharpen::applyOperation(cv::Mat &src)

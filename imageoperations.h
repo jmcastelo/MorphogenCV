@@ -44,6 +44,15 @@ public:
     virtual std::vector<OptionsParameter<cv::InterpolationFlags>*> getInterpolationFlagParameters(){ std::vector<OptionsParameter<cv::InterpolationFlags>*> parameters; return parameters; };
     virtual KernelParameter* getKernelParameter(){ return nullptr; }
 
+    void adjustMinMax(double value, double minValue, double maxValue, double &min, double &max)
+    {
+        if (value < minValue) min = value;
+        else min = minValue;
+
+        if (value > maxValue) max = value;
+        else max = maxValue;
+    }
+
     virtual void applyOperation(cv::Mat &src) = 0;
 
     ImageOperation(bool on): enabled(on){};
