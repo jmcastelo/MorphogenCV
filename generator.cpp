@@ -38,6 +38,7 @@ Pipeline::Pipeline(cv::Mat img): image(img)
         Pixelate::name,
         RadialRemap::name,
         Rotation::name,
+        Saturate::name,
         Sharpen::name,
         ShiftHue::name
     };
@@ -153,6 +154,10 @@ void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationI
     {
         imageOperations.insert(it + currentOperationIndex + 1, new Rotation(false, 0.0, 1.0, cv::INTER_NEAREST));
     }
+    else if (operationName == Saturate::name)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new Saturate(false, 1.0, 0.0));
+    }
     else if (operationName == Sharpen::name)
     {
         imageOperations.insert(it + currentOperationIndex + 1, new Sharpen(false, 1.0, 5.0, 1.0));
@@ -246,6 +251,10 @@ void Pipeline::loadImageOperation(
         cv::InterpolationFlags flag = static_cast<cv::InterpolationFlags>(interpolationFlagParameters[0]);
         imageOperations.push_back(new Rotation(enabled, doubleParameters[0], doubleParameters[1], flag));
     }
+    else if (operationName == Saturate::name)
+    {
+        imageOperations.push_back(new Saturate(enabled, doubleParameters[0], doubleParameters[1]));
+    }
     else if (operationName == Sharpen::name)
     {
         imageOperations.push_back(new Sharpen(enabled, doubleParameters[0], doubleParameters[1], doubleParameters[2]));
@@ -277,6 +286,7 @@ GeneratorCV::GeneratorCV()
         Pixelate::name,
         RadialRemap::name,
         Rotation::name,
+        Saturate::name,
         Sharpen::name,
         ShiftHue::name
     };

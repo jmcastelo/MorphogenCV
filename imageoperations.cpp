@@ -523,6 +523,41 @@ void Rotation::applyOperation(cv::Mat &src)
     cv::warpAffine(src, src, rotationMat, src.size(), flag->value);
 }
 
+// Saturate
+
+std::string Saturate::name = "Saturate";
+
+Saturate::Saturate(bool on, double g, double b): ImageOperation(on)
+{
+    double minGain = 0.0;
+    if (g < minGain) minGain = g;
+    double maxGain = 5.0;
+    if (g > maxGain) maxGain = g;
+
+    double minBias = -100.0;
+    if (b < minBias) minBias = b;
+    double maxBias = 100.0;
+    if (b > maxBias) maxBias = b;
+
+    gain = new DoubleParameter("Gain", g, minGain, maxGain, -1.0e6, 1.0e6);
+    bias = new DoubleParameter("Bias", b, minBias, maxBias, -1.0e6, 1.0e6);
+}
+
+void Saturate::applyOperation(cv::Mat &src)
+{
+    cv::Mat hsv;
+    cv::cvtColor(src, hsv, cv::COLOR_BGR2HSV);
+
+    cv::Mat channels[3];
+    cv::split(hsv, channels);
+
+    channels[1].convertTo(channels[1], -1, gain->value, bias->value);
+
+    cv::merge(channels, 3, hsv);
+
+    cv::cvtColor(hsv, src, cv::COLOR_HSV2BGR);
+}
+
 // Sharpen
 
 std::string Sharpen::name = "Sharpen";
@@ -539,8 +574,9 @@ void Sharpen::applyOperation(cv::Mat &src)
     cv::Mat blurred;
     cv::GaussianBlur(src, blurred, cv::Size(), sigma->value, sigma->value, cv::BORDER_ISOLATED);
     cv::Mat lowContrastMask = abs(src - blurred) < threshold->value;
-    src = src * (1 + amount->value) + blurred * (-amount->value);
-    src.copyTo(src, lowContrastMask);
+    cv::Mat sharpened = src * (1 + amount->value) + blurred * (-amount->value);
+    src.copyTo(sharpened, lowContrastMask);
+    src = sharpened.clone();
 }
 
 // Shift hue

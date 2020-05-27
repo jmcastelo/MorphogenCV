@@ -438,6 +438,29 @@ public:
     void applyOperation(cv::Mat &src);
 };
 
+// Saturate
+
+class Saturate: public ImageOperation
+{
+    DoubleParameter *gain, *bias;
+
+public:
+    static std::string name;
+
+    Saturate(bool on, double g, double b);
+    ~Saturate()
+    {
+        delete gain;
+        delete bias;
+    }
+
+    std::string getName(){ return name; };
+
+    std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {gain, bias}; return parameters; };
+
+    void applyOperation(cv::Mat &src);
+};
+
 // Sharpen
 
 class Sharpen: public ImageOperation
