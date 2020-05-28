@@ -76,6 +76,8 @@ class MainWidget : public QWidget
 
     std::chrono::steady_clock::time_point timePoint;
 
+    QTabWidget *mainTabWidget;
+
     QPushButton *pauseResumePushButton;
 
     QCheckBox *coloredSeedCheckBox;
@@ -134,14 +136,14 @@ class MainWidget : public QWidget
     QTabWidget *plotsTabWidget;
 
     QWidget *generalControlsWidget;
-    QWidget *drawWidget;
     QWidget *imageManipulationWidget;
     QWidget *computationWidget;
 
     void constructGeneralControls();
-    void constructDrawControls();
     void constructImageManipulationControls();
     void constructComputationControls();
+
+    void resizeMainTabs(int index);
 
     void pauseResumeSystem(bool checked);
 

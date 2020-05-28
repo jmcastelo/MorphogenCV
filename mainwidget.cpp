@@ -41,18 +41,20 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     // Qt
 
     constructGeneralControls();
-    constructDrawControls();
     constructImageManipulationControls();
     constructComputationControls();
 
     // Main tabs
 
-    QTabWidget *mainTabWidget = new QTabWidget;
-    mainTabWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    mainTabWidget = new QTabWidget;
+    mainTabWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     mainTabWidget->addTab(generalControlsWidget, "General");
-    mainTabWidget->addTab(drawWidget, "Draw");
     mainTabWidget->addTab(imageManipulationWidget, "Pipelines");
     mainTabWidget->addTab(computationWidget, "Plots");
+
+    resizeMainTabs(0);
+
+    connect(mainTabWidget, &QTabWidget::currentChanged, this, &MainWidget::resizeMainTabs);
 
     // Plot tabs
 
@@ -69,17 +71,18 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
     statusBar = new QStatusBar;
     statusBar->setFont(QFont("sans", 8));
-    statusBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    statusBar->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
     statusBar->showMessage(QString("%1 Iterations | %2 ms / iteration | %3 ms / pipelines").arg(generator->getIterationNumber()).arg(0).arg(0));
 
     // Main layout
 
     QVBoxLayout *mainVBoxLayout = new QVBoxLayout;
+    mainVBoxLayout->setAlignment(Qt::AlignTop);
     mainVBoxLayout->addWidget(mainTabWidget);
     mainVBoxLayout->addWidget(statusBar);
 
     setLayout(mainVBoxLayout);
-    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    layout()->setSizeConstraint(QLayout::SetFixedSize);
 
     // Timer for iteration loop
 
@@ -178,83 +181,6 @@ void MainWidget::constructGeneralControls()
     QGroupBox *videoGroupBox = new QGroupBox("Video capture");
     videoGroupBox->setLayout(videoVBoxLayout);
 
-    // About
-
-    QPushButton *aboutPushButton = new QPushButton("About");
-    aboutPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-
-    // Main layout
-
-    QVBoxLayout *generalControlsVBoxLayout = new QVBoxLayout;
-    generalControlsVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
-    generalControlsVBoxLayout->addWidget(configGroupBox);
-    generalControlsVBoxLayout->addWidget(mainControlsGroupBox);
-    generalControlsVBoxLayout->addWidget(videoGroupBox);
-    generalControlsVBoxLayout->addWidget(aboutPushButton);
-
-    // Widget to put in tab
-
-    generalControlsWidget = new QWidget;
-    generalControlsWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    generalControlsWidget->setLayout(generalControlsVBoxLayout);
-
-    // Signals + Slots
-
-    connect(pauseResumePushButton, &QPushButton::clicked, this, &MainWidget::pauseResumeSystem);
-    connect(saveConfigPushButton, &QPushButton::clicked, this, &MainWidget::saveConfig);
-    connect(loadConfigPushButton, &QPushButton::clicked, this, &MainWidget::loadConfig);
-    connect(timerIntervalLineEdit, &QLineEdit::returnPressed, this, &MainWidget::setTimerInterval);
-    connect(imageSizeLineEdit, &QLineEdit::returnPressed, this, &MainWidget::setImageSize);
-    connect(videoFilenamePushButton, &QPushButton::clicked, this, &MainWidget::openVideoWriter);
-    connect(videoCapturePushButton, &QPushButton::clicked, this, &MainWidget::onVideoCapturePushButtonClicked);
-    connect(fpsLineEdit, &QLineEdit::returnPressed, [=](){ generator->setFramesPerSecond(fpsLineEdit->text().toInt()); });
-    connect(aboutPushButton, &QPushButton::clicked, this, &MainWidget::about);
-}
-
-void MainWidget::constructDrawControls()
-{
-    // Seed
-
-    QPushButton *drawRandomSeedPushButton = new QPushButton("Draw random");
-    drawRandomSeedPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-
-    coloredSeedCheckBox = new QCheckBox("Color");
-    coloredSeedCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    coloredSeedCheckBox->setChecked(false);
-
-    bwSeedCheckBox = new QCheckBox("Grays");
-    bwSeedCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    bwSeedCheckBox->setChecked(true);
-
-    QHBoxLayout *randomSeedHBoxLayout = new QHBoxLayout;
-    randomSeedHBoxLayout->setAlignment(Qt::AlignLeft);
-    randomSeedHBoxLayout->addWidget(drawRandomSeedPushButton);
-    randomSeedHBoxLayout->addWidget(coloredSeedCheckBox);
-    randomSeedHBoxLayout->addWidget(bwSeedCheckBox);
-
-    QPushButton *drawSeedImagePushButton = new QPushButton("Draw image");
-    drawSeedImagePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-
-    QPushButton *loadSeedImagePushButton = new QPushButton("Load image");
-    loadSeedImagePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-
-    QHBoxLayout *seedImageHBoxLayout = new QHBoxLayout;
-    seedImageHBoxLayout->setAlignment(Qt::AlignLeft);
-    seedImageHBoxLayout->addWidget(drawSeedImagePushButton);
-    seedImageHBoxLayout->addWidget(loadSeedImagePushButton);
-
-    QVBoxLayout *seedVBoxLayout = new QVBoxLayout;
-    seedVBoxLayout->addLayout(randomSeedHBoxLayout);
-    seedVBoxLayout->addLayout(seedImageHBoxLayout);
-
-    QGroupBox *seedGroupBox = new QGroupBox("Seed");
-    seedGroupBox->setLayout(seedVBoxLayout);
-
-    QButtonGroup *seedButtonGroup = new QButtonGroup(this);
-    seedButtonGroup->setExclusive(true);
-    seedButtonGroup->addButton(coloredSeedCheckBox, 0);
-    seedButtonGroup->addButton(bwSeedCheckBox, 1);
-
     // Pointer
 
     QPushButton *drawPointerPushButton = new QPushButton("Draw");
@@ -305,53 +231,44 @@ void MainWidget::constructDrawControls()
     QGroupBox *pointerGroupBox = new QGroupBox("Pointer");
     pointerGroupBox->setLayout(pointerVBoxLayout);
 
-    // Blend previous frames
+    // About
 
-    CustomLineEdit *previousFramesSizeLineEdit = new CustomLineEdit;
-    previousFramesSizeLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    QIntValidator *previousFramesSizeValidator = new QIntValidator(0, 100, previousFramesSizeLineEdit);
-    previousFramesSizeValidator->setLocale(QLocale::English);
-    previousFramesSizeLineEdit->setValidator(previousFramesSizeValidator);
-    previousFramesSizeLineEdit->setText(QString::number(generator->getPreviousFramesSize()));
+    QPushButton *aboutPushButton = new QPushButton("About");
+    aboutPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
-    CustomLineEdit *previousFramesBlendFactorLineEdit = new CustomLineEdit;
-    previousFramesBlendFactorLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    QDoubleValidator *previousFramesBlendFactorValidator = new QDoubleValidator(0.0, 1.0, 10, previousFramesBlendFactorLineEdit);
-    previousFramesBlendFactorValidator->setLocale(QLocale::English);
-    previousFramesBlendFactorLineEdit->setValidator(previousFramesBlendFactorValidator);
-    previousFramesBlendFactorLineEdit->setText(QString::number(generator->getPreviousFramesBlendFactor()));
+    // Main layouts
 
-    QFormLayout *blendPreviousFramesLayout = new QFormLayout;
-    blendPreviousFramesLayout->addRow("Number of frames:", previousFramesSizeLineEdit);
-    blendPreviousFramesLayout->addRow("Blend factor:", previousFramesBlendFactorLineEdit);
+    QVBoxLayout *vBoxLayout1 = new QVBoxLayout;
+    vBoxLayout1->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
+    vBoxLayout1->addWidget(configGroupBox);
+    vBoxLayout1->addWidget(pointerGroupBox);
 
-    QGroupBox *blendPreviousFramesGroupBox = new QGroupBox("Blend last frames");
-    blendPreviousFramesGroupBox->setLayout(blendPreviousFramesLayout);
+    QVBoxLayout *vBoxLayout2 = new QVBoxLayout;
+    vBoxLayout2->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
+    vBoxLayout2->addWidget(mainControlsGroupBox);
+    vBoxLayout2->addWidget(videoGroupBox);
 
-    // Main layout
-
-    QVBoxLayout *drawVBoxLayout = new QVBoxLayout;
-    drawVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
-    drawVBoxLayout->addWidget(seedGroupBox);
-    drawVBoxLayout->addWidget(pointerGroupBox);
-    drawVBoxLayout->addWidget(blendPreviousFramesGroupBox);
+    QHBoxLayout *generalControlsHBoxLayout = new QHBoxLayout;
+    generalControlsHBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
+    generalControlsHBoxLayout->addLayout(vBoxLayout1);
+    generalControlsHBoxLayout->addLayout(vBoxLayout2);
 
     // Widget to put in tab
 
-    drawWidget = new QWidget;
-    drawWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    drawWidget->setLayout(drawVBoxLayout);
+    generalControlsWidget = new QWidget;
+    generalControlsWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    generalControlsWidget->setLayout(generalControlsHBoxLayout);
 
     // Signals + Slots
 
-    connect(drawRandomSeedPushButton, &QPushButton::clicked, [=](){ generator->drawRandomSeed(bwSeedCheckBox->isChecked()); });
-    connect(drawSeedImagePushButton, &QPushButton::clicked, [=](){ generator->drawSeedImage(); });
-    connect(loadSeedImagePushButton, &QPushButton::clicked, [=]()
-    {
-        QString filename = QFileDialog::getOpenFileName(this, "Load image", "", "Images (*.bmp *.jpeg *.jpg *.png *.tiff *.tif)");
-        if (!filename.isEmpty())
-            generator->loadSeedImage(filename.toStdString());
-    });
+    connect(pauseResumePushButton, &QPushButton::clicked, this, &MainWidget::pauseResumeSystem);
+    connect(saveConfigPushButton, &QPushButton::clicked, this, &MainWidget::saveConfig);
+    connect(loadConfigPushButton, &QPushButton::clicked, this, &MainWidget::loadConfig);
+    connect(timerIntervalLineEdit, &QLineEdit::returnPressed, this, &MainWidget::setTimerInterval);
+    connect(imageSizeLineEdit, &QLineEdit::returnPressed, this, &MainWidget::setImageSize);
+    connect(videoFilenamePushButton, &QPushButton::clicked, this, &MainWidget::openVideoWriter);
+    connect(videoCapturePushButton, &QPushButton::clicked, this, &MainWidget::onVideoCapturePushButtonClicked);
+    connect(fpsLineEdit, &QLineEdit::returnPressed, [=](){ generator->setFramesPerSecond(fpsLineEdit->text().toInt()); });
     connect(drawPointerPushButton, &QPushButton::clicked, [=](bool checked){ generator->drawingPointer = checked; });
     connect(clearPointerCanvasPushButton, &QPushButton::clicked, [=](){ generator->clearPointerCanvas(); });
     connect(pickPointerColorPushButton, &QPushButton::clicked, [=]()
@@ -364,21 +281,60 @@ void MainWidget::constructDrawControls()
     connect(pointerRadiusLineEdit, &CustomLineEdit::focusOut, [=](){ pointerRadiusLineEdit->setText(QString::number(generator->getPointerRadius())); });
     connect(pointerThicknessLineEdit, &CustomLineEdit::returnPressed, [=](){ generator->setPointerThickness(pointerThicknessLineEdit->text().toInt()); });
     connect(pointerThicknessLineEdit, &CustomLineEdit::focusOut, [=](){ pointerThicknessLineEdit->setText(QString::number(generator->getPointerThickness())); });
-    connect(previousFramesSizeLineEdit, &CustomLineEdit::returnPressed, [=](){ generator->setPreviousFramesSize(previousFramesSizeLineEdit->text().toInt()); });
-    connect(previousFramesSizeLineEdit, &CustomLineEdit::focusOut, [=](){ previousFramesSizeLineEdit->setText(QString::number(generator->getPreviousFramesSize())); });
-    connect(previousFramesBlendFactorLineEdit, &CustomLineEdit::returnPressed, [=](){ generator->setPreviousFramesBlendFactor(previousFramesBlendFactorLineEdit->text().toDouble()); });
-    connect(previousFramesBlendFactorLineEdit, &CustomLineEdit::focusOut, [=](){ previousFramesBlendFactorLineEdit->setText(QString::number(generator->getPreviousFramesBlendFactor())); });
+    connect(aboutPushButton, &QPushButton::clicked, this, &MainWidget::about);
 }
 
 void MainWidget::constructImageManipulationControls()
 {
+    // Seed
+
+    QPushButton *drawRandomSeedPushButton = new QPushButton("Draw random");
+    drawRandomSeedPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    coloredSeedCheckBox = new QCheckBox("Color");
+    coloredSeedCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    coloredSeedCheckBox->setChecked(false);
+
+    bwSeedCheckBox = new QCheckBox("Grays");
+    bwSeedCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    bwSeedCheckBox->setChecked(true);
+
+    QHBoxLayout *randomSeedHBoxLayout = new QHBoxLayout;
+    randomSeedHBoxLayout->setAlignment(Qt::AlignLeft);
+    randomSeedHBoxLayout->addWidget(drawRandomSeedPushButton);
+    randomSeedHBoxLayout->addWidget(coloredSeedCheckBox);
+    randomSeedHBoxLayout->addWidget(bwSeedCheckBox);
+
+    QPushButton *drawSeedImagePushButton = new QPushButton("Draw image");
+    drawSeedImagePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    QPushButton *loadSeedImagePushButton = new QPushButton("Load image");
+    loadSeedImagePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    QHBoxLayout *seedImageHBoxLayout = new QHBoxLayout;
+    seedImageHBoxLayout->setAlignment(Qt::AlignLeft);
+    seedImageHBoxLayout->addWidget(drawSeedImagePushButton);
+    seedImageHBoxLayout->addWidget(loadSeedImagePushButton);
+
+    QVBoxLayout *seedVBoxLayout = new QVBoxLayout;
+    seedVBoxLayout->addLayout(randomSeedHBoxLayout);
+    seedVBoxLayout->addLayout(seedImageHBoxLayout);
+
+    QGroupBox *seedGroupBox = new QGroupBox("Seed");
+    seedGroupBox->setLayout(seedVBoxLayout);
+
+    QButtonGroup *seedButtonGroup = new QButtonGroup(this);
+    seedButtonGroup->setExclusive(true);
+    seedButtonGroup->addButton(coloredSeedCheckBox, 0);
+    seedButtonGroup->addButton(bwSeedCheckBox, 1);
+
     // Pipelines
 
     QPushButton *addPipelinePushButton = new QPushButton("Add new");
-    addPipelinePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    addPipelinePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     QPushButton *removePipelinePushButton = new QPushButton("Remove selected");
-    removePipelinePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    removePipelinePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     QHBoxLayout *pipelineButtonsHBoxLayout = new QHBoxLayout;
     pipelineButtonsHBoxLayout->addWidget(addPipelinePushButton);
@@ -404,14 +360,36 @@ void MainWidget::constructImageManipulationControls()
     pipelinesButtonGroup = new QButtonGroup(this);
     pipelinesButtonGroup->setExclusive(true);
 
-    // Pipelines layout
-
     QVBoxLayout *pipelineVBoxLayout = new QVBoxLayout;
+    pipelineVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
     pipelineVBoxLayout->addLayout(pipelineButtonsHBoxLayout);
     pipelineVBoxLayout->addLayout(pipelinesGridLayout);
 
     QGroupBox *pipelineGroupBox = new QGroupBox("Pipelines");
     pipelineGroupBox->setLayout(pipelineVBoxLayout);
+
+    // Blend previous frames
+
+    CustomLineEdit *previousFramesSizeLineEdit = new CustomLineEdit;
+    previousFramesSizeLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    QIntValidator *previousFramesSizeValidator = new QIntValidator(0, 100, previousFramesSizeLineEdit);
+    previousFramesSizeValidator->setLocale(QLocale::English);
+    previousFramesSizeLineEdit->setValidator(previousFramesSizeValidator);
+    previousFramesSizeLineEdit->setText(QString::number(generator->getPreviousFramesSize()));
+
+    CustomLineEdit *previousFramesBlendFactorLineEdit = new CustomLineEdit;
+    previousFramesBlendFactorLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    QDoubleValidator *previousFramesBlendFactorValidator = new QDoubleValidator(0.0, 1.0, 10, previousFramesBlendFactorLineEdit);
+    previousFramesBlendFactorValidator->setLocale(QLocale::English);
+    previousFramesBlendFactorLineEdit->setValidator(previousFramesBlendFactorValidator);
+    previousFramesBlendFactorLineEdit->setText(QString::number(generator->getPreviousFramesBlendFactor()));
+
+    QFormLayout *blendPreviousFramesLayout = new QFormLayout;
+    blendPreviousFramesLayout->addRow("Number of frames:", previousFramesSizeLineEdit);
+    blendPreviousFramesLayout->addRow("Blend factor:", previousFramesBlendFactorLineEdit);
+
+    QGroupBox *blendPreviousFramesGroupBox = new QGroupBox("Blend last frames");
+    blendPreviousFramesGroupBox->setLayout(blendPreviousFramesLayout);
 
     // Image operations
 
@@ -432,7 +410,8 @@ void MainWidget::constructImageManipulationControls()
     insertRemoveHBoxLayout->addWidget(removeImageOperationPushButton);
 
     imageOperationsListWidget = new QListWidget;
-    imageOperationsListWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    imageOperationsListWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    imageOperationsListWidget->setFixedHeight(50);
     imageOperationsListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
     imageOperationsListWidget->setDragDropMode(QAbstractItemView::InternalMove);
 
@@ -480,6 +459,7 @@ void MainWidget::constructImageManipulationControls()
     // Image operations layout
 
     QVBoxLayout *imageOperationsVBoxLayout = new QVBoxLayout;
+    imageOperationsVBoxLayout->setAlignment(Qt::AlignTop);
     imageOperationsVBoxLayout->addLayout(newImageOperationFormLayout);
     imageOperationsVBoxLayout->addLayout(insertRemoveHBoxLayout);
     imageOperationsVBoxLayout->addWidget(imageOperationsListWidget);
@@ -489,38 +469,57 @@ void MainWidget::constructImageManipulationControls()
     QGroupBox *imageOperationsGroupBox = new QGroupBox("Pipeline operations");
     imageOperationsGroupBox->setLayout(imageOperationsVBoxLayout);
 
-    // Main
+    // Main layouts
 
-    QVBoxLayout *imageManipulationVBoxLayout = new QVBoxLayout;
-    imageManipulationVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
-    imageManipulationVBoxLayout->addWidget(pipelineGroupBox);
-    imageManipulationVBoxLayout->addWidget(imageOperationsGroupBox);
+    QVBoxLayout *vBoxLayout1 = new QVBoxLayout;
+    vBoxLayout1->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
+    vBoxLayout1->addWidget(seedGroupBox);
+    vBoxLayout1->addWidget(pipelineGroupBox);
+    vBoxLayout1->addWidget(blendPreviousFramesGroupBox);
+
+    QVBoxLayout *vBoxLayout2 = new QVBoxLayout;
+    vBoxLayout2->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
+    vBoxLayout2->addWidget(imageOperationsGroupBox);
+
+    QHBoxLayout *imageManipulationHBoxLayout = new QHBoxLayout;
+    imageManipulationHBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
+    imageManipulationHBoxLayout->addLayout(vBoxLayout1);
+    imageManipulationHBoxLayout->addLayout(vBoxLayout2);
 
     imageManipulationWidget = new QWidget;
-    imageManipulationWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    imageManipulationWidget->setLayout(imageManipulationVBoxLayout);
+    imageManipulationWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    imageManipulationWidget->setLayout(imageManipulationHBoxLayout);
 
     // Signals + Slots
 
-    connect(addPipelinePushButton, &QPushButton::clicked, [=](bool checked)
+    connect(drawRandomSeedPushButton, &QPushButton::clicked, [=](){ generator->drawRandomSeed(bwSeedCheckBox->isChecked()); });
+    connect(drawSeedImagePushButton, &QPushButton::clicked, [=](){ generator->drawSeedImage(); });
+    connect(loadSeedImagePushButton, &QPushButton::clicked, [=]()
     {
-        Q_UNUSED(checked)
+        QString filename = QFileDialog::getOpenFileName(this, "Load image", "", "Images (*.bmp *.jpeg *.jpg *.png *.tiff *.tif)");
+        if (!filename.isEmpty())
+            generator->loadSeedImage(filename.toStdString());
+    });
+    connect(addPipelinePushButton, &QPushButton::clicked, [=]()
+    {
         generator->addPipeline();
         initPipelineControls(generator->getPipelinesSize() - 1);
     });
-    connect(removePipelinePushButton, &QPushButton::clicked, [=](bool checked)
+    connect(removePipelinePushButton, &QPushButton::clicked, [=]()
     {
-        Q_UNUSED(checked)
         generator->removePipeline(pipelinesButtonGroup->checkedId());
         initPipelineControls(pipelinesButtonGroup->checkedId());
     });
-    connect(equalizeBlendFactorsPushButton, &QPushButton::clicked, [=](bool checked)
+    connect(equalizeBlendFactorsPushButton, &QPushButton::clicked, [=]()
     {
-        Q_UNUSED(checked)
         generator->equalizePipelineBlendFactors();
         for (int i = 0; i < generator->getPipelinesSize(); i++)
             pipelineBlendFactorLineEdit[i]->setText(QString::number(generator->getPipelineBlendFactor(i)));
     });
+    connect(previousFramesSizeLineEdit, &CustomLineEdit::returnPressed, [=](){ generator->setPreviousFramesSize(previousFramesSizeLineEdit->text().toInt()); });
+    connect(previousFramesSizeLineEdit, &CustomLineEdit::focusOut, [=](){ previousFramesSizeLineEdit->setText(QString::number(generator->getPreviousFramesSize())); });
+    connect(previousFramesBlendFactorLineEdit, &CustomLineEdit::returnPressed, [=](){ generator->setPreviousFramesBlendFactor(previousFramesBlendFactorLineEdit->text().toDouble()); });
+    connect(previousFramesBlendFactorLineEdit, &CustomLineEdit::focusOut, [=](){ previousFramesBlendFactorLineEdit->setText(QString::number(generator->getPreviousFramesBlendFactor())); });
     connect(imageOperationsListWidget, &QListWidget::currentRowChanged, this, &MainWidget::onImageOperationsListWidgetCurrentRowChanged);
     connect(imageOperationsListWidget->model(), &QAbstractItemModel::rowsMoved, this, &MainWidget::onRowsMoved);
     connect(insertImageOperationPushButton, &QPushButton::clicked, this, &MainWidget::insertImageOperation);
@@ -533,9 +532,8 @@ void MainWidget::constructImageManipulationControls()
 
 void MainWidget::constructComputationControls()
 {
-    togglePlotsPushButton = new QPushButton("Toggle plots");
-    togglePlotsPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    togglePlotsPushButton->setCheckable(true);
+    togglePlotsPushButton = new QPushButton("Show plots");
+    togglePlotsPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     // Full image controls
 
@@ -607,7 +605,7 @@ void MainWidget::constructComputationControls()
     QFormLayout *pixelLayout = new QFormLayout;
     pixelLayout->addRow("Pixel selection:", selectPixelPushButton);
     pixelLayout->addRow("Color intensity plot:", pixelIterationPushButton);
-    pixelLayout->addRow("Color-space plot", colorSpacePixelPushButton);
+    pixelLayout->addRow("Color-space plot:", colorSpacePixelPushButton);
     pixelLayout->addRow("X-Axis:", colorSpacePixelXAxisComboBox);
     pixelLayout->addRow("Y-Axis:", colorSpacePixelYAxisComboBox);
 
@@ -616,19 +614,23 @@ void MainWidget::constructComputationControls()
 
     // Main
 
+    QHBoxLayout *computationHBoxLayout = new QHBoxLayout;
+    computationHBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
+    computationHBoxLayout->addWidget(fullImageGroupBox);
+    computationHBoxLayout->addWidget(pixelGroupBox);
+
     QVBoxLayout *computationVBoxLayout = new QVBoxLayout;
     computationVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
+    computationVBoxLayout->addLayout(computationHBoxLayout);
     computationVBoxLayout->addWidget(togglePlotsPushButton);
-    computationVBoxLayout->addWidget(fullImageGroupBox);
-    computationVBoxLayout->addWidget(pixelGroupBox);
 
     computationWidget = new QWidget;
-    computationWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    computationWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     computationWidget->setLayout(computationVBoxLayout);
 
     // Signals + Slots
 
-    connect(togglePlotsPushButton, &QPushButton::clicked, [=](bool checked){ plotsTabWidget->setVisible(checked); });
+    connect(togglePlotsPushButton, &QPushButton::clicked, [=](){ if (!plotsTabWidget->isVisible()) plotsTabWidget->show(); });
     connect(imageIterationPushButton, &QPushButton::clicked, [=](bool checked){ if (checked) imageIterationPlot->clearGraphsData(); });
     connect(pixelIterationPushButton, &QPushButton::clicked, [=](bool checked){ if (checked) pixelIterationPlot->clearGraphsData(); });
     connect(colorSpacePixelPushButton, &QPushButton::clicked, [=](bool checked){ if (checked) colorSpacePixelPlot->clearCurveData(); });
@@ -663,6 +665,18 @@ void MainWidget::constructComputationControls()
 
     colorSpacePixelXAxisComboBox->setCurrentIndex(0);
     colorSpacePixelYAxisComboBox->setCurrentIndex(1);
+}
+
+void MainWidget::resizeMainTabs(int index)
+{
+    for (int i = 0; i < mainTabWidget->count(); i++)
+        if (i != index)
+            mainTabWidget->widget(i)->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+
+    mainTabWidget->widget(index)->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    mainTabWidget->widget(index)->resize(mainTabWidget->widget(index)->minimumSizeHint());
+    mainTabWidget->widget(index)->adjustSize();
+    QTimer::singleShot(10, [=](){ resize(minimumSizeHint()); adjustSize(); });
 }
 
 void MainWidget::pauseResumeSystem(bool checked)
@@ -846,6 +860,8 @@ void MainWidget::initPipelineControls(int selectedPipelineIndex)
         initImageOperationsListWidget(selectedPipelineIndex);
     else
         initImageOperationsListWidget(0);
+
+    QTimer::singleShot(10, [=](){ resize(minimumSizeHint()); adjustSize(); });
 }
 
 void MainWidget::setPipelineBlendFactorLineEditText(int pipelineIndex)
@@ -897,6 +913,8 @@ void MainWidget::initImageOperationsListWidget(int pipelineIndex)
     {
         QListWidgetItem *operation = imageOperationsListWidget->item(currentImageOperationIndex[pipelineIndex]);
         imageOperationsListWidget->setCurrentItem(operation);
+
+        imageOperationsListWidget->setFixedHeight(imageOperationsListWidget->sizeHintForRow(0) * 6 + 2 * imageOperationsListWidget->frameWidth());
     }
 }
 
@@ -938,6 +956,8 @@ void MainWidget::onImageOperationsListWidgetCurrentRowChanged(int currentRow)
 
         currentImageOperationIndex[pipelineIndex] = currentRow;
     }
+
+    QTimer::singleShot(10, [=](){ resize(minimumSizeHint()); adjustSize(); });
 }
 
 void MainWidget::onDoubleParameterWidgetFocusIn(DoubleParameterWidget *widget)
@@ -1046,6 +1066,7 @@ void MainWidget::insertImageOperation()
         QListWidgetItem *newOperation = new QListWidgetItem;
         newOperation->setText(QString::fromStdString(generator->getImageOperationName(pipelineIndex, currentOperationIndex + 1)));
         imageOperationsListWidget->insertItem(currentOperationIndex + 1, newOperation);
+        imageOperationsListWidget->setFixedHeight(imageOperationsListWidget->sizeHintForRow(0) * 6 + 2 * imageOperationsListWidget->frameWidth());
         imageOperationsListWidget->setCurrentItem(newOperation);
     }
 }
@@ -1058,10 +1079,11 @@ void MainWidget::removeImageOperation()
         int operationIndex = imageOperationsListWidget->currentRow();
 
         imageOperationsListWidget->takeItem(operationIndex);
+        imageOperationsListWidget->setFixedHeight(imageOperationsListWidget->sizeHintForRow(0) * 6 + 2 * imageOperationsListWidget->frameWidth());
 
         generator->removeImageOperation(pipelineIndex, operationIndex);
 
-        currentImageOperationIndex[pipelineIndex] = operationIndex;
+        currentImageOperationIndex[pipelineIndex] = imageOperationsListWidget->currentRow();
     }
 }
 
