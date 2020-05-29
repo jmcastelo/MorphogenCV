@@ -47,9 +47,7 @@ Pipeline::Pipeline(cv::Mat img): image(img)
 Pipeline::~Pipeline()
 {
     for (auto operation: imageOperations)
-    {
         delete operation;
-    }
 }
 
 void Pipeline::iterate()
@@ -312,13 +310,16 @@ GeneratorCV::GeneratorCV()
 
     framesPerSecond = 30;
 
+    cv::namedWindow("Frame");
+    cv::setMouseCallback("Frame", onMouse, this);
+
     setMask();
     computeHistogramMax();
     drawRandomSeed(true);
     clearPointerCanvas();
 
-    cv::namedWindow("Out image", cv::WINDOW_AUTOSIZE);
-    cv::setMouseCallback("Out image", onMouse, this);
+    outputPipeline = new Pipeline(cv::Mat::zeros(imageSize, imageSize, CV_8UC3));
+
     selectedPixel = cv::Point(imageSize / 2, imageSize / 2);
 }
 
@@ -328,6 +329,8 @@ GeneratorCV::~GeneratorCV()
         delete pipeline;
 
     pipelines.clear();
+
+    delete outputPipeline;
 }
 
 void GeneratorCV::destroyAllWindows()
@@ -369,9 +372,9 @@ void GeneratorCV::drawRandomSeed(bool grayscale)
     for (auto pipeline: pipelines)
         pipeline->image = maskedSeed.clone();
 
-    outImage = maskedSeed.clone();
+    outputImage = maskedSeed.clone();
 
-    cv::imshow("Out image", maskedSeed);
+    cv::imshow("Frame", maskedSeed);
 }
 
 void GeneratorCV::loadSeedImage(std::string filename)
@@ -393,9 +396,9 @@ void GeneratorCV::drawSeedImage()
         for (auto pipeline: pipelines)
             pipeline->image = seedImage.clone();
 
-        outImage = seedImage.clone();
+        outputImage = seedImage.clone();
 
-        cv::imshow("Out image", seedImage);
+        cv::imshow("Frame", seedImage);
     }
 }
 
@@ -406,20 +409,20 @@ void GeneratorCV::blendImages()
     for (auto pipeline: pipelines)
         cv::addWeighted(blendImage, 1.0, pipeline->image, pipeline->blendFactor, 0.0, blendImage);
 
-    blendImage.copyTo(outImage, mask);
+    blendImage.copyTo(outputPipeline->image, mask);
 }
 
 void GeneratorCV::blendPreviousImages()
 {
     for (auto previousFrame: previousFrames)
-        cv::addWeighted(outImage, 1.0, previousFrame, previousFramesBlendFactor, 0.0, outImage);
+        cv::addWeighted(outputImage, 1.0, previousFrame, previousFramesBlendFactor, 0.0, outputImage);
 
     if (previousFramesSize > 0)
     {
         if (!previousFrames.empty() && static_cast<int>(previousFrames.size()) == previousFramesSize)
             previousFrames.erase(previousFrames.begin());
 
-        previousFrames.push_back(outImage);
+        previousFrames.push_back(outputImage);
     }
 }
 
@@ -430,25 +433,29 @@ void GeneratorCV::iterate()
 
     blendImages();
 
+    outputPipeline->iterate();
+
+    outputImage = outputPipeline->image.clone();
+
     blendPreviousImages();
 
     if (pointerCanvasDrawn)
         drawPointerCanvas();
 
     for (auto &pipeline: pipelines)
-        pipeline->image = outImage.clone();
+        pipeline->image = outputImage.clone();
 
     iteration++;
 }
 
 void GeneratorCV::computeBGRSum()
 {
-    bgrSum = cv::sum(outImage);
+    bgrSum = cv::sum(outputImage);
 }
 
 void GeneratorCV::computeBGRPixel()
 {
-    bgrPixel = outImage.at<cv::Vec3b>(selectedPixel);
+    bgrPixel = outputImage.at<cv::Vec3b>(selectedPixel);
 }
 
 void GeneratorCV::computeHistogram()
@@ -457,7 +464,7 @@ void GeneratorCV::computeHistogram()
     const float *histogramRange[] = {range};
 
     cv::Mat bgrChannels[3];
-    cv::split(outImage, bgrChannels);
+    cv::split(outputImage, bgrChannels);
 
     cv::calcHist(&bgrChannels[0], 1, 0, mask, blueHistogram, 1, &histogramSize, histogramRange, true, false);
     cv::calcHist(&bgrChannels[1], 1, 0, mask, greenHistogram, 1, &histogramSize, histogramRange, true, false);
@@ -466,13 +473,13 @@ void GeneratorCV::computeHistogram()
 
 void GeneratorCV::computeDFT()
 {
-    cv::Mat outImageGray;
-    cv::cvtColor(outImage, outImageGray, cv::COLOR_BGR2GRAY);
+    cv::Mat outputImageGray;
+    cv::cvtColor(outputImage, outputImageGray, cv::COLOR_BGR2GRAY);
 
     cv::Mat padded;
-    int m = cv::getOptimalDFTSize(outImage.rows);
-    int n = cv::getOptimalDFTSize(outImage.cols);
-    cv::copyMakeBorder(outImageGray, padded, 0, m - outImageGray.rows, 0, n - outImageGray.cols, cv::BORDER_CONSTANT, cv::Scalar::all(0));
+    int m = cv::getOptimalDFTSize(outputImage.rows);
+    int n = cv::getOptimalDFTSize(outputImage.cols);
+    cv::copyMakeBorder(outputImageGray, padded, 0, m - outputImageGray.rows, 0, n - outputImageGray.cols, cv::BORDER_CONSTANT, cv::Scalar::all(0));
 
     cv::Mat planes[] = {cv::Mat_<float>(padded), cv::Mat::zeros(padded.size(), CV_32F)};
     cv::Mat complexOutImage;
@@ -509,7 +516,7 @@ void GeneratorCV::computeDFT()
 
     cv::normalize(magOutImage, magOutImage, 0, 1, cv::NORM_MINMAX);
 
-    cv::imshow("DFT Spectrum magnitude", magOutImage);
+    cv::imshow("DFT Spectrum Magnitude", magOutImage);
 }
 
 void GeneratorCV::showPixelSelectionCursor()
@@ -517,13 +524,13 @@ void GeneratorCV::showPixelSelectionCursor()
     cv::Mat layer = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
     cv::line(layer, cv::Point(0, selectedPixel.y), cv::Point(imageSize, selectedPixel.y), cv::Scalar(255, 255, 255));
     cv::line(layer, cv::Point(selectedPixel.x, 0), cv::Point(selectedPixel.x, imageSize), cv::Scalar(255, 255, 255));
-    cv::addWeighted(outImage, 0.5, layer, 0.5, 0.0, layer);
-    cv::imshow("Out image", layer);
+    cv::addWeighted(outputImage, 0.5, layer, 0.5, 0.0, layer);
+    cv::imshow("Frame", layer);
 }
 
 void GeneratorCV::showImage()
 {
-    cv::imshow("Out image", outImage);
+    cv::imshow("Frame", outputImage);
 }
 
 void GeneratorCV::openVideoWriter(std::string name)
@@ -536,7 +543,7 @@ void GeneratorCV::writeVideoFrame()
 {
     if (videoWriter.isOpened())
     {
-        videoWriter.write(outImage);
+        videoWriter.write(outputImage);
         frameCount++;
     }
 }
@@ -600,12 +607,12 @@ void GeneratorCV::drawPointerCanvas()
     cv::Mat maskInverse;
     cv::bitwise_not(mask, maskInverse);
 
-    cv::Mat outImageMasked;
-    cv::bitwise_and(outImage, outImage, outImageMasked, maskInverse);
+    cv::Mat outputImageMasked;
+    cv::bitwise_and(outputImage, outputImage, outputImageMasked, maskInverse);
     cv::Mat pointerCanvasMasked;
     cv::bitwise_and(pointerCanvas, pointerCanvas, pointerCanvasMasked, mask);
 
-    cv::add(outImageMasked, pointerCanvasMasked, outImage);
+    cv::add(outputImageMasked, pointerCanvasMasked, outputImage);
 }
 
 void GeneratorCV::clearPointerCanvas()
@@ -623,7 +630,7 @@ void GeneratorCV::setImageSize(int size)
     for (auto &pipeline: pipelines)
         cv::resize(pipeline->image, pipeline->image, cv::Size(imageSize, imageSize));
 
-    cv::resize(outImage, outImage, cv::Size(imageSize, imageSize));
+    cv::resize(outputImage, outputImage, cv::Size(imageSize, imageSize));
 
     if (!seedImage.empty())
         cv::resize(seedImage, seedImage, cv::Size(imageSize, imageSize));
@@ -633,7 +640,7 @@ void GeneratorCV::setImageSize(int size)
     setMask();
     computeHistogramMax();
 
-    cv::imshow("Out image", outImage);
+    cv::imshow("Frame", outputImage);
 
     selectedPixel = cv::Point(imageSize / 2, imageSize / 2);
 }
@@ -683,7 +690,7 @@ QVector<double> GeneratorCV::getColorComponents(int colorIndex)
     QVector<double> components;
 
     cv::MatIterator_<cv::Vec3b> it, end;
-    for (it = outImage.begin<cv::Vec3b>(), end = outImage.end<cv::Vec3b>(); it != end; ++it)
+    for (it = outputImage.begin<cv::Vec3b>(), end = outputImage.end<cv::Vec3b>(); it != end; ++it)
         components.push_back((*it)[colorIndex]);
 
     return components;
@@ -691,22 +698,31 @@ QVector<double> GeneratorCV::getColorComponents(int colorIndex)
 
 void GeneratorCV::swapImageOperations(int pipelineIndex, int operationIndex0, int operationIndex1)
 {
-    pipelines[pipelineIndex]->swapImageOperations(operationIndex0, operationIndex1);
+    if (pipelineIndex >= 0)
+        pipelines[pipelineIndex]->swapImageOperations(operationIndex0, operationIndex1);
+    else
+        outputPipeline->swapImageOperations(operationIndex0, operationIndex1);
 }
 
 void GeneratorCV::removeImageOperation(int pipelineIndex, int operationIndex)
 {
-    pipelines[pipelineIndex]->removeImageOperation(operationIndex);
+    if (pipelineIndex >= 0)
+        pipelines[pipelineIndex]->removeImageOperation(operationIndex);
+    else
+        outputPipeline->removeImageOperation(operationIndex);
 }
 
 void GeneratorCV::insertImageOperation(int pipelineIndex, int newOperationIndex, int currentOperationIndex)
 {
-    pipelines[pipelineIndex]->insertImageOperation(newOperationIndex, currentOperationIndex);
+    if (pipelineIndex >= 0)
+        pipelines[pipelineIndex]->insertImageOperation(newOperationIndex, currentOperationIndex);
+    else
+        outputPipeline->insertImageOperation(newOperationIndex, currentOperationIndex);
 }
 
 void GeneratorCV::removePipeline(int pipelineIndex)
 {
-    if (!pipelines.empty())
+    if (pipelineIndex >= 0 && !pipelines.empty())
     {
         pipelines.erase(pipelines.begin() + pipelineIndex);
 
@@ -732,7 +748,7 @@ void GeneratorCV::removePipeline(int pipelineIndex)
 
 void GeneratorCV::addPipeline()
 {
-    pipelines.push_back(new Pipeline(outImage));
+    pipelines.push_back(new Pipeline(outputImage));
     if (pipelines.size() == 1)
         pipelines.back()->blendFactor = 1.0;
     else
@@ -742,7 +758,7 @@ void GeneratorCV::addPipeline()
 void GeneratorCV::loadPipeline(double blendFactor)
 {
     cv::Mat mat;
-    outImage.copyTo(mat, mask);
+    outputImage.copyTo(mat, mask);
     pipelines.push_back(new Pipeline(mat));
     pipelines.back()->blendFactor = blendFactor;
 }

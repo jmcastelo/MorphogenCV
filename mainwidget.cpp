@@ -27,16 +27,14 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
     timerInterval = 30; // ms
 
-    currentImageOperationIndex = {0, 0};
-
     // Plots
 
-    imageIterationPlot = new ImageIterationPlot("Evolution of full image colors", 0.0, 1.0);
-    pixelIterationPlot = new ImageIterationPlot("Evolution of single pixel colors", 0.0, 255.0);
-    histogramPlot = new HistogramPlot("BGR Histogram", 0.0, 255.0);
+    imageIterationPlot = new ImageIterationPlot("Evolution of full image colors", 0.0, 1.0, this);
+    pixelIterationPlot = new ImageIterationPlot("Evolution of single pixel colors", 0.0, 255.0, this);
+    histogramPlot = new HistogramPlot("BGR Histogram", 0.0, 255.0, this);
     histogramPlot->setYMax(generator->getHistogramMax());
-    colorSpacePlot = new ScatterPlot("Color-space plot", 0.0, 255.0, 0.0, 255.0);
-    colorSpacePixelPlot = new CurvePlot("Color-space trajectory of single pixel", 0.0, 255.0, 0.0, 255.0);
+    colorSpacePlot = new ScatterPlot("Color-space plot", 0.0, 255.0, 0.0, 255.0, this);
+    colorSpacePixelPlot = new CurvePlot("Color-space trajectory of single pixel", 0.0, 255.0, 0.0, 255.0, this);
 
     // Qt
 
@@ -84,6 +82,10 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     setLayout(mainVBoxLayout);
     layout()->setSizeConstraint(QLayout::SetFixedSize);
 
+    // Style
+
+    setStyleSheet(QString("QPushButton#pipelineButton{ background-color: #ffc840; } QPushButton:checked#pipelineButton { background-color: #00ffff; }"));
+
     // Timer for iteration loop
 
     timer = new QTimer(this);
@@ -94,7 +96,16 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
 MainWidget::~MainWidget()
 {
+    delete timer;
+
     delete plotsTabWidget;
+
+    delete histogramPlot;
+    delete imageIterationPlot;
+    delete pixelIterationPlot;
+    delete colorSpacePlot;
+    delete colorSpacePixelPlot;
+
     delete generator;
 }
 
@@ -348,17 +359,27 @@ void MainWidget::constructImageManipulationControls()
     blendFactorsLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     blendFactorsLabel->hide();
 
-    equalizeBlendFactorsPushButton = new QPushButton("Equalize");
+    equalizeBlendFactorsPushButton = new QPushButton("Equalize blend factors");
     equalizeBlendFactorsPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     equalizeBlendFactorsPushButton->hide();
 
+    outputPipelinePushButton = new QPushButton("Output pipeline");
+    outputPipelinePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    outputPipelinePushButton->setObjectName("pipelineButton");
+    outputPipelinePushButton->setCheckable(true);
+    outputPipelinePushButton->setChecked(true);
+
     pipelinesGridLayout = new QGridLayout;
+    pipelinesGridLayout->setAlignment(Qt::AlignLeft);
     pipelinesGridLayout->addWidget(pipelinesLabel, 0, 0);
     pipelinesGridLayout->addWidget(blendFactorsLabel, 0, 1);
+    pipelinesGridLayout->addWidget(outputPipelinePushButton, 1, 0);
     pipelinesGridLayout->addWidget(equalizeBlendFactorsPushButton, 1, 1);
 
     pipelinesButtonGroup = new QButtonGroup(this);
     pipelinesButtonGroup->setExclusive(true);
+    pipelinesButtonGroup->addButton(outputPipelinePushButton);
+    pipelinesButtonGroup->setId(outputPipelinePushButton, -2);
 
     QVBoxLayout *pipelineVBoxLayout = new QVBoxLayout;
     pipelineVBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
@@ -411,7 +432,7 @@ void MainWidget::constructImageManipulationControls()
 
     imageOperationsListWidget = new QListWidget;
     imageOperationsListWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-    imageOperationsListWidget->setFixedHeight(50);
+    imageOperationsListWidget->setFixedHeight(100);
     imageOperationsListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
     imageOperationsListWidget->setDragDropMode(QAbstractItemView::InternalMove);
 
@@ -500,6 +521,7 @@ void MainWidget::constructImageManipulationControls()
         if (!filename.isEmpty())
             generator->loadSeedImage(filename.toStdString());
     });
+    connect(outputPipelinePushButton, &QPushButton::clicked, [=](bool checked){ if (checked) initImageOperationsListWidget(pipelinesButtonGroup->checkedId()); });
     connect(addPipelinePushButton, &QPushButton::clicked, [=]()
     {
         generator->addPipeline();
@@ -676,7 +698,6 @@ void MainWidget::resizeMainTabs(int index)
     mainTabWidget->widget(index)->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     mainTabWidget->widget(index)->resize(mainTabWidget->widget(index)->minimumSizeHint());
     mainTabWidget->widget(index)->adjustSize();
-    QTimer::singleShot(10, [=](){ resize(minimumSizeHint()); adjustSize(); });
 }
 
 void MainWidget::pauseResumeSystem(bool checked)
@@ -799,8 +820,8 @@ void MainWidget::initPipelineControls(int selectedPipelineIndex)
 
     // Keep index within range
 
-    if (selectedPipelineIndex < 0)
-        selectedPipelineIndex = 0;
+    if (selectedPipelineIndex < -2)
+        selectedPipelineIndex = -2;
 
     if (selectedPipelineIndex > generator->getPipelinesSize() - 1)
         selectedPipelineIndex = generator->getPipelinesSize() - 1;
@@ -813,6 +834,7 @@ void MainWidget::initPipelineControls(int selectedPipelineIndex)
 
         QPushButton *pushButton = new QPushButton(QString("Pipeline %1").arg(pipelineIndex + 1));
         pushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+        pushButton->setObjectName("pipelineButton");
         pushButton->setCheckable(true);
         pushButton->setChecked(pipelineIndex == selectedPipelineIndex);
 
@@ -848,6 +870,8 @@ void MainWidget::initPipelineControls(int selectedPipelineIndex)
     }
 
     pipelinesGridLayout->removeWidget(equalizeBlendFactorsPushButton);
+    pipelinesGridLayout->removeWidget(outputPipelinePushButton);
+    pipelinesGridLayout->addWidget(outputPipelinePushButton, generator->getPipelinesSize() + 1, 0);
     pipelinesGridLayout->addWidget(equalizeBlendFactorsPushButton, generator->getPipelinesSize() + 1, 1);
 
     // Set visibility of labels and equalize blend factors button
@@ -856,12 +880,19 @@ void MainWidget::initPipelineControls(int selectedPipelineIndex)
     blendFactorsLabel->setVisible(generator->getPipelinesSize() > 0);
     equalizeBlendFactorsPushButton->setVisible(generator->getPipelinesSize() > 1);
 
+    // Check output pipeline button
+
+    if (selectedPipelineIndex == -2 || generator->getPipelinesSize() == 0)
+        outputPipelinePushButton->setChecked(true);
+    else
+        outputPipelinePushButton->setChecked(false);
+
+    // Init operations
+
     if (generator->getPipelinesSize() > 0)
         initImageOperationsListWidget(selectedPipelineIndex);
     else
         initImageOperationsListWidget(0);
-
-    QTimer::singleShot(10, [=](){ resize(minimumSizeHint()); adjustSize(); });
 }
 
 void MainWidget::setPipelineBlendFactorLineEditText(int pipelineIndex)
@@ -914,7 +945,10 @@ void MainWidget::initImageOperationsListWidget(int pipelineIndex)
         QListWidgetItem *operation = imageOperationsListWidget->item(currentImageOperationIndex[pipelineIndex]);
         imageOperationsListWidget->setCurrentItem(operation);
 
-        imageOperationsListWidget->setFixedHeight(imageOperationsListWidget->sizeHintForRow(0) * 6 + 2 * imageOperationsListWidget->frameWidth());
+        int size = imageOperationsListWidget->sizeHintForRow(0);
+        if (size > 0) rowSize = size;
+
+        imageOperationsListWidget->setFixedHeight(rowSize * 5 + 2 * imageOperationsListWidget->frameWidth());
     }
 }
 
@@ -947,7 +981,7 @@ void MainWidget::onImageOperationsListWidgetCurrentRowChanged(int currentRow)
             operationsWidget = nullptr;
         }
 
-        operationsWidget = new OperationsWidget(generator->pipelines[pipelineIndex]->imageOperations[currentRow]);
+        operationsWidget = new OperationsWidget(pipelineIndex >= 0 ? generator->pipelines[pipelineIndex]->imageOperations[currentRow] : generator->outputPipeline->imageOperations[currentRow]);
         parametersLayout->addWidget(operationsWidget);
         operationsWidget->show();
 
@@ -956,8 +990,6 @@ void MainWidget::onImageOperationsListWidgetCurrentRowChanged(int currentRow)
 
         currentImageOperationIndex[pipelineIndex] = currentRow;
     }
-
-    QTimer::singleShot(10, [=](){ resize(minimumSizeHint()); adjustSize(); });
 }
 
 void MainWidget::onDoubleParameterWidgetFocusIn(DoubleParameterWidget *widget)
@@ -1055,36 +1087,39 @@ void MainWidget::onRowsMoved(QModelIndex parent, int start, int end, QModelIndex
 
 void MainWidget::insertImageOperation()
 {
-    if (generator->getPipelinesSize() > 0)
-    {
-        int pipelineIndex = pipelinesButtonGroup->checkedId();
-        int newOperationIndex = newImageOperationComboBox->currentIndex();
-        int currentOperationIndex = imageOperationsListWidget->currentRow();
+    int pipelineIndex = pipelinesButtonGroup->checkedId();
+    int newOperationIndex = newImageOperationComboBox->currentIndex();
+    int currentOperationIndex = imageOperationsListWidget->currentRow();
 
-        generator->insertImageOperation(pipelineIndex, newOperationIndex, currentOperationIndex);
+    generator->insertImageOperation(pipelineIndex, newOperationIndex, currentOperationIndex);
 
-        QListWidgetItem *newOperation = new QListWidgetItem;
-        newOperation->setText(QString::fromStdString(generator->getImageOperationName(pipelineIndex, currentOperationIndex + 1)));
-        imageOperationsListWidget->insertItem(currentOperationIndex + 1, newOperation);
-        imageOperationsListWidget->setFixedHeight(imageOperationsListWidget->sizeHintForRow(0) * 6 + 2 * imageOperationsListWidget->frameWidth());
-        imageOperationsListWidget->setCurrentItem(newOperation);
-    }
+    QListWidgetItem *newOperation = new QListWidgetItem;
+    newOperation->setText(QString::fromStdString(generator->getImageOperationName(pipelineIndex, currentOperationIndex + 1)));
+    imageOperationsListWidget->insertItem(currentOperationIndex + 1, newOperation);
+
+    int size = imageOperationsListWidget->sizeHintForRow(0);
+    if (size > 0) rowSize = size;
+
+    imageOperationsListWidget->setFixedHeight(rowSize * 5 + 2 * imageOperationsListWidget->frameWidth());
+
+    imageOperationsListWidget->setCurrentItem(newOperation);
 }
 
 void MainWidget::removeImageOperation()
 {
-    if (generator->getPipelinesSize() > 0)
-    {
-        int pipelineIndex = pipelinesButtonGroup->checkedId();
-        int operationIndex = imageOperationsListWidget->currentRow();
+    int pipelineIndex = pipelinesButtonGroup->checkedId();
+    int operationIndex = imageOperationsListWidget->currentRow();
 
-        imageOperationsListWidget->takeItem(operationIndex);
-        imageOperationsListWidget->setFixedHeight(imageOperationsListWidget->sizeHintForRow(0) * 6 + 2 * imageOperationsListWidget->frameWidth());
+    imageOperationsListWidget->takeItem(operationIndex);
 
-        generator->removeImageOperation(pipelineIndex, operationIndex);
+    int size = imageOperationsListWidget->sizeHintForRow(0);
+    if (size > 0) rowSize = size;
 
-        currentImageOperationIndex[pipelineIndex] = imageOperationsListWidget->currentRow();
-    }
+    imageOperationsListWidget->setFixedHeight(rowSize * 5 + 2 * imageOperationsListWidget->frameWidth());
+
+    generator->removeImageOperation(pipelineIndex, operationIndex);
+
+    currentImageOperationIndex[pipelineIndex] = imageOperationsListWidget->currentRow();
 }
 
 void MainWidget::iterationLoop()
@@ -1179,8 +1214,8 @@ void MainWidget::colorSpaceAxisChanged(int axisIndex, QComboBox *axisComboBox)
 void MainWidget::closeEvent(QCloseEvent *event)
 {
     timer->stop();
+    plotsTabWidget->close();
     generator->destroyAllWindows();
-    plotsTabWidget->hide();
     event->accept();
 }
 

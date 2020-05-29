@@ -19,11 +19,11 @@
 
 // Image iteration plot
 
-ImageIterationPlot::ImageIterationPlot(QString title, double yMin, double yMax)
+ImageIterationPlot::ImageIterationPlot(QString title, double yMin, double yMax, QWidget *parent = nullptr): QWidget(parent)
 {
     itMin = 1000;
 
-    plot = new QCustomPlot;
+    plot = new QCustomPlot(this);
 
     plot->xAxis->setLabel("Iteration");
     plot->yAxis->setLabel("Intensity");
@@ -77,9 +77,9 @@ void ImageIterationPlot::clearGraphsData()
 
 // Histogram plot
 
-HistogramPlot::HistogramPlot(QString title, double xMin, double xMax)
+HistogramPlot::HistogramPlot(QString title, double xMin, double xMax, QWidget *parent = nullptr): QWidget(parent)
 {
-    plot = new QCustomPlot;
+    plot = new QCustomPlot(this);
 
     plot->xAxis->setLabel("Intensity");
     plot->yAxis->setLabel("Count");
@@ -122,9 +122,9 @@ void HistogramPlot::setData(const QVector<double> &bins, const QVector<double> &
 
 // Scatter plot
 
-ScatterPlot::ScatterPlot(QString title, double xMin, double xMax, double yMin, double yMax)
+ScatterPlot::ScatterPlot(QString title, double xMin, double xMax, double yMin, double yMax, QWidget *parent = nullptr): QWidget(parent)
 {
-    plot = new QCustomPlot;
+    plot = new QCustomPlot(this);
 
     plot->xAxis->setLabel("Blue");
     plot->yAxis->setLabel("Green");
@@ -163,9 +163,9 @@ void ScatterPlot::setData(const QVector<double> &x, const QVector<double> &y)
 
 // Curve plot
 
-CurvePlot::CurvePlot(QString title, double xMin, double xMax, double yMin, double yMax)
+CurvePlot::CurvePlot(QString title, double xMin, double xMax, double yMin, double yMax, QWidget *parent = nullptr): QWidget(parent)
 {
-    plot = new QCustomPlot;
+    plot = new QCustomPlot(this);
 
     plot->xAxis->setLabel("Blue");
     plot->yAxis->setLabel("Green");

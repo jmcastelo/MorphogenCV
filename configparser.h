@@ -36,7 +36,11 @@ public:
 private:
     GeneratorCV *generator;
     QString filename;
+    QXmlStreamWriter stream;
     QXmlStreamReader xml;
+
+    void writeImageOperations(Pipeline *pipeline);
+    void readImageOperations(Pipeline *pipeline);
 };
 
 #endif // CONFIGPARSER_H

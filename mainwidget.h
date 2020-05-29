@@ -23,6 +23,7 @@
 #include "plots.h"
 #include "configparser.h"
 #include <vector>
+#include <map>
 #include <chrono>
 #include <QWidget>
 #include <QHBoxLayout>
@@ -99,6 +100,7 @@ class MainWidget : public QWidget
     QPushButton *insertImageOperationPushButton;
     QPushButton *removeImageOperationPushButton;
 
+    QPushButton *outputPipelinePushButton;
     QGridLayout *pipelinesGridLayout;
     QLabel *pipelinesLabel;
     QLabel *blendFactorsLabel;
@@ -108,7 +110,8 @@ class MainWidget : public QWidget
     QPushButton *equalizeBlendFactorsPushButton;
 
     QListWidget *imageOperationsListWidget;
-    std::vector<int> currentImageOperationIndex;
+    int rowSize;
+    std::map<int, int> currentImageOperationIndex;
 
     QSlider *selectedParameterSlider;
     CustomLineEdit *selectedParameterMinLineEdit;

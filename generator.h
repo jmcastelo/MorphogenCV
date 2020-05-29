@@ -62,7 +62,8 @@ class GeneratorCV
 {
     cv::Mat mask;
     cv::Mat seedImage;
-    cv::Mat outImage;
+    cv::Mat outputImage;
+    cv::Mat frame;
     std::vector<cv::Mat> previousFrames;
 
     int iteration;
@@ -111,6 +112,7 @@ public:
     std::vector<std::string> availableImageOperations;
 
     std::vector<Pipeline*> pipelines;
+    Pipeline *outputPipeline;
 
     bool selectingPixel;
     bool drawingPointer;
@@ -158,18 +160,18 @@ public:
     int getFrameCount(){ return frameCount; }
 
     void resetIterationNumer() { iteration = 0; }
-    int getIterationNumber(){ return iteration; };
+    int getIterationNumber(){ return iteration; }
 
-    int getHistogramMax(){ return histogramMax; };
+    int getHistogramMax(){ return histogramMax; }
 
     void setImageSize(int size);
-    int getImageSize(){ return imageSize; };
+    int getImageSize(){ return imageSize; }
 
-    double getBSum(){ return bgrSum[0] * colorScaleFactor; };
-    double getGSum(){ return bgrSum[1] * colorScaleFactor; };
-    double getRSum(){ return bgrSum[2] * colorScaleFactor; };
+    double getBSum(){ return bgrSum[0] * colorScaleFactor; }
+    double getGSum(){ return bgrSum[1] * colorScaleFactor; }
+    double getRSum(){ return bgrSum[2] * colorScaleFactor; }
 
-    double getPixelComponent(int colorIndex){ return bgrPixel[colorIndex]; };
+    double getPixelComponent(int colorIndex){ return bgrPixel[colorIndex]; }
 
     QVector<double> getBlueHistogram();
     QVector<double> getGreenHistogram();
@@ -182,8 +184,20 @@ public:
     void removeImageOperation(int pipelineIndex, int operationIndex);
     void insertImageOperation(int pipelineIndex, int newOperationIndex, int currentOperationIndex);
 
-    std::string getImageOperationName(int pipelineIndex, int operationIndex){ return pipelines[pipelineIndex]->imageOperations[operationIndex]->getName(); };
-    int getImageOperationsSize(int pipelineIndex){ return pipelines.empty() ? 0 : pipelines[pipelineIndex]->imageOperations.size(); };
+    std::string getImageOperationName(int pipelineIndex, int operationIndex)
+    {
+        if (pipelineIndex >= 0)
+            return pipelines[pipelineIndex]->imageOperations[operationIndex]->getName();
+        else
+            return outputPipeline->imageOperations[operationIndex]->getName();
+    }
+    int getImageOperationsSize(int pipelineIndex)
+    {
+        if (pipelineIndex >= 0)
+            return pipelines.empty() ? 0 : pipelines[pipelineIndex]->imageOperations.size();
+        else
+            return outputPipeline->imageOperations.size();
+    }
 
     void removePipeline(int pipelineIndex);
     void addPipeline();
@@ -191,7 +205,7 @@ public:
     int getPipelinesSize(){ return pipelines.size(); };
 
     void setPipelineBlendFactor(int pipelineIndex, double factor);
-    double getPipelineBlendFactor(int pipelineIndex){ return pipelines[pipelineIndex]->blendFactor; };
+    double getPipelineBlendFactor(int pipelineIndex){ return pipelines[pipelineIndex]->blendFactor; }
     void equalizePipelineBlendFactors();
 };
 

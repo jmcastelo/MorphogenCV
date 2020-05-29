@@ -22,7 +22,7 @@ void ConfigurationParser::write()
     QFile outFile(filename);
     outFile.open(QIODevice::WriteOnly);
 
-    QXmlStreamWriter stream(&outFile);
+    stream.setDevice(&outFile);
     stream.setAutoFormatting(true);
 
     stream.writeStartDocument();
@@ -33,80 +33,93 @@ void ConfigurationParser::write()
     {
         stream.writeStartElement("pipeline");
         stream.writeAttribute("blendfactor", QString::number(pipeline->blendFactor));
+        writeImageOperations(pipeline);
+        stream.writeEndElement();
+    }
 
-        for (auto operation: pipeline->imageOperations)
+    stream.writeStartElement("outputpipeline");
+    writeImageOperations(generator->outputPipeline);
+    stream.writeEndElement();
+
+    stream.writeEndElement();
+
+    stream.writeEndDocument();
+
+    outFile.close();
+}
+
+void ConfigurationParser::writeImageOperations(Pipeline *pipeline)
+{
+    for (auto operation: pipeline->imageOperations)
+    {
+        stream.writeStartElement("operation");
+        stream.writeAttribute("name", QString::fromStdString(operation->getName()));
+        stream.writeAttribute("enabled", QString::number(operation->isEnabled()));
+
+        for (auto parameter: operation->getBoolParameters())
         {
-            stream.writeStartElement("operation");
-            stream.writeAttribute("name", QString::fromStdString(operation->getName()));
-            stream.writeAttribute("enabled", QString::number(operation->isEnabled()));
+            stream.writeStartElement("parameter");
+            stream.writeAttribute("name", QString::fromStdString(parameter->name));
+            stream.writeAttribute("type", "bool");
+            stream.writeCharacters(QString::number(parameter->value));
+            stream.writeEndElement();
+        }
 
-            for (auto parameter: operation->getBoolParameters())
+        for (auto parameter: operation->getIntParameters())
+        {
+            stream.writeStartElement("parameter");
+            stream.writeAttribute("name", QString::fromStdString(parameter->name));
+            stream.writeAttribute("type", "int");
+            stream.writeCharacters(QString::number(parameter->value));
+            stream.writeEndElement();
+        }
+
+        for (auto parameter: operation->getDoubleParameters())
+        {
+            stream.writeStartElement("parameter");
+            stream.writeAttribute("name", QString::fromStdString(parameter->name));
+            stream.writeAttribute("type", "double");
+            stream.writeCharacters(QString::number(parameter->value));
+            stream.writeEndElement();
+        }
+
+        for (auto parameter: operation->getMorphTypeParameters())
+        {
+            stream.writeStartElement("parameter");
+            stream.writeAttribute("name", QString::fromStdString(parameter->name));
+            stream.writeAttribute("type", "morphtype");
+            stream.writeCharacters(QString::number(parameter->value));
+            stream.writeEndElement();
+        }
+
+        for (auto parameter: operation->getMorphShapeParameters())
+        {
+            stream.writeStartElement("parameter");
+            stream.writeAttribute("name", QString::fromStdString(parameter->name));
+            stream.writeAttribute("type", "morphshape");
+            stream.writeCharacters(QString::number(parameter->value));
+            stream.writeEndElement();
+        }
+
+        for (auto parameter: operation->getInterpolationFlagParameters())
+        {
+            stream.writeStartElement("parameter");
+            stream.writeAttribute("name", QString::fromStdString(parameter->name));
+            stream.writeAttribute("type", "interpolationflag");
+            stream.writeCharacters(QString::number(parameter->value));
+            stream.writeEndElement();
+        }
+
+        if (operation->getKernelParameter())
+        {
+            stream.writeStartElement("parameter");
+            stream.writeAttribute("name", QString::fromStdString(operation->getKernelParameter()->name));
+            stream.writeAttribute("type", "kernel");
+
+            for (auto element: operation->getKernelParameter()->values)
             {
-                stream.writeStartElement("parameter");
-                stream.writeAttribute("name", QString::fromStdString(parameter->name));
-                stream.writeAttribute("type", "bool");
-                stream.writeCharacters(QString::number(parameter->value));
-                stream.writeEndElement();
-            }
-
-            for (auto parameter: operation->getIntParameters())
-            {
-                stream.writeStartElement("parameter");
-                stream.writeAttribute("name", QString::fromStdString(parameter->name));
-                stream.writeAttribute("type", "int");
-                stream.writeCharacters(QString::number(parameter->value));
-                stream.writeEndElement();
-            }
-
-            for (auto parameter: operation->getDoubleParameters())
-            {
-                stream.writeStartElement("parameter");
-                stream.writeAttribute("name", QString::fromStdString(parameter->name));
-                stream.writeAttribute("type", "double");
-                stream.writeCharacters(QString::number(parameter->value));
-                stream.writeEndElement();
-            }
-
-            for (auto parameter: operation->getMorphTypeParameters())
-            {
-                stream.writeStartElement("parameter");
-                stream.writeAttribute("name", QString::fromStdString(parameter->name));
-                stream.writeAttribute("type", "morphtype");
-                stream.writeCharacters(QString::number(parameter->value));
-                stream.writeEndElement();
-            }
-
-            for (auto parameter: operation->getMorphShapeParameters())
-            {
-                stream.writeStartElement("parameter");
-                stream.writeAttribute("name", QString::fromStdString(parameter->name));
-                stream.writeAttribute("type", "morphshape");
-                stream.writeCharacters(QString::number(parameter->value));
-                stream.writeEndElement();
-            }
-
-            for (auto parameter: operation->getInterpolationFlagParameters())
-            {
-                stream.writeStartElement("parameter");
-                stream.writeAttribute("name", QString::fromStdString(parameter->name));
-                stream.writeAttribute("type", "interpolationflag");
-                stream.writeCharacters(QString::number(parameter->value));
-                stream.writeEndElement();
-            }
-
-            if (operation->getKernelParameter())
-            {
-                stream.writeStartElement("parameter");
-                stream.writeAttribute("name", QString::fromStdString(operation->getKernelParameter()->name));
-                stream.writeAttribute("type", "kernel");
-
-                for (auto element: operation->getKernelParameter()->values)
-                {
-                    stream.writeStartElement("element");
-                    stream.writeCharacters(QString::number(element));
-                    stream.writeEndElement();
-                }
-
+                stream.writeStartElement("element");
+                stream.writeCharacters(QString::number(element));
                 stream.writeEndElement();
             }
 
@@ -115,12 +128,6 @@ void ConfigurationParser::write()
 
         stream.writeEndElement();
     }
-
-    stream.writeEndElement();
-
-    stream.writeEndDocument();
-
-    outFile.close();
 }
 
 void ConfigurationParser::read()
@@ -133,6 +140,7 @@ void ConfigurationParser::read()
     if (xml.readNextStartElement() && xml.name() == "pipelines")
     {
         generator->pipelines.clear();
+        generator->outputPipeline->imageOperations.clear();
 
         while (xml.readNextStartElement())
         {
@@ -140,74 +148,11 @@ void ConfigurationParser::read()
             {
                 double blendFactor = xml.attributes().value("blendfactor").toDouble();
                 generator->loadPipeline(blendFactor);
-
-                while (xml.readNextStartElement())
-                {
-                    if (xml.name() == "operation")
-                    {
-                        QString operationName = xml.attributes().value("name").toString();
-
-                        bool enabled = xml.attributes().value("enabled").toInt();
-
-                        std::vector<bool> boolParameters;
-                        std::vector<int> intParameters;
-                        std::vector<double> doubleParameters;
-                        std::vector<int> morphTypeParameters;
-                        std::vector<int> morphShapeParameters;
-                        std::vector<int> interpolationFlagParameters;
-                        std::vector<float> kernelElements;
-
-                        while (xml.readNextStartElement())
-                        {
-                            if (xml.name() == "parameter")
-                            {
-                                QString parameterType = xml.attributes().value("type").toString();
-
-                                if (parameterType == "bool")
-                                    boolParameters.push_back(xml.readElementText().toInt());
-                                else if (parameterType == "int")
-                                    intParameters.push_back(xml.readElementText().toInt());
-                                else if (parameterType == "double")
-                                    doubleParameters.push_back(xml.readElementText().toDouble());
-                                else if (parameterType == "morphtype")
-                                    morphTypeParameters.push_back(xml.readElementText().toInt());
-                                else if (parameterType == "morphshape")
-                                    morphShapeParameters.push_back(xml.readElementText().toInt());
-                                else if (parameterType == "interpolationflag")
-                                    interpolationFlagParameters.push_back(xml.readElementText().toInt());
-                                else if (parameterType == "kernel")
-                                {
-                                    while (xml.readNextStartElement())
-                                    {
-                                        if (xml.name() == "element")
-                                            kernelElements.push_back(xml.readElementText().toFloat());
-                                        else
-                                            xml.skipCurrentElement();
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                xml.skipCurrentElement();
-                            }
-                        }
-
-                        generator->pipelines.back()->loadImageOperation(
-                                    operationName.toStdString(),
-                                    enabled,
-                                    boolParameters,
-                                    intParameters,
-                                    doubleParameters,
-                                    morphTypeParameters,
-                                    morphShapeParameters,
-                                    interpolationFlagParameters,
-                                    kernelElements);
-                    }
-                    else
-                    {
-                        xml.skipCurrentElement();
-                    }
-                }
+                readImageOperations(generator->pipelines.back());
+            }
+            else if (xml.name() == "outputpipeline")
+            {
+                readImageOperations(generator->outputPipeline);
             }
             else
             {
@@ -221,4 +166,75 @@ void ConfigurationParser::read()
     if (xml.hasError()) xml.raiseError();
 
     inFile.close();
+}
+
+void ConfigurationParser::readImageOperations(Pipeline *pipeline)
+{
+    while (xml.readNextStartElement())
+    {
+        if (xml.name() == "operation")
+        {
+            QString operationName = xml.attributes().value("name").toString();
+
+            bool enabled = xml.attributes().value("enabled").toInt();
+
+            std::vector<bool> boolParameters;
+            std::vector<int> intParameters;
+            std::vector<double> doubleParameters;
+            std::vector<int> morphTypeParameters;
+            std::vector<int> morphShapeParameters;
+            std::vector<int> interpolationFlagParameters;
+            std::vector<float> kernelElements;
+
+            while (xml.readNextStartElement())
+            {
+                if (xml.name() == "parameter")
+                {
+                    QString parameterType = xml.attributes().value("type").toString();
+
+                    if (parameterType == "bool")
+                        boolParameters.push_back(xml.readElementText().toInt());
+                    else if (parameterType == "int")
+                        intParameters.push_back(xml.readElementText().toInt());
+                    else if (parameterType == "double")
+                        doubleParameters.push_back(xml.readElementText().toDouble());
+                    else if (parameterType == "morphtype")
+                        morphTypeParameters.push_back(xml.readElementText().toInt());
+                    else if (parameterType == "morphshape")
+                        morphShapeParameters.push_back(xml.readElementText().toInt());
+                    else if (parameterType == "interpolationflag")
+                        interpolationFlagParameters.push_back(xml.readElementText().toInt());
+                    else if (parameterType == "kernel")
+                    {
+                        while (xml.readNextStartElement())
+                        {
+                            if (xml.name() == "element")
+                                kernelElements.push_back(xml.readElementText().toFloat());
+                            else
+                                xml.skipCurrentElement();
+                        }
+                    }
+                }
+                else
+                {
+                    xml.skipCurrentElement();
+                }
+            }
+
+            pipeline->loadImageOperation(
+                        operationName.toStdString(),
+                        enabled,
+                        boolParameters,
+                        intParameters,
+                        doubleParameters,
+                        morphTypeParameters,
+                        morphShapeParameters,
+                        interpolationFlagParameters,
+                        kernelElements);
+        }
+        else
+        {
+            xml.skipCurrentElement();
+        }
+    }
 }

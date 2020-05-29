@@ -29,7 +29,7 @@ public:
     int itMin;
     QCustomPlot *plot;
 
-    ImageIterationPlot(QString title, double yMin, double yMax);
+    ImageIterationPlot(QString title, double yMin, double yMax, QWidget *parent);
 
     void addPoint(double it, double blue, double green, double red);
     void clearGraphsData();
@@ -40,7 +40,7 @@ class HistogramPlot: public QWidget
 public:
     QCustomPlot *plot;
 
-    HistogramPlot(QString title, double xMin, double xMax);
+    HistogramPlot(QString title, double xMin, double xMax, QWidget *parent);
 
     void setYMax(double yMax);
     void setData(const QVector<double> &bins, const QVector<double> &blue, const QVector<double> &green, const QVector<double> &red);
@@ -51,7 +51,7 @@ class ScatterPlot: public QWidget
 public:
     QCustomPlot *plot;
 
-    ScatterPlot(QString title, double xMin, double xMax, double yMin, double yMax);
+    ScatterPlot(QString title, double xMin, double xMax, double yMin, double yMax, QWidget *parent);
 
     void setAxesLabels(QString xLabel, QString yLabel);
     void setData(const QVector<double> &x, const QVector<double> &y);
@@ -63,7 +63,7 @@ public:
     QCPCurve *curve;
     QCustomPlot *plot;
 
-    CurvePlot(QString title, double xMin, double xMax, double yMin, double yMax);
+    CurvePlot(QString title, double xMin, double xMax, double yMin, double yMax, QWidget *parent);
 
     void setAxesLabels(QString xLabel, QString yLabel);
     void addPoint(double x, double y);
