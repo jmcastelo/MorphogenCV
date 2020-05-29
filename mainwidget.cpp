@@ -26,6 +26,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     // Init variables
 
     timerInterval = 30; // ms
+    batchSize = 1;
 
     // Plots
 
@@ -84,7 +85,9 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
     // Style
 
-    setStyleSheet(QString("QPushButton#pipelineButton{ background-color: #ffc840; } QPushButton:checked#pipelineButton { background-color: #00ffff; }"));
+    QString startButtonStyle = "QPushButton#startButton{ background-color: #00ff00; }";
+    QString pipelineButtonStyle = "QPushButton#pipelineButton{ background-color: #ffc840; } QPushButton:checked#pipelineButton { background-color: #00ffff; }";
+    setStyleSheet(startButtonStyle + pipelineButtonStyle);
 
     // Timer for iteration loop
 
@@ -128,18 +131,35 @@ void MainWidget::constructGeneralControls()
 
     // Main
 
-    pauseResumePushButton = new QPushButton("Start");
+    pauseResumePushButton = new QPushButton("Start iterating");
+    pauseResumePushButton->setObjectName("startButton");
     pauseResumePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     pauseResumePushButton->setCheckable(true);
 
-    timerIntervalLineEdit = new QLineEdit;
+    batchPushButton = new QPushButton("Start batch");
+    batchPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    batchPushButton->setCheckable(true);
+
+    QHBoxLayout *startButtonsHBoxLayout = new QHBoxLayout;
+    startButtonsHBoxLayout->setAlignment(Qt::AlignHCenter);
+    startButtonsHBoxLayout->addWidget(pauseResumePushButton);
+    startButtonsHBoxLayout->addWidget(batchPushButton);
+
+    batchSizeLineEdit = new CustomLineEdit;
+    batchSizeLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    QIntValidator *batchSizeValidator = new QIntValidator(1, 9999999, batchSizeLineEdit);
+    batchSizeValidator->setLocale(QLocale::English);
+    batchSizeLineEdit->setValidator(batchSizeValidator);
+    batchSizeLineEdit->setText(QString::number(batchSize));
+
+    timerIntervalLineEdit = new CustomLineEdit;
     timerIntervalLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QIntValidator *timeIntervalIntValidator = new QIntValidator(1, 10000, timerIntervalLineEdit);
     timeIntervalIntValidator->setLocale(QLocale::English);
     timerIntervalLineEdit->setValidator(timeIntervalIntValidator);
     timerIntervalLineEdit->setText(QString::number(timerInterval));
 
-    imageSizeLineEdit = new QLineEdit;
+    imageSizeLineEdit = new CustomLineEdit;
     imageSizeLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QIntValidator *imageSizeIntValidator = new QIntValidator(0, 4096, imageSizeLineEdit);
     imageSizeIntValidator->setLocale(QLocale::English);
@@ -147,11 +167,12 @@ void MainWidget::constructGeneralControls()
     imageSizeLineEdit->setText(QString::number(generator->getImageSize()));
 
     QFormLayout *formLayout = new QFormLayout;
+    formLayout->addRow("Batch size (its):", batchSizeLineEdit);
     formLayout->addRow("Time interval (ms):", timerIntervalLineEdit);
     formLayout->addRow("Image size (px):", imageSizeLineEdit);
 
     QVBoxLayout *mainControlsVBoxLayout = new QVBoxLayout;
-    mainControlsVBoxLayout->addWidget(pauseResumePushButton);
+    mainControlsVBoxLayout->addLayout(startButtonsHBoxLayout);
     mainControlsVBoxLayout->addLayout(formLayout);
 
     QGroupBox *mainControlsGroupBox = new QGroupBox("Main");
@@ -167,7 +188,7 @@ void MainWidget::constructGeneralControls()
     videoCapturePushButton->setCheckable(true);
     videoCapturePushButton->setEnabled(false);
 
-    fpsLineEdit = new QLineEdit;
+    fpsLineEdit = new CustomLineEdit;
     fpsLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     QIntValidator *fpsValidator = new QIntValidator(1, 1000, fpsLineEdit);
     fpsValidator->setLocale(QLocale::English);
@@ -220,8 +241,8 @@ void MainWidget::constructGeneralControls()
     pointerThicknessLineEdit->setText(QString::number(generator->getPointerThickness()));
 
     QFormLayout *pointerFormLayout = new QFormLayout;
-    pointerFormLayout->addRow("Radius:", pointerRadiusLineEdit);
-    pointerFormLayout->addRow("Thickness:", pointerThicknessLineEdit);
+    pointerFormLayout->addRow("Radius (px):", pointerRadiusLineEdit);
+    pointerFormLayout->addRow("Thickness (px):", pointerThicknessLineEdit);
 
     QPushButton *pickPointerColorPushButton = new QPushButton("Pick color");
     pickPointerColorPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
@@ -273,13 +294,19 @@ void MainWidget::constructGeneralControls()
     // Signals + Slots
 
     connect(pauseResumePushButton, &QPushButton::clicked, this, &MainWidget::pauseResumeSystem);
+    connect(batchPushButton, &QPushButton::clicked, this, &MainWidget::toggleBatch);
     connect(saveConfigPushButton, &QPushButton::clicked, this, &MainWidget::saveConfig);
     connect(loadConfigPushButton, &QPushButton::clicked, this, &MainWidget::loadConfig);
-    connect(timerIntervalLineEdit, &QLineEdit::returnPressed, this, &MainWidget::setTimerInterval);
-    connect(imageSizeLineEdit, &QLineEdit::returnPressed, this, &MainWidget::setImageSize);
+    connect(batchSizeLineEdit, &CustomLineEdit::returnPressed, [=](){ batchSize = batchSizeLineEdit->text().toInt(); });
+    connect(batchSizeLineEdit, &CustomLineEdit::focusOut, [=](){ batchSizeLineEdit->setText(QString::number(batchSize)); });
+    connect(timerIntervalLineEdit, &CustomLineEdit::returnPressed, this, &MainWidget::setTimerInterval);
+    connect(timerIntervalLineEdit, &CustomLineEdit::focusOut, [=](){ timerIntervalLineEdit->setText(QString::number(timerInterval)); });
+    connect(imageSizeLineEdit, &CustomLineEdit::returnPressed, this, &MainWidget::setImageSize);
+    connect(imageSizeLineEdit, &CustomLineEdit::focusOut, [=](){ imageSizeLineEdit->setText(QString::number(generator->getImageSize())); });
     connect(videoFilenamePushButton, &QPushButton::clicked, this, &MainWidget::openVideoWriter);
     connect(videoCapturePushButton, &QPushButton::clicked, this, &MainWidget::onVideoCapturePushButtonClicked);
-    connect(fpsLineEdit, &QLineEdit::returnPressed, [=](){ generator->setFramesPerSecond(fpsLineEdit->text().toInt()); });
+    connect(fpsLineEdit, &CustomLineEdit::returnPressed, [=](){ generator->setFramesPerSecond(fpsLineEdit->text().toInt()); });
+    connect(fpsLineEdit, &CustomLineEdit::focusOut, [=](){ fpsLineEdit->setText(QString::number(generator->getFramesPerSecond())); });
     connect(drawPointerPushButton, &QPushButton::clicked, [=](bool checked){ generator->drawingPointer = checked; });
     connect(clearPointerCanvasPushButton, &QPushButton::clicked, [=](){ generator->clearPointerCanvas(); });
     connect(pickPointerColorPushButton, &QPushButton::clicked, [=]()
@@ -304,11 +331,11 @@ void MainWidget::constructImageManipulationControls()
 
     coloredSeedCheckBox = new QCheckBox("Color");
     coloredSeedCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    coloredSeedCheckBox->setChecked(false);
+    coloredSeedCheckBox->setChecked(true);
 
     bwSeedCheckBox = new QCheckBox("Grays");
     bwSeedCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    bwSeedCheckBox->setChecked(true);
+    bwSeedCheckBox->setChecked(false);
 
     QHBoxLayout *randomSeedHBoxLayout = new QHBoxLayout;
     randomSeedHBoxLayout->setAlignment(Qt::AlignLeft);
@@ -678,11 +705,32 @@ void MainWidget::pauseResumeSystem(bool checked)
     {
         timer->stop();
         pauseResumePushButton->setText("Resume");
+        batchPushButton->setEnabled(true);
     }
     else
     {
+        timePoint = std::chrono::steady_clock::now();
         timer->start(timerInterval);
         pauseResumePushButton->setText("Pause");
+        batchPushButton->setEnabled(false);
+    }
+}
+
+void MainWidget::toggleBatch(bool checked)
+{
+    if (!checked)
+    {
+        timer->stop();
+        batchPushButton->setText("Start batch");
+        pauseResumePushButton->setEnabled(true);
+    }
+    else
+    {
+        timePoint = std::chrono::steady_clock::now();
+        timer->start(timerInterval);
+        batchNumber = 0;
+        batchPushButton->setText("Stop batch");
+        pauseResumePushButton->setEnabled(false);
     }
 }
 
@@ -1096,72 +1144,89 @@ void MainWidget::removeImageOperation()
 
 void MainWidget::iterationLoop()
 {
-    auto start = std::chrono::steady_clock::now();
-    generator->iterate();
-    auto end = std::chrono::steady_clock::now();
-
-    // Full image computations/plots
-
-    if (colorSpacePushButton->isChecked())
+    if (pauseResumePushButton->isChecked() || (batchPushButton->isChecked() && batchNumber < batchSize))
     {
-        int xAxisIndex = colorSpaceXAxisComboBox->currentIndex();
-        int yAxisIndex = colorSpaceYAxisComboBox->currentIndex();
+        auto start = std::chrono::steady_clock::now();
+        generator->iterate();
+        auto end = std::chrono::steady_clock::now();
 
-        colorSpacePlot->setData(generator->getColorComponents(xAxisIndex), generator->getColorComponents(yAxisIndex));
+        // Full image computations/plots
+
+        if (colorSpacePushButton->isChecked())
+        {
+            int xAxisIndex = colorSpaceXAxisComboBox->currentIndex();
+            int yAxisIndex = colorSpaceYAxisComboBox->currentIndex();
+
+            colorSpacePlot->setData(generator->getColorComponents(xAxisIndex), generator->getColorComponents(yAxisIndex));
+        }
+
+        if (dftPushButton->isChecked())
+            generator->computeDFT();
+
+        if (histogramPushButton->isChecked())
+        {
+            generator->computeHistogram();
+            histogramPlot->setData(generator->getHistogramBins(), generator->getBlueHistogram(), generator->getGreenHistogram(), generator->getRedHistogram());
+        }
+
+        if (imageIterationPushButton->isChecked())
+        {
+            generator->computeBGRSum();
+            imageIterationPlot->addPoint(generator->getIterationNumber(), generator->getBSum(), generator->getGSum(), generator->getRSum());
+        }
+
+        // Single pixel computations/plots
+
+        if (pixelIterationPushButton->isChecked() || colorSpacePixelPushButton->isChecked())
+            generator->computeBGRPixel();
+
+        if (pixelIterationPushButton->isChecked())
+            pixelIterationPlot->addPoint(generator->getIterationNumber(), generator->getPixelComponent(0), generator->getPixelComponent(1), generator->getPixelComponent(2));
+
+        if (colorSpacePixelPushButton->isChecked())
+        {
+            int xAxisIndex = colorSpacePixelXAxisComboBox->currentIndex();
+            int yAxisIndex = colorSpacePixelYAxisComboBox->currentIndex();
+
+            colorSpacePixelPlot->addPoint(generator->getPixelComponent(xAxisIndex), generator->getPixelComponent(yAxisIndex));
+        }
+
+        // Show out image
+
+        if (selectPixelPushButton->isChecked())
+            generator->showPixelSelectionCursor();
+        else
+            generator->showImage();
+
+        if (videoCapturePushButton->isChecked())
+        {
+            generator->writeVideoFrame();
+            setVideoCaptureElapsedTimeLabel();
+        }
+
+        // Batch
+
+        if (batchPushButton->isChecked())
+        {
+            batchNumber++;
+
+            if (batchNumber == batchSize)
+                batchPushButton->click();
+        }
+
+        // Timing
+
+        auto now = std::chrono::steady_clock::now();
+        auto iterationTime = std::chrono::duration_cast<std::chrono::milliseconds>(now - timePoint).count();
+        timePoint = now;
+
+        auto pipelineTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+        // Status bar
+
+        statusBar->clearMessage();
+        statusBar->showMessage(QString("%1 Iterations | %2 ms / iteration | %3 ms / pipelines").arg(generator->getIterationNumber()).arg(iterationTime).arg(pipelineTime));
     }
-
-    if (dftPushButton->isChecked())
-        generator->computeDFT();
-
-    if (histogramPushButton->isChecked())
-    {
-        generator->computeHistogram();
-        histogramPlot->setData(generator->getHistogramBins(), generator->getBlueHistogram(), generator->getGreenHistogram(), generator->getRedHistogram());
-    }
-
-    if (imageIterationPushButton->isChecked())
-    {
-        generator->computeBGRSum();
-        imageIterationPlot->addPoint(generator->getIterationNumber(), generator->getBSum(), generator->getGSum(), generator->getRSum());
-    }
-
-    // Single pixel computations/plots
-
-    if (pixelIterationPushButton->isChecked() || colorSpacePixelPushButton->isChecked())
-        generator->computeBGRPixel();
-
-    if (pixelIterationPushButton->isChecked())
-        pixelIterationPlot->addPoint(generator->getIterationNumber(), generator->getPixelComponent(0), generator->getPixelComponent(1), generator->getPixelComponent(2));
-
-    if (colorSpacePixelPushButton->isChecked())
-    {
-        int xAxisIndex = colorSpacePixelXAxisComboBox->currentIndex();
-        int yAxisIndex = colorSpacePixelYAxisComboBox->currentIndex();
-
-        colorSpacePixelPlot->addPoint(generator->getPixelComponent(xAxisIndex), generator->getPixelComponent(yAxisIndex));
-    }
-
-    // Show out image
-
-    if (selectPixelPushButton->isChecked())
-        generator->showPixelSelectionCursor();
-    else
-        generator->showImage();
-
-    if (videoCapturePushButton->isChecked())
-    {
-        generator->writeVideoFrame();
-        setVideoCaptureElapsedTimeLabel();
-    }
-
-    auto now = std::chrono::steady_clock::now();
-    auto iterationTime = std::chrono::duration_cast<std::chrono::milliseconds>(now - timePoint).count();
-    timePoint = now;
-
-    auto pipelineTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
-    statusBar->clearMessage();
-    statusBar->showMessage(QString("%1 Iterations | %2 ms / iteration | %3 ms / pipelines").arg(generator->getIterationNumber()).arg(iterationTime).arg(pipelineTime));
 }
 
 void MainWidget::colorSpaceAxisChanged(int axisIndex, QComboBox *axisComboBox)

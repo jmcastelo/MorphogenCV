@@ -80,20 +80,25 @@ class MainWidget : public QWidget
     QTabWidget *mainTabWidget;
 
     QPushButton *pauseResumePushButton;
+    QPushButton *batchPushButton;
 
     QCheckBox *coloredSeedCheckBox;
     QCheckBox *bwSeedCheckBox;
 
-    QLineEdit *timerIntervalLineEdit;
+    int batchSize;
+    int batchNumber;
+
+    CustomLineEdit *batchSizeLineEdit;
+    CustomLineEdit *timerIntervalLineEdit;
 
     QTimer *timer;
     int timerInterval;
 
-    QLineEdit *imageSizeLineEdit;
+    CustomLineEdit *imageSizeLineEdit;
 
     QPushButton *videoFilenamePushButton;
     QPushButton *videoCapturePushButton;
-    QLineEdit *fpsLineEdit;
+    CustomLineEdit *fpsLineEdit;
     QLabel *videoCaptureElapsedTimeLabel;
 
     QComboBox *newImageOperationComboBox;
@@ -149,6 +154,8 @@ class MainWidget : public QWidget
     void resizeMainTabs(int index);
 
     void pauseResumeSystem(bool checked);
+
+    void toggleBatch(bool checked);
 
     void saveConfig();
     void loadConfig();

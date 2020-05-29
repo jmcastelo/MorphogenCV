@@ -333,7 +333,7 @@ GeneratorCV::GeneratorCV()
 
     setMask();
     computeHistogramMax();
-    drawRandomSeed(true);
+    drawRandomSeed(false);
     clearPointerCanvas();
 
     outputPipeline = new Pipeline(cv::Mat::zeros(imageSize, imageSize, CV_8UC3));
