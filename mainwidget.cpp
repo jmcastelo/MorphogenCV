@@ -389,29 +389,6 @@ void MainWidget::constructImageManipulationControls()
     QGroupBox *pipelineGroupBox = new QGroupBox("Pipelines");
     pipelineGroupBox->setLayout(pipelineVBoxLayout);
 
-    // Blend previous frames
-
-    CustomLineEdit *previousFramesSizeLineEdit = new CustomLineEdit;
-    previousFramesSizeLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    QIntValidator *previousFramesSizeValidator = new QIntValidator(0, 100, previousFramesSizeLineEdit);
-    previousFramesSizeValidator->setLocale(QLocale::English);
-    previousFramesSizeLineEdit->setValidator(previousFramesSizeValidator);
-    previousFramesSizeLineEdit->setText(QString::number(generator->getPreviousFramesSize()));
-
-    CustomLineEdit *previousFramesBlendFactorLineEdit = new CustomLineEdit;
-    previousFramesBlendFactorLineEdit->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-    QDoubleValidator *previousFramesBlendFactorValidator = new QDoubleValidator(0.0, 1.0, 10, previousFramesBlendFactorLineEdit);
-    previousFramesBlendFactorValidator->setLocale(QLocale::English);
-    previousFramesBlendFactorLineEdit->setValidator(previousFramesBlendFactorValidator);
-    previousFramesBlendFactorLineEdit->setText(QString::number(generator->getPreviousFramesBlendFactor()));
-
-    QFormLayout *blendPreviousFramesLayout = new QFormLayout;
-    blendPreviousFramesLayout->addRow("Number of frames:", previousFramesSizeLineEdit);
-    blendPreviousFramesLayout->addRow("Blend factor:", previousFramesBlendFactorLineEdit);
-
-    QGroupBox *blendPreviousFramesGroupBox = new QGroupBox("Blend last frames");
-    blendPreviousFramesGroupBox->setLayout(blendPreviousFramesLayout);
-
     // Image operations
 
     newImageOperationComboBox = new QComboBox;
@@ -496,7 +473,6 @@ void MainWidget::constructImageManipulationControls()
     vBoxLayout1->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
     vBoxLayout1->addWidget(seedGroupBox);
     vBoxLayout1->addWidget(pipelineGroupBox);
-    vBoxLayout1->addWidget(blendPreviousFramesGroupBox);
 
     QVBoxLayout *vBoxLayout2 = new QVBoxLayout;
     vBoxLayout2->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
@@ -538,10 +514,6 @@ void MainWidget::constructImageManipulationControls()
         for (int i = 0; i < generator->getPipelinesSize(); i++)
             pipelineBlendFactorLineEdit[i]->setText(QString::number(generator->getPipelineBlendFactor(i)));
     });
-    connect(previousFramesSizeLineEdit, &CustomLineEdit::returnPressed, [=](){ generator->setPreviousFramesSize(previousFramesSizeLineEdit->text().toInt()); });
-    connect(previousFramesSizeLineEdit, &CustomLineEdit::focusOut, [=](){ previousFramesSizeLineEdit->setText(QString::number(generator->getPreviousFramesSize())); });
-    connect(previousFramesBlendFactorLineEdit, &CustomLineEdit::returnPressed, [=](){ generator->setPreviousFramesBlendFactor(previousFramesBlendFactorLineEdit->text().toDouble()); });
-    connect(previousFramesBlendFactorLineEdit, &CustomLineEdit::focusOut, [=](){ previousFramesBlendFactorLineEdit->setText(QString::number(generator->getPreviousFramesBlendFactor())); });
     connect(imageOperationsListWidget, &QListWidget::currentRowChanged, this, &MainWidget::onImageOperationsListWidgetCurrentRowChanged);
     connect(imageOperationsListWidget->model(), &QAbstractItemModel::rowsMoved, this, &MainWidget::onRowsMoved);
     connect(insertImageOperationPushButton, &QPushButton::clicked, this, &MainWidget::insertImageOperation);

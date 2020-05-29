@@ -25,6 +25,7 @@ Pipeline::Pipeline(cv::Mat img): image(img)
         GaussianBlur::name,
         Blur::name,
         MedianBlur::name,
+        BlendPreviousImages::name,
         Canny::name,
         ConvertTo::name,
         DeblurFilter::name,
@@ -86,6 +87,10 @@ void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationI
     if (operationName == BilateralFilter::name)
     {
         imageOperations.insert(it + currentOperationIndex + 1, new BilateralFilter(false, 3, 50, 50));
+    }
+    else if (operationName == BlendPreviousImages::name)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new BlendPreviousImages(false, 0, 0.0));
     }
     else if (operationName == Blur::name)
     {
@@ -181,6 +186,10 @@ void Pipeline::loadImageOperation(
     {
         imageOperations.push_back(new BilateralFilter(enabled, intParameters[0], doubleParameters[0], doubleParameters[1]));
     }
+    else if (operationName == BlendPreviousImages::name)
+    {
+        imageOperations.push_back(new BlendPreviousImages(enabled, intParameters[0], doubleParameters[0]));
+    }
     else if (operationName == Blur::name)
     {
         imageOperations.push_back(new Blur(enabled, intParameters[0]));
@@ -271,6 +280,7 @@ GeneratorCV::GeneratorCV()
         GaussianBlur::name,
         Blur::name,
         MedianBlur::name,
+        BlendPreviousImages::name,
         Canny::name,
         ConvertTo::name,
         DeblurFilter::name,
@@ -296,9 +306,6 @@ GeneratorCV::GeneratorCV()
     histogramSize = 256;
 
     iteration = 0;
-
-    previousFramesSize = 0;
-    previousFramesBlendFactor = 0.0;
 
     selectingPixel = false;
 
@@ -412,20 +419,6 @@ void GeneratorCV::blendImages()
     blendImage.copyTo(outputPipeline->image, mask);
 }
 
-void GeneratorCV::blendPreviousImages()
-{
-    for (auto previousFrame: previousFrames)
-        cv::addWeighted(outputImage, 1.0, previousFrame, previousFramesBlendFactor, 0.0, outputImage);
-
-    if (previousFramesSize > 0)
-    {
-        if (!previousFrames.empty() && static_cast<int>(previousFrames.size()) == previousFramesSize)
-            previousFrames.erase(previousFrames.begin());
-
-        previousFrames.push_back(outputImage);
-    }
-}
-
 void GeneratorCV::iterate()
 {
     for (auto pipeline: pipelines)
@@ -436,8 +429,6 @@ void GeneratorCV::iterate()
     outputPipeline->iterate();
 
     outputImage = outputPipeline->image.clone();
-
-    blendPreviousImages();
 
     if (pointerCanvasDrawn)
         drawPointerCanvas();
@@ -552,18 +543,6 @@ void GeneratorCV::closeVideoWriter()
 {
     if (videoWriter.isOpened())
         videoWriter.release();
-}
-
-void GeneratorCV::setPreviousFramesSize(int n)
-{
-    if (n >= 0)
-    {
-        if (n < previousFramesSize)
-            for (int i = 0; i < previousFramesSize - n; i++)
-                previousFrames.erase(previousFrames.begin() + i);
-
-        previousFramesSize = n;
-    }
 }
 
 void GeneratorCV::onMouse(int event, int x, int y, int flags, void *userdata)

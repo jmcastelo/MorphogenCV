@@ -63,15 +63,10 @@ class GeneratorCV
     cv::Mat mask;
     cv::Mat seedImage;
     cv::Mat outputImage;
-    cv::Mat frame;
-    std::vector<cv::Mat> previousFrames;
 
     int iteration;
 
     int imageSize;
-
-    int previousFramesSize;
-    double previousFramesBlendFactor;
 
     int histogramSize;
     cv::Mat blueHistogram;
@@ -80,7 +75,6 @@ class GeneratorCV
 
     double histogramMax;
     double colorScaleFactor;
-    double blendFactor;
 
     cv::Scalar bgrSum;
     cv::Vec3b bgrPixel;
@@ -102,7 +96,6 @@ class GeneratorCV
     void computeHistogramMax();
     void applyImageOperations();
     void blendImages();
-    void blendPreviousImages();
     static void onMouse(int event, int x, int y, int flags, void* userdata);
     void processMouse(int event, int x, int y, int flags);
     void drawPointer(int x, int y);
@@ -148,12 +141,6 @@ public:
     void openVideoWriter(std::string name);
     void writeVideoFrame();
     void closeVideoWriter();
-
-    void setPreviousFramesSize(int n);
-    int getPreviousFramesSize(){ return previousFramesSize; }
-
-    void setPreviousFramesBlendFactor(double factor){ if (factor >= 0.0) previousFramesBlendFactor = factor; }
-    double getPreviousFramesBlendFactor(){ return previousFramesBlendFactor; }
 
     void setFramesPerSecond(int fps){ framesPerSecond = fps; }
     int getFramesPerSecond(){ return framesPerSecond; }

@@ -85,6 +85,34 @@ public:
     void applyOperation(cv::Mat &src);
 };
 
+// Blend previous images
+
+class BlendPreviousImages: public ImageOperation
+{
+    IntParameter *size;
+    DoubleParameter *blendFactor;
+
+    std::vector<cv::Mat> previousImages;
+    int oldSize;
+
+public:
+    static std::string name;
+
+    BlendPreviousImages(bool on, int s, double bf);
+    ~BlendPreviousImages()
+    {
+        delete size;
+        delete blendFactor;
+    }
+
+    std::string getName(){ return name; };
+
+    std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {size}; return parameters; };
+    std::vector<DoubleParameter*> getDoubleParameters(){ std::vector<DoubleParameter*> parameters = {blendFactor}; return parameters; };
+
+    void applyOperation(cv::Mat &src);
+};
+
 // Blur
 
 class Blur: public ImageOperation

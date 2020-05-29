@@ -41,6 +41,43 @@ void BilateralFilter::applyOperation(cv::Mat &src)
     src = dst.clone();
 }
 
+// Blend previous images
+
+std::string BlendPreviousImages::name = "Blend previous images";
+
+BlendPreviousImages::BlendPreviousImages(bool on, int s, double bf): ImageOperation(on)
+{
+    size = new IntParameter("Number of images", s, 0, 100, false);
+    oldSize = s;
+
+    double minBlendFactor, maxBlendFactor;
+    adjustMinMax(bf, 0.0, 0.5, minBlendFactor, maxBlendFactor);
+    blendFactor = new DoubleParameter("Blend factor", bf, minBlendFactor, maxBlendFactor, 0.0, 1.0);
+}
+
+void BlendPreviousImages::applyOperation(cv::Mat &src)
+{
+    if (oldSize != size->value)
+    {
+        if (size->value < oldSize)
+            for (int i = 0; i < oldSize - size->value; i++)
+                previousImages.erase(previousImages.begin() + i);
+
+        oldSize = size->value;
+    }
+
+    for (auto previousFrame: previousImages)
+        cv::addWeighted(src, 1.0, previousFrame, blendFactor->value, 0.0, src);
+
+    if (size->value > 0)
+    {
+        if (!previousImages.empty() && static_cast<int>(previousImages.size()) == size->value)
+            previousImages.erase(previousImages.begin());
+
+        previousImages.push_back(src.clone());
+    }
+}
+
 // Blur
 
 std::string Blur::name = "Blur: homogeneous";
