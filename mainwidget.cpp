@@ -71,7 +71,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     statusBar = new QStatusBar;
     statusBar->setFont(QFont("sans", 8));
     statusBar->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
-    statusBar->showMessage(QString("%1 Iterations | %2 ms / iteration | %3 ms / pipelines").arg(generator->getIterationNumber()).arg(0).arg(0));
+    statusBar->showMessage(QString("%1 Iterations | %2 ms / iteration | %3 ms / pipelines").arg(0).arg(0).arg(0));
 
     // Main layout
 
@@ -760,6 +760,11 @@ void MainWidget::loadConfig()
         initPipelineControls(0);
 
         generator->resetIterationNumer();
+
+        if (!pauseResumePushButton->isChecked())
+            pauseResumePushButton->setText("Start iterating");
+
+        statusBar->showMessage(QString("%1 Iterations | %2 ms / iteration | %3 ms / pipelines").arg(0).arg(0).arg(0));
 
         imageIterationPlot->clearGraphsData();
         pixelIterationPlot->clearGraphsData();
