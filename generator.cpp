@@ -21,11 +21,11 @@ Pipeline::Pipeline(cv::Mat img): image(img)
 {
     // Duplicate of GeneratorCV's
     availableImageOperations = {
+        BlendPreviousImages::name,
         BilateralFilter::name,
         GaussianBlur::name,
         Blur::name,
         MedianBlur::name,
-        BlendPreviousImages::name,
         Canny::name,
         ConvertTo::name,
         DeblurFilter::name,
@@ -286,11 +286,11 @@ GeneratorCV::GeneratorCV()
 {
     // Duplicate of Pipeline's
     availableImageOperations = {
+        BlendPreviousImages::name,
         BilateralFilter::name,
         GaussianBlur::name,
         Blur::name,
         MedianBlur::name,
-        BlendPreviousImages::name,
         Canny::name,
         ConvertTo::name,
         DeblurFilter::name,
