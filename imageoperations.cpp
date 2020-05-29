@@ -262,7 +262,7 @@ std::string Filter2D::name = "Filter 2D";
 
 Filter2D::Filter2D(bool on, std::vector<float> v): ImageOperation(on)
 {
-    kernel = new KernelParameter("Kernel", v, -1000.0, 1000.0);
+    kernel = new KernelParameter("Kernel", v, -1000.0, 1000.0, true);
 
     updateKernelMat();
 }
@@ -366,24 +366,31 @@ void MedianBlur::applyOperation(cv::Mat &src)
     cv::medianBlur(src, src, ksize->value);
 }
 
-// Mix channels
+// Mix BGR channels
 
-std::string MixChannels::name = "Mix channels";
+std::string MixBGRChannels::name = "Mix BGR channels";
 
-MixChannels::MixChannels(bool on, int b, int g, int r): ImageOperation(on)
+MixBGRChannels::MixBGRChannels(bool on, std::vector<float> v): ImageOperation(on)
 {
-    std::vector<std::string> valueNames = {"Blue", "Green", "Red"};
-    std::vector<int> values = {0, 1, 2};
+    kernel = new KernelParameter("Mix matrix", v, -10.0, 10.0, false);
 
-    blue = new OptionsParameter<int>("Blue", valueNames, values, b);
-    green = new OptionsParameter<int>("Green", valueNames, values, g);
-    red = new OptionsParameter<int>("Red", valueNames, values, r);
+    updateKernelMat();
 }
 
-void MixChannels::applyOperation(cv::Mat &src)
+void MixBGRChannels::updateKernelMat()
 {
-    int fromTo[] = {0, blue->value, 1, green->value, 2, red->value};
-    cv::mixChannels(&src, 1, &src, 1, fromTo, 3);
+    kernelMat = cv::Mat(kernel->values).reshape(0, 3);
+    kernelMat.convertTo(kernelMat, CV_32F);
+}
+
+void MixBGRChannels::applyOperation(cv::Mat &src)
+{
+    src.forEach<cv::Vec3b>([&](cv::Vec3b &pixel, const int*)
+    {
+        pixel[0] = cv::saturate_cast<uchar>(kernelMat.at<float>(0, 0) * pixel[0] + kernelMat.at<float>(0, 1) * pixel[1] + kernelMat.at<float>(0, 2) * pixel[2]);
+        pixel[1] = cv::saturate_cast<uchar>(kernelMat.at<float>(1, 0) * pixel[0] + kernelMat.at<float>(1, 1) * pixel[1] + kernelMat.at<float>(1, 2) * pixel[2]);
+        pixel[2] = cv::saturate_cast<uchar>(kernelMat.at<float>(2, 0) * pixel[0] + kernelMat.at<float>(2, 1) * pixel[1] + kernelMat.at<float>(2, 2) * pixel[2]);
+    });
 }
 
 // Morphological operations
@@ -670,4 +677,24 @@ void ShiftHue::applyOperation(cv::Mat &src)
     hsv.forEach<cv::Vec3b>([&](cv::Vec3b &pixel, const int*){ pixel[0] = (pixel[0] + delta->value) % 180; });
 
     cv::cvtColor(hsv, src, cv::COLOR_HSV2BGR);
+}
+
+// Swap channels
+
+std::string SwapChannels::name = "Swap channels";
+
+SwapChannels::SwapChannels(bool on, int b, int g, int r): ImageOperation(on)
+{
+    std::vector<std::string> valueNames = {"Blue", "Green", "Red"};
+    std::vector<int> values = {0, 1, 2};
+
+    blue = new OptionsParameter<int>("Blue", valueNames, values, b);
+    green = new OptionsParameter<int>("Green", valueNames, values, g);
+    red = new OptionsParameter<int>("Red", valueNames, values, r);
+}
+
+void SwapChannels::applyOperation(cv::Mat &src)
+{
+    int fromTo[] = {0, blue->value, 1, green->value, 2, red->value};
+    cv::mixChannels(&src, 1, &src, 1, fromTo, 3);
 }

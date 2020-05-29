@@ -345,27 +345,25 @@ public:
     void applyOperation(cv::Mat &src);
 };
 
-// Mix channels
+// Mix BGR channels
 
-class MixChannels: public ImageOperation
+class MixBGRChannels: public ImageOperation
 {
-    OptionsParameter<int> *blue, *green, *red;
+    KernelParameter *kernel;
 
 public:
     static std::string name;
 
-    MixChannels(bool on, int b, int g, int r);
-    ~MixChannels()
-    {
-        delete blue;
-        delete green;
-        delete red;
-    }
+    cv::Mat kernelMat;
 
-    std::string getName(){ return name; };
+    MixBGRChannels(bool on, std::vector<float> v);
+    ~MixBGRChannels(){ delete kernel; }
 
-    std::vector<OptionsParameter<int>*> getOptionsIntParameters(){ std::vector<OptionsParameter<int>*> parameters = {blue, green, red}; return parameters; };
+    std::string getName(){ return name; }
 
+    KernelParameter* getKernelParameter(){ return kernel; }
+
+    void updateKernelMat();
     void applyOperation(cv::Mat &src);
 };
 
@@ -537,6 +535,30 @@ public:
     std::string getName(){ return name; };
 
     std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {delta}; return parameters; };
+
+    void applyOperation(cv::Mat &src);
+};
+
+// Swap channels
+
+class SwapChannels: public ImageOperation
+{
+    OptionsParameter<int> *blue, *green, *red;
+
+public:
+    static std::string name;
+
+    SwapChannels(bool on, int b, int g, int r);
+    ~SwapChannels()
+    {
+        delete blue;
+        delete green;
+        delete red;
+    }
+
+    std::string getName(){ return name; };
+
+    std::vector<OptionsParameter<int>*> getOptionsIntParameters(){ std::vector<OptionsParameter<int>*> parameters = {blue, green, red}; return parameters; };
 
     void applyOperation(cv::Mat &src);
 };

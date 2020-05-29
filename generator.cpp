@@ -34,14 +34,15 @@ Pipeline::Pipeline(cv::Mat img): image(img)
         GammaCorrection::name,
         InvertColors::name,
         Laplacian::name,
-        MixChannels::name,
+        MixBGRChannels::name,
         MorphologyEx::name,
         Pixelate::name,
         RadialRemap::name,
         Rotation::name,
         Saturate::name,
         Sharpen::name,
-        ShiftHue::name
+        ShiftHue::name,
+        SwapChannels::name
     };
 }
 
@@ -137,9 +138,14 @@ void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationI
     {
         imageOperations.insert(it + currentOperationIndex + 1, new MedianBlur(false, 3));
     }
-    else if (operationName == MixChannels::name)
+    else if (operationName == SwapChannels::name)
     {
-        imageOperations.insert(it + currentOperationIndex + 1, new MixChannels(false, 0, 1, 2));
+        imageOperations.insert(it + currentOperationIndex + 1, new SwapChannels(false, 0, 1, 2));
+    }
+    else if (operationName == MixBGRChannels::name)
+    {
+        std::vector<float> kernel = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
+        imageOperations.insert(it + currentOperationIndex + 1, new MixBGRChannels(false, kernel));
     }
     else if (operationName == MorphologyEx::name)
     {
@@ -234,9 +240,13 @@ void Pipeline::loadImageOperation(
     {
         imageOperations.push_back(new MedianBlur(enabled, intParameters[0]));
     }
-    else if (operationName == MixChannels::name)
+    else if (operationName == SwapChannels::name)
     {
-        imageOperations.push_back(new MixChannels(enabled, intParameters[0], intParameters[1], intParameters[2]));
+        imageOperations.push_back(new SwapChannels(enabled, intParameters[0], intParameters[1], intParameters[2]));
+    }
+    else if (operationName == MixBGRChannels::name)
+    {
+        imageOperations.push_back(new MixBGRChannels(enabled, kernelElements));
     }
     else if (operationName == MorphologyEx::name)
     {
@@ -289,14 +299,15 @@ GeneratorCV::GeneratorCV()
         GammaCorrection::name,
         InvertColors::name,
         Laplacian::name,
-        MixChannels::name,
+        MixBGRChannels::name,
         MorphologyEx::name,
         Pixelate::name,
         RadialRemap::name,
         Rotation::name,
         Saturate::name,
         Sharpen::name,
-        ShiftHue::name
+        ShiftHue::name,
+        SwapChannels::name
     };
 
     imageSize = 700;

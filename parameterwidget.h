@@ -281,6 +281,7 @@ public:
 
         normalizePushButton = new QPushButton("Normalize");
         normalizePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+        normalizePushButton->setVisible(kernelParameter->normalize);
 
         connect(normalizePushButton, &QPushButton::clicked, [=]()
         {

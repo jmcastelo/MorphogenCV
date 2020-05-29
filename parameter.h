@@ -81,11 +81,13 @@ public:
     std::string name;
     std::vector<float> values;
     float min, max;
-    KernelParameter(std::string theName, std::vector<float> theValues, float theMin, float theMax):
+    bool normalize;
+    KernelParameter(std::string theName, std::vector<float> theValues, float theMin, float theMax, bool norm):
         name(theName),
         values(theValues),
         min(theMin),
-        max(theMax)
+        max(theMax),
+        normalize(norm)
     {}
 };
 
