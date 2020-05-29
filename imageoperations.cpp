@@ -387,9 +387,11 @@ void MixBGRChannels::applyOperation(cv::Mat &src)
 {
     src.forEach<cv::Vec3b>([&](cv::Vec3b &pixel, const int*)
     {
-        pixel[0] = cv::saturate_cast<uchar>(kernelMat.at<float>(0, 0) * pixel[0] + kernelMat.at<float>(0, 1) * pixel[1] + kernelMat.at<float>(0, 2) * pixel[2]);
-        pixel[1] = cv::saturate_cast<uchar>(kernelMat.at<float>(1, 0) * pixel[0] + kernelMat.at<float>(1, 1) * pixel[1] + kernelMat.at<float>(1, 2) * pixel[2]);
-        pixel[2] = cv::saturate_cast<uchar>(kernelMat.at<float>(2, 0) * pixel[0] + kernelMat.at<float>(2, 1) * pixel[1] + kernelMat.at<float>(2, 2) * pixel[2]);
+        cv::Vec3b tmp;
+        tmp[0] = cv::saturate_cast<uchar>(kernelMat.at<float>(0, 0) * pixel[0] + kernelMat.at<float>(0, 1) * pixel[1] + kernelMat.at<float>(0, 2) * pixel[2]);
+        tmp[1] = cv::saturate_cast<uchar>(kernelMat.at<float>(1, 0) * pixel[0] + kernelMat.at<float>(1, 1) * pixel[1] + kernelMat.at<float>(1, 2) * pixel[2]);
+        tmp[2] = cv::saturate_cast<uchar>(kernelMat.at<float>(2, 0) * pixel[0] + kernelMat.at<float>(2, 1) * pixel[1] + kernelMat.at<float>(2, 2) * pixel[2]);
+        pixel = tmp;
     });
 }
 
