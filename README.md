@@ -20,6 +20,7 @@ Instead of a single feedback loop, MorphogenCV is able to process images in seve
 
 A list of supported operations follows:
 
+* Blend previous images
 * Blur: bilateral filter
 * Blur: Gaussian
 * Blur: homogeneous
@@ -89,10 +90,6 @@ Operations can be inserted and removed from a pipeline, and their order inside t
 
 Generally, each operation has a set of adjustable parameters. Fiddling with them modifies the result of the operation on the image and as a consequence, determines the form and dynamics of the output image. Whenever a numeric parameter is edited, the user must press the return key to make the change effective. There is also a slider for adjusting continous parameters, whose minimum an maximum values can be chosen. Good luck looking for a nice pattern!
 
-#### Blend last frames
-
-It is possible to blend the last output images with the current one, providing a kind of "memory" effect. The number of frames for blending and the blend factor of each frame are selectable.
-
 ### Plots tab
 
 MorphogenCV provides the user with plots of several computed quantities which can be shown or hidden by the press of a button.
@@ -115,9 +112,24 @@ Plots involving a single pixel (selectable on the image window) include:
 
 ## Some notes on emergent patterns
 
-Depending on the operations performed on the image and the values of their parameters, different patterns can emerge. Of special interest are those forms which display a dynamic behavior of self-organization. For example, for certain configurations a shape may nucleate on the center of the image. Spontaneously this nucleus can get an internal structure that evolves in time. If a scale factor has been applied it may tend to expand naturally. But surrounding the nucleus a layer of less-organized forms usually exists that clash with its expansion because it does not follow the behavior of the internal structure of the nucleus. An analogy comes to mind: order and chaos. The expanding order and the impeding chaos. The nucleus may employ different strategies to expand, like developing prolongations or sending areas of brighter colors to the periphery that modify the outer layer of chaos in an attempt to make it more in accordance with its inner structure. Sometimes the periphery grows towards the center and the nucleus contracts or loses some of its structure. But soon it reorganizes itself and its natural expanding behavior emerges again. In this intricate form-interchange between center and periphery the whole system evolves displaying amazing patterns.
+### An example: nucleus and periphery
+
+Depending on the operations performed on the image and the values of their parameters, different patterns can emerge. Of special interest are those forms which display a dynamic behavior of self-organization. For example, for certain configurations a shape may nucleate on the center of the image. Spontaneously this nucleus can get an internal structure that evolves in time. If a suitable scale factor has been applied it may tend to expand naturally. But surrounding the nucleus a layer of less-organized forms usually exists that clashes with its expansion because it does not follow the behavior of the internal structure of the nucleus. An analogy comes to mind: order and chaos. The expanding order and the impeding chaos. The nucleus may employ different strategies to expand, like developing prolongations or sending areas of brighter colors to the periphery that modify the outer layer of chaos in an attempt to make it more in accordance with its inner structure. Sometimes the periphery grows towards the center and the nucleus contracts or loses some of its structure. But soon it reorganizes itself and its natural expanding behavior emerges again. In this intricate form-interchange between center and periphery the whole system evolves displaying amazing patterns.
+
+### Determinism and pessimism
+
+MorphogenCV's system is deterministic. This means that given an initial condition, or initial image, and a set of operations arranged in their pipelines, the sequential iterations yield a fixed series of images. No matter how complex the emergent patterns may be, exactly the same sequence of patterns arise in two different simulation runs if they start with exactly the same seed and their operations with their parameters are the same. This can be proven by generating a random seed and saving it in a file to be used as initial condition for two identical batch simulations. Selecting a batch size of N iterations, exactly the same resulting image is obtained after the N iterations for each run. So in a sense, all these beautiful emergent patterns that seem to be alive, are as enslaved as a clock ticking in a universe where everything is fixed by the hand of destiny. There is no freedom in them, paradoxical as it may sound. But this gloomy perspective doesn't necessarily extrapolate to the universe we live in, since the universe these shapes and forms live in is a computer, which is deterministic by design, whereas our universe...
 
 ## Description of the operations
+
+### Blend previous images
+
+Blends the last output images with the current one, providing a kind of "memory" effect.
+
+#### Parameters
+
+* **Number of images**: to blend with the current one.
+* **Blend factor**: Values between 0 and 1. Typically a small value is needed.
 
 ### Blur: bilateral filter
 
