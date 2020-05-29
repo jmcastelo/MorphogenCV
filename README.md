@@ -4,7 +4,7 @@ An interactive tool to simulate videofeedback, a phenomenon that consists of con
 
 ### Download
 
-[The latest release](https://github.com/jmcastelo/MorphogenCV/releases/download/v1.0/MorphogenCV_v1.0.zip) is available to download.
+[The latest release](https://github.com/jmcastelo/MorphogenCV/releases/tag/v1.0) is available to [download](https://github.com/jmcastelo/MorphogenCV/releases/download/v1.0/MorphogenCV_v1.0.zip).
 
 ## Screenshots
 
@@ -14,7 +14,7 @@ An interactive tool to simulate videofeedback, a phenomenon that consists of con
 
 ## Pipelines
 
-Instead of a single feedback loop, MorphogenCV is able to process images in several parallel loops, called pipelines. A pipeline is simply a sequence of operations that are performed on an image, in order. The output image of an operation is the input image of the next one. Once the processing of the operations of the pipelines is made, the resulting images are blended into a global output image. Finally, the global output image is fed back to each pipeline. This establishes parallel loops that iteratively process the image.
+Instead of a single feedback loop, MorphogenCV is able to process images in several parallel loops, called parallel pipelines. A pipeline is simply a sequence of operations that are performed on an image, in order. Along a pipeline, the output image of an operation is the input image of the next one. Once the processing of the operations of the parallel pipelines is made, the resulting images are blended into an output image, with adjustable blend factors. This image is processed by a final output pipeline and its output image is fed back to each pipeline. This establishes parallel loops that iteratively process the image.
 
 ## Operations
 
@@ -44,22 +44,19 @@ A list of supported operations follows:
 * Pixelate
 * Radial remap
 * Rotation/scaling
+* Saturate
 * Sharpen
 * Shift hue
 
 ## Description of the user interface
 
-The user interface is divided into two separate windows: the control window and the global output image window. The first one presents three tabs: general, pipelines and plots. These tabs contain the controls to change the options and parameters of the system, and take actions on it The second one displays the resulting global output image. This window can be zoomed in and out and its controls are quite self-descriptive. 
+The user interface is divided into two separate windows: the control window and the global output image window. The first one presents three tabs: general, pipelines and plots. These tabs contain the controls to change the options and parameters of the system, and take actions on it The second one displays the resulting global output image. This window can be zoomed in and out and its controls are quite self-descriptive. One can take screenshots by pressing the "floppy disk" icon.
 
 ### General tab
 
-#### Seed image
-
-In order for the pipelines to start processing, an initial seed image must be supplied. In MorphogenCV, this is an image with random colored or grayscale pixels. The seed image can be fed to the pipelines when a button is pressed. This is useful whenever the global output image gets all black while fiddling with the parameters.
-
 #### Configurations
 
-It is possible to save configurations of the pipelines, with all their operations and parameters, to XML files with the extension .morph that can be loaded later. Several configurations are provided so that you can start exploring from them.
+It is possible to save configurations of the pipelines, with all their operations and parameters, to XML files with the extension .morph that can be loaded later. These files are backwards compatible with previous versions of MorphogenCV. Several configurations are provided so that you can start exploring from them.
 
 #### Main
 
@@ -67,21 +64,33 @@ The pipelines processing can be paused and resumed, and the time interval betwee
 
 #### Video capture
 
-Videos of the evolution of the patterns can be captured in AVI format. The number of frames per second can be chosen. MPEG-1 codec is used. On Windows, the `opencv_videoio_ffmpeg430_64.dll` library is needed for this utility to work.
+Videos of the evolution of the patterns can be captured in AVI format. The number of frames per second can be chosen. MPEG-1 codec is used. On Windows, the `opencv_videoio_ffmpeg430_64.dll` library is needed for this utility to work, which is included in the releases of MorphogenCV.
+
+#### Pointer
+
+A pointer with the shape of a circle can be drawn on the image. Its radius, thickness and color can be selected. A thickness value of -1 means the circle is filled. One can clear the drawing and also draw a centered circle. Drawing on the image can be useful to alter the emerging patterns or to provide a seed for the patterns to emerge.
 
 ### Pipelines tab
 
+#### Seed image
+
+In order for the pipelines to start processing, an initial seed image must be supplied. In MorphogenCV, this is an image with random colored or grayscale pixels, or an image that can be loaded by the user. The seed image can be fed to the pipelines when a button is pressed. This is useful whenever the output image gets all black or white while fiddling with the parameters. Also, one can load a screenshot of a previous pattern to start with as initial conditions.
+
 #### Pipelines
 
-Pipelines can be created, selected and destroyed. Their blend factors can be chosen and their sum is always guaranteed to be 1. They represent the relative contribution of each pipeline output image to the blended global output image. All the blend factors can be made equal if the user wants to. A pipeline is created with a zero blend factor. When a pipeline is destroyed, the blend factors of the remaining pipelines are recomputed so that their sum is 1.
+Parallel pipelines can be created, selected and destroyed. Their blend factors can be chosen which are between 0 and 1, and their sum is always guaranteed to be 1. They represent the relative contribution of each paralel pipeline output image to the blended output image. All the blend factors can be made equal if the user wants to. A parallel pipeline is created with a zero blend factor. When a parallel pipeline is destroyed, the blend factors of the remaining pipelines are recomputed so that their sum is 1. The output pipeline can be selected but not destroyed.
 
 #### Pipeline operations
 
-Operations can be inserted and removed from a pipeline, and their order inside their containing pipeline can be changed by drag and drop. Note that the order of operations usually determines the form and dynamics of the resulting global output image.
+Operations can be inserted and removed from a pipeline, and their order inside their containing pipeline can be changed by drag and drop. Note that the order of operations usually determines the form and dynamics of the resulting output image.
 
 #### Parameters
 
-Generally, each operation has a set of adjustable parameters. Fiddling with them modifies the result of the operation on the image and as a consequence, determines the form and dynamics of the global output image. Whenever a numeric parameter is edited, the user must press the return key to make the change effective. There is also a slider for adjusting continous parameters, whose minimum an maximum values can be chosen. Good luck looking for a nice pattern!
+Generally, each operation has a set of adjustable parameters. Fiddling with them modifies the result of the operation on the image and as a consequence, determines the form and dynamics of the output image. Whenever a numeric parameter is edited, the user must press the return key to make the change effective. There is also a slider for adjusting continous parameters, whose minimum an maximum values can be chosen. Good luck looking for a nice pattern!
+
+#### Blend last frames
+
+It is possible to blend the last output images with the current one, providing a kind of "memory" effect. The number of frames for blending and the blend factor of each frame are selectable.
 
 ### Plots tab
 
@@ -103,7 +112,11 @@ Plots involving a single pixel (selectable on the image window) include:
 * Color intensity plot: evolution in time of the selected pixel's BGR color channels.
 * Color-space plot: 2D curve plot with selectable axes corresponding to the selected pixel's BGR color channels.
 
-## Description of operations
+## Some notes on emergent patterns
+
+Depending on the operations performed on the image and the values of their parameters, different patterns can emerge. Of special interest are those forms which display a dynamic behavior of self-organization. For example, for certain configurations a shape may nucleate on the center of the image. Spontaneously this nucleus can get an internal structure that evolves in time. If a scale factor has been applied it may tend to expand naturally. But surrounding the nucleus a layer of less-organized forms usually exists that clash with its expansion because it does not follow the behavior of the internal structure of the nucleus. An analogy comes to mind: order and chaos. The expanding order and the impeding chaos. The nucleus may employ different strategies to expand, like developing prolongations or sending areas of brighter colors to the periphery that modify the outer layer of chaos in an attempt to make it more in accordance with its inner structure. Sometimes the periphery grows towards the center and the nucleus contracts or loses some of its structure. But soon it reorganizes itself and its natural expanding behavior emerges again. In this intricate form-interchange between center and periphery the whole system evolves displaying amazing patterns.
+
+## Description of the operations
 
 ### Blur: bilateral filter
 
@@ -201,15 +214,13 @@ Calculates the Laplacian of an image. Works best for silhouette definition if ap
 
 * **Kernel size**: Aperture size used to compute the second-derivative filters. Must be positive and odd. When "Kernel size" = 1, the Laplacian is computed by filtering the image with a typical 3x3 aperture.
 
-### Mix channels
+### Mix BGR channels
 
-Copies specified color channel (blue, green or red) from input image to specified channel (blue, green or red) of output image. [OpenCV function documentation.](https://docs.opencv.org/master/d2/de8/group__core__array.html#ga51d768c270a1cdd3497255017c4504be)
+Mixes the blue, green and red channels through a mix matrix multiplication. The first row of the matrix corresponds to the blue channel and its elements give the multiplication factors of the blue, green and red channels in order, that contribute to the output blue channel: **B'**=M00**B**+M01**G**+M02**R**. Similarly for the green and red channels (second and third rows): **G'**=M10**B**+M11**G**+M12**R** and **R'**=M20**B**+M21**G**+M22**R**. This operation is quite CPU intensive.
 
-#### Parameters
+#### Parameter
 
-* **Blue**: Destination channel for blue channel of input image.
-* **Green**: Destination channel for green channel of input image.
-* **Red**: Destination channel for red channel of input image.
+* **Mix matrix**: A 3x3 matrix with real values.
 
 ### Morphology operations
 
@@ -250,6 +261,15 @@ Rotates an image by a given "Angle" and scales it by a given "Scale". Selected i
 * **Scale**: Must be positive.
 * **Interpolation**: "Nearest neighbor", "Bilinear", "Bicubic", "Area" or "Lanczos 8x8"
 
+### Saturate
+
+Changes the saturation of an image, so to say how pure its colors are.
+
+#### Parameters
+
+* **Gain**: multiplication factor applied to the saturation.
+* **Bias**: value added to the saturat.
+
 ### Sharpen
 
 Sharpens an image with a low contrast mask. First it blurs the image with a Gaussian filter.
@@ -268,9 +288,23 @@ Shifts the hue of an image by a given "Delta". First the image is converted from
 
 * **Delta**: hue increment or decrement. It ranges from -180 to 180.
 
+### Swap channels
+
+Copies specified color channel (blue, green or red) from input image to specified channel (blue, green or red) of output image. [OpenCV function documentation.](https://docs.opencv.org/master/d2/de8/group__core__array.html#ga51d768c270a1cdd3497255017c4504be)
+
+#### Parameters
+
+* **Blue**: Destination channel for blue channel of input image.
+* **Green**: Destination channel for green channel of input image.
+* **Red**: Destination channel for red channel of input image.
+
 ## Compilation
 
 Build dependencies: `Qt (5.14.2)`, `OpenCV (4.3.0)` and `QCustomPlot (2.0.1)`, this last library is included in the repository. Please edit the Qt project file to suit your environment requirements. To compile MorphogenCV execute `qmake` followed by `make` on Linux or `mingw32-make` on Windows with MinGW. On Windows you may need to copy the appropriate Qt and OpenCV DLLs to the directory where the binary is located in order to run it.
+
+## Links
+
+* [Softology's videofeedback website](https://softology.com.au/videofeedback/videofeedback.htm)
 
 ## License
 
