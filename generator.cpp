@@ -427,7 +427,7 @@ void GeneratorCV::blendImages()
     for (auto pipeline: pipelines)
         cv::addWeighted(blendImage, 1.0, pipeline->image, pipeline->blendFactor, 0.0, blendImage);
 
-    blendImage.copyTo(outputPipeline->image, mask);
+    outputPipeline->image = blendImage.clone();
 }
 
 void GeneratorCV::iterate()
@@ -439,7 +439,7 @@ void GeneratorCV::iterate()
 
     outputPipeline->iterate();
 
-    outputImage = outputPipeline->image.clone();
+    outputPipeline->image.copyTo(outputImage, mask);
 
     if (pointerCanvasDrawn)
         drawPointerCanvas();
