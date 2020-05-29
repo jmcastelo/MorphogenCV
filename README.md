@@ -32,7 +32,7 @@ A list of supported operations follows:
 * Gamma correction
 * Invert colors
 * Laplacian
-* Mix channels
+* Mix BGR channels
 * Morphology operations
     * Erode
     * Dilate
@@ -47,6 +47,7 @@ A list of supported operations follows:
 * Saturate
 * Sharpen
 * Shift hue
+* Swap channels
 
 ## Description of the user interface
 
@@ -60,7 +61,7 @@ It is possible to save configurations of the pipelines, with all their operation
 
 #### Main
 
-The pipelines processing can be paused and resumed, and the time interval between succesive iterations can be chosen (in milliseconds). The images MorphogenCV employs are square and their size can be determined.
+The pipelines processing can be paused and resumed, and the time interval between succesive iterations can be chosen (in milliseconds). Processing in iteration batches can also be done. The batch size (number of iterations per batch) can be adjusted. The images MorphogenCV employs are square and their size can be determined.
 
 #### Video capture
 
