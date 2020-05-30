@@ -86,7 +86,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
     // Style
 
-    QString startButtonStyle = "QPushButton#startButton{ color: #ffffff; background-color: #00ba00; }";
+    QString startButtonStyle = "QPushButton#startButton{ color: #ffffff; background-color: #1c9122; }";
     QString pipelineButtonStyle = "QPushButton#pipelineButton{ color: #ffffff; background-color: #6600a6; } QPushButton:checked#pipelineButton { color: #000000; background-color: #fcff59; }";
     setStyleSheet(startButtonStyle + pipelineButtonStyle);
 
@@ -275,6 +275,7 @@ void MainWidget::constructGeneralControls()
     vBoxLayout1->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
     vBoxLayout1->addWidget(configGroupBox);
     vBoxLayout1->addWidget(pointerGroupBox);
+    vBoxLayout1->addWidget(aboutPushButton);
 
     QVBoxLayout *vBoxLayout2 = new QVBoxLayout;
     vBoxLayout2->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
@@ -1271,7 +1272,7 @@ void MainWidget::about()
     aboutBox->setWindowTitle("About");
 
     QStringList lines;
-    lines.append("<h2>MorphogenCV 1.0</h2>");
+    lines.append("<h2>MorphogenCV 1.1</h2>");
     lines.append("<h4>Videofeedback simulation software.</h4>");
     lines.append("Looking for help? Please visit:<br>");
     lines.append("<a href='https://github.com/jmcastelo/MorphogenCV'>https://github.com/jmcastelo/MorphogenCV</a><br><br>");
