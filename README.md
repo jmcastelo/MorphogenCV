@@ -14,7 +14,9 @@ An interactive tool to simulate videofeedback, a phenomenon that consists of con
 
 ## Pipelines
 
-Instead of a single feedback loop, MorphogenCV is able to process images in several parallel loops, called parallel pipelines. A pipeline is simply a sequence of operations that are performed on an image, in order. Along a pipeline, the output image of an operation is the input image of the next one. Once the processing of the operations of the parallel pipelines is made, the resulting images are blended into an output image, with adjustable blend factors. This image is processed by a final output pipeline and its output image is fed back to each pipeline. This establishes parallel loops that iteratively process the image.
+Instead of a single feedback loop, MorphogenCV is able to process images in several parallel loops, called parallel pipelines. A pipeline is simply a sequence of operations that are performed on an image, in order. Along a pipeline, the output image of an operation is the input image of the next one. Once the processing of the operations of the parallel pipelines is made, the resulting images are blended into an output image, with adjustable blend factors. This image is processed by a final output pipeline and its output image is fed back to each pipeline. This establishes parallel loops that iteratively process the image. See diagram below for an example.
+
+<p align="center"><img width="548" height="1006" src="https://raw.githubusercontent.com/jmcastelo/MorphogenCV/master/images/diagram.png"></p>
 
 ## Operations
 
@@ -52,7 +54,7 @@ A list of supported operations follows:
 
 ## Description of the user interface
 
-The user interface is divided into two separate windows: the control window and the global output image window. The first one presents three tabs: general, pipelines and plots. These tabs contain the controls to change the options and parameters of the system, and take actions on it The second one displays the resulting global output image. This window can be zoomed in and out and its controls are quite self-descriptive. One can take screenshots by pressing the "floppy disk" icon.
+The user interface is divided into two separate windows: the control window and the global output image window. The first one presents three tabs: general, pipelines and plots. These tabs contain the controls to change the options and parameters of the system, and take actions on it. The second one displays the resulting output image. This window can be zoomed in and out and its controls are quite self-descriptive. One can take screenshots by pressing the "floppy disk" icon.
 
 ### General tab
 
@@ -76,7 +78,7 @@ A pointer with the shape of a circle can be drawn on the image. Its radius, thic
 
 #### Seed image
 
-In order for the pipelines to start processing, an initial seed image must be supplied. In MorphogenCV, this is an image with random colored or grayscale pixels, or an image that can be loaded by the user. The seed image can be fed to the pipelines when a button is pressed. This is useful whenever the output image gets all black or white while fiddling with the parameters. Also, one can load a screenshot of a previous pattern to start with as initial conditions.
+In order for the pipelines to start processing, an initial seed image must be supplied. In MorphogenCV, this is an image with random colored or grayscale pixels, or an image that can be loaded by the user. The seed image can be fed to the pipelines when a button is pressed. This is useful whenever the output image gets all black or white while fiddling with the parameters. Also, one can load a screenshot of a previous pattern to start with as initial condition.
 
 #### Pipelines
 
