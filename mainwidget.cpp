@@ -71,6 +71,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     statusBar = new QStatusBar;
     statusBar->setFont(QFont("sans", 8));
     statusBar->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    statusBar->setSizeGripEnabled(false);
     statusBar->showMessage(QString("%1 Iterations | %2 ms / iteration | %3 ms / pipelines").arg(0).arg(0).arg(0));
 
     // Main layout
@@ -85,8 +86,8 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
 
     // Style
 
-    QString startButtonStyle = "QPushButton#startButton{ background-color: #00ff00; }";
-    QString pipelineButtonStyle = "QPushButton#pipelineButton{ background-color: #ffc840; } QPushButton:checked#pipelineButton { background-color: #00ffff; }";
+    QString startButtonStyle = "QPushButton#startButton{ color: #ffffff; background-color: #00ba00; }";
+    QString pipelineButtonStyle = "QPushButton#pipelineButton{ color: #ffffff; background-color: #6600a6; } QPushButton:checked#pipelineButton { color: #000000; background-color: #fcff59; }";
     setStyleSheet(startButtonStyle + pipelineButtonStyle);
 
     // Timer for iteration loop
