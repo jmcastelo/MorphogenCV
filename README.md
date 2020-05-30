@@ -4,7 +4,7 @@ An interactive tool to simulate videofeedback, a phenomenon that consists of con
 
 ### Download
 
-[The latest release](https://github.com/jmcastelo/MorphogenCV/releases/tag/v1.0) is available to [download](https://github.com/jmcastelo/MorphogenCV/releases/download/v1.0/MorphogenCV_v1.0.zip).
+[The latest release](https://github.com/jmcastelo/MorphogenCV/releases/tag/v1.1) is available to [download](https://github.com/jmcastelo/MorphogenCV/releases/download/v1.1/MorphogenCV_v1.1.zip).
 
 ## Screenshots
 
