@@ -278,12 +278,12 @@ Rotates an image by a given "Angle" and scales it by a given "Scale". Selected i
 
 ### Saturate
 
-Changes the saturation of an image, so to say how pure its colors are.
+Changes the saturation of an image, how pure its colors are.
 
 #### Parameters
 
-* **Gain**: multiplication factor applied to the saturation.
-* **Bias**: value added to the saturat.
+* **Gain**: Multiplication factor applied to the saturation.
+* **Bias**: Value added to the saturation.
 
 ### Sharpen
 
