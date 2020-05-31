@@ -119,6 +119,50 @@ void Canny::applyOperation(cv::Mat &src)
     src = dst.clone();
 }
 
+// Color quantization
+
+std::string ColorQuantization::name = "Color quantization";
+
+ColorQuantization::ColorQuantization(bool on, int nBGRLevels, int nHueLevels, int nLightLevels, int nSatLevels, int type): ImageOperation(on)
+{
+    bgrLevels = new IntParameter("BGR Levels", nBGRLevels, 1, 255, false);
+    hueLevels = new IntParameter("Hue Levels", nHueLevels, 1, 179, false);
+    lightLevels = new IntParameter("Lightness Levels", nLightLevels, 1, 255, false);
+    satLevels = new IntParameter("Saturation Levels", nSatLevels, 1, 255, false);
+
+    std::vector<std::string> names = {"BGR", "HLS"};
+    std::vector<int> values = {0, 1};
+
+    colorSpace = new OptionsParameter<int>("Color-space", names, values, type);
+}
+
+void ColorQuantization::applyOperation(cv::Mat &src)
+{
+    if (colorSpace->value == 0)
+    {
+        src.forEach<cv::Vec3b>([&](cv::Vec3b &pixel, const int*)
+        {
+            pixel[0] = static_cast<uchar>(roundf(pixel[0] * bgrLevels->value / 255.0) * 255.0 / bgrLevels->value);
+            pixel[1] = static_cast<uchar>(roundf(pixel[1] * bgrLevels->value / 255.0) * 255.0 / bgrLevels->value);
+            pixel[2] = static_cast<uchar>(roundf(pixel[2] * bgrLevels->value / 255.0) * 255.0 / bgrLevels->value);
+        });
+    }
+    else if (colorSpace->value == 1)
+    {
+        cv::Mat hls;
+        cv::cvtColor(src, hls, cv::COLOR_BGR2HLS);
+
+        hls.forEach<cv::Vec3b>([&](cv::Vec3b &pixel, const int*)
+        {
+            pixel[0] = static_cast<uchar>(roundf(pixel[0] * hueLevels->value / 179.0) * 179.0 / hueLevels->value);
+            pixel[1] = static_cast<uchar>(roundf(pixel[1] * lightLevels->value / 255.0) * 255.0 / lightLevels->value);
+            pixel[2] = static_cast<uchar>(roundf(pixel[2] * satLevels->value / 255.0) * 255.0 / satLevels->value);
+        });
+
+        cv::cvtColor(hls, src, cv::COLOR_HLS2BGR);
+    }
+}
+
 // Convert to
 
 std::string ConvertTo::name = "Contrast/brightness";

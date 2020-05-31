@@ -161,6 +161,34 @@ public:
     void applyOperation(cv::Mat &src);
 };
 
+// Color quantization
+
+class ColorQuantization: public ImageOperation
+{
+    IntParameter *bgrLevels, *hueLevels, *lightLevels, *satLevels;
+    OptionsParameter<int> *colorSpace;
+
+public:
+    static std::string name;
+
+    ColorQuantization(bool on, int nBGRLevels, int nHueLevels, int nLightLevels, int nSatLevels, int type);
+    ~ColorQuantization()
+    {
+        delete bgrLevels;
+        delete hueLevels;
+        delete lightLevels;
+        delete satLevels;
+        delete colorSpace;
+    }
+
+    std::string getName(){ return name; };
+
+    std::vector<IntParameter*> getIntParameters(){ std::vector<IntParameter*> parameters = {bgrLevels, hueLevels, lightLevels, satLevels}; return parameters; };
+    std::vector<OptionsParameter<int>*> getOptionsIntParameters(){ std::vector<OptionsParameter<int>*> parameters = {colorSpace}; return parameters; };
+
+    void applyOperation(cv::Mat &src);
+};
+
 // Convert to
 
 class ConvertTo: public ImageOperation

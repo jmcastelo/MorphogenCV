@@ -27,6 +27,7 @@ Pipeline::Pipeline(cv::Mat img): image(img)
         Blur::name,
         MedianBlur::name,
         Canny::name,
+        ColorQuantization::name,
         ConvertTo::name,
         DeblurFilter::name,
         EqualizeHist::name,
@@ -100,6 +101,10 @@ void Pipeline::insertImageOperation(int newOperationIndex, int currentOperationI
     else if (operationName == Canny::name)
     {
         imageOperations.insert(it + currentOperationIndex + 1, new Canny(false, 100, 300, 3, false));
+    }
+    else if (operationName == ColorQuantization::name)
+    {
+        imageOperations.insert(it + currentOperationIndex + 1, new ColorQuantization(false, 255, 179, 255, 255, 0));
     }
     else if (operationName == ConvertTo::name)
     {
@@ -204,6 +209,10 @@ void Pipeline::loadImageOperation(
     {
         imageOperations.push_back(new Canny(enabled, doubleParameters[0], doubleParameters[1], intParameters[0], boolParameters[0]));
     }
+    else if (operationName == ColorQuantization::name)
+    {
+        imageOperations.push_back(new ColorQuantization(enabled, intParameters[0], intParameters[1], intParameters[2], intParameters[3], intParameters[4]));
+    }
     else if (operationName == ConvertTo::name)
     {
         imageOperations.push_back(new ConvertTo(enabled, doubleParameters[0], doubleParameters[1]));
@@ -292,6 +301,7 @@ GeneratorCV::GeneratorCV()
         Blur::name,
         MedianBlur::name,
         Canny::name,
+        ColorQuantization::name,
         ConvertTo::name,
         DeblurFilter::name,
         EqualizeHist::name,
