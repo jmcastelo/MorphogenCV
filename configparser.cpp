@@ -83,6 +83,15 @@ void ConfigurationParser::writeImageOperations(Pipeline *pipeline)
             stream.writeEndElement();
         }
 
+        for (auto parameter: operation->getOptionsIntParameters())
+        {
+            stream.writeStartElement("parameter");
+            stream.writeAttribute("name", QString::fromStdString(parameter->name));
+            stream.writeAttribute("type", "int");
+            stream.writeCharacters(QString::number(parameter->value));
+            stream.writeEndElement();
+        }
+
         for (auto parameter: operation->getMorphTypeParameters())
         {
             stream.writeStartElement("parameter");
