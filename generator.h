@@ -68,6 +68,8 @@ class GeneratorCV
 
     int imageSize;
 
+    bool circularMask;
+
     int histogramSize;
     cv::Mat blueHistogram;
     cv::Mat greenHistogram;
@@ -121,6 +123,8 @@ public:
     void loadSeedImage(std::string filename);
 
     void iterate();
+
+    void toggleMask(bool apply);
 
     void computeBGRSum();
     void computeBGRPixel();

@@ -172,9 +172,14 @@ void MainWidget::constructGeneralControls()
     formLayout->addRow("Time interval (ms):", timerIntervalLineEdit);
     formLayout->addRow("Image size (px):", imageSizeLineEdit);
 
+    QCheckBox *applyCircularMaskCheckBox = new QCheckBox("Apply circular mask");
+    applyCircularMaskCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    applyCircularMaskCheckBox->setChecked(false);
+
     QVBoxLayout *mainControlsVBoxLayout = new QVBoxLayout;
     mainControlsVBoxLayout->addLayout(startButtonsHBoxLayout);
     mainControlsVBoxLayout->addLayout(formLayout);
+    mainControlsVBoxLayout->addWidget(applyCircularMaskCheckBox);
 
     QGroupBox *mainControlsGroupBox = new QGroupBox("Main");
     mainControlsGroupBox->setLayout(mainControlsVBoxLayout);
@@ -305,6 +310,7 @@ void MainWidget::constructGeneralControls()
     connect(timerIntervalLineEdit, &CustomLineEdit::focusOut, [=](){ timerIntervalLineEdit->setText(QString::number(timerInterval)); });
     connect(imageSizeLineEdit, &CustomLineEdit::returnPressed, this, &MainWidget::setImageSize);
     connect(imageSizeLineEdit, &CustomLineEdit::focusOut, [=](){ imageSizeLineEdit->setText(QString::number(generator->getImageSize())); });
+    connect(applyCircularMaskCheckBox, &QCheckBox::clicked, [=](bool checked){ generator->toggleMask(checked); });
     connect(videoFilenamePushButton, &QPushButton::clicked, this, &MainWidget::openVideoWriter);
     connect(videoCapturePushButton, &QPushButton::clicked, this, &MainWidget::onVideoCapturePushButtonClicked);
     connect(fpsLineEdit, &CustomLineEdit::returnPressed, [=](){ generator->setFramesPerSecond(fpsLineEdit->text().toInt()); });

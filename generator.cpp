@@ -331,6 +331,8 @@ GeneratorCV::GeneratorCV()
     cv::namedWindow("Frame");
     cv::setMouseCallback("Frame", onMouse, this);
 
+    circularMask = false;
+
     setMask();
     computeHistogramMax();
     drawRandomSeed(false);
@@ -360,8 +362,21 @@ void GeneratorCV::destroyAllWindows()
 void GeneratorCV::setMask()
 {
     mask = cv::Mat::zeros(imageSize, imageSize, CV_8U);
-    cv::Point center = cv::Point(imageSize / 2, imageSize / 2);
-    cv::circle(mask, center, imageSize / 2 - 2, cv::Scalar(255, 255, 255), -1, cv::FILLED);
+
+    if (circularMask)
+    {
+        cv::Point center = cv::Point(imageSize / 2, imageSize / 2);
+        cv::circle(mask, center, imageSize / 2 - 2, cv::Scalar(255, 255, 255), -1, cv::FILLED);
+    }
+    else
+        cv::rectangle(mask, cv::Point(0, 0), cv::Point(imageSize, imageSize), cv::Scalar(255, 255, 255), -1);
+}
+
+void GeneratorCV::toggleMask(bool apply)
+{
+    circularMask = apply;
+    setMask();
+    computeHistogramMax();
 }
 
 void GeneratorCV::computeHistogramMax()
@@ -432,12 +447,14 @@ void GeneratorCV::blendImages()
 
 void GeneratorCV::iterate()
 {
-    for (auto pipeline: pipelines)
+    for (auto &pipeline: pipelines)
         pipeline->iterate();
 
     blendImages();
 
     outputPipeline->iterate();
+
+    outputImage = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
 
     outputPipeline->image.copyTo(outputImage, mask);
 
@@ -592,15 +609,15 @@ void GeneratorCV::drawPointerCanvas()
 {
     cv::Mat pointerCanvasGray;
     cv::cvtColor(pointerCanvas, pointerCanvasGray, cv::COLOR_BGR2GRAY);
-    cv::Mat mask;
-    cv::threshold(pointerCanvasGray, mask, 1, 255, cv::THRESH_BINARY);
+    cv::Mat drawingMask;
+    cv::threshold(pointerCanvasGray, drawingMask, 1, 255, cv::THRESH_BINARY);
     cv::Mat maskInverse;
-    cv::bitwise_not(mask, maskInverse);
+    cv::bitwise_not(drawingMask, maskInverse);
 
     cv::Mat outputImageMasked;
     cv::bitwise_and(outputImage, outputImage, outputImageMasked, maskInverse);
     cv::Mat pointerCanvasMasked;
-    cv::bitwise_and(pointerCanvas, pointerCanvas, pointerCanvasMasked, mask);
+    cv::bitwise_and(pointerCanvas, pointerCanvas, pointerCanvasMasked, drawingMask);
 
     cv::add(outputImageMasked, pointerCanvasMasked, outputImage);
 }
