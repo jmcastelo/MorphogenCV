@@ -66,8 +66,9 @@ void BlendPreviousImages::applyOperation(cv::Mat &src)
         oldSize = size->value;
     }
 
-    for (auto previousFrame: previousImages)
-        cv::addWeighted(src, 1.0, previousFrame, blendFactor->value, 0.0, src);
+    int imax = previousImages.size();
+    for (int i = 0; i < imax; i++)
+        cv::addWeighted(src, 1.0, previousImages[i], blendFactor->value * (imax - i) / imax, 0.0, src);
 
     if (size->value > 0)
     {
