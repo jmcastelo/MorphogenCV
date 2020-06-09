@@ -51,7 +51,7 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     mainTabWidget->addTab(imageManipulationWidget, "Pipelines");
     mainTabWidget->addTab(computationWidget, "Plots");
 
-    resizeMainTabs(0);
+    //resizeMainTabs(0);
 
     connect(mainTabWidget, &QTabWidget::currentChanged, this, &MainWidget::resizeMainTabs);
 
@@ -77,12 +77,12 @@ MainWidget::MainWidget(QWidget *parent): QWidget(parent)
     // Main layout
 
     QVBoxLayout *mainVBoxLayout = new QVBoxLayout;
-    mainVBoxLayout->setAlignment(Qt::AlignTop);
     mainVBoxLayout->addWidget(mainTabWidget);
     mainVBoxLayout->addWidget(statusBar);
 
     setLayout(mainVBoxLayout);
-    layout()->setSizeConstraint(QLayout::SetFixedSize);
+
+    resizeMainTabs(0);
 
     // Style
 
@@ -295,7 +295,7 @@ void MainWidget::constructGeneralControls()
     // Widget to put in tab
 
     generalControlsWidget = new QWidget;
-    generalControlsWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    //generalControlsWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
     generalControlsWidget->setLayout(generalControlsHBoxLayout);
 
     // Signals + Slots
@@ -519,7 +519,7 @@ void MainWidget::constructImageManipulationControls()
     imageManipulationHBoxLayout->addLayout(vBoxLayout2);
 
     imageManipulationWidget = new QWidget;
-    imageManipulationWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    //imageManipulationWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
     imageManipulationWidget->setLayout(imageManipulationHBoxLayout);
 
     // Signals + Slots
@@ -654,7 +654,7 @@ void MainWidget::constructComputationControls()
     computationVBoxLayout->addWidget(togglePlotsPushButton);
 
     computationWidget = new QWidget;
-    computationWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    //computationWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
     computationWidget->setLayout(computationVBoxLayout);
 
     // Signals + Slots
@@ -704,7 +704,12 @@ void MainWidget::resizeMainTabs(int index)
 
     mainTabWidget->widget(index)->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     mainTabWidget->widget(index)->resize(mainTabWidget->widget(index)->minimumSizeHint());
-    mainTabWidget->widget(index)->adjustSize();
+
+    mainTabWidget->resize(mainTabWidget->minimumSizeHint());
+
+    QApplication::processEvents();
+
+    resize(minimumSizeHint());
 }
 
 void MainWidget::pauseResumeSystem(bool checked)
