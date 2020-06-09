@@ -300,7 +300,6 @@ void MainWidget::constructGeneralControls()
     // Widget to put in tab
 
     generalControlsWidget = new QWidget;
-    //generalControlsWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
     generalControlsWidget->setLayout(generalControlsHBoxLayout);
 
     // Signals + Slots
@@ -525,7 +524,6 @@ void MainWidget::constructImageManipulationControls()
     imageManipulationHBoxLayout->addLayout(vBoxLayout2);
 
     imageManipulationWidget = new QWidget;
-    //imageManipulationWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
     imageManipulationWidget->setLayout(imageManipulationHBoxLayout);
 
     // Signals + Slots
@@ -660,7 +658,6 @@ void MainWidget::constructComputationControls()
     computationVBoxLayout->addWidget(togglePlotsPushButton);
 
     computationWidget = new QWidget;
-    //computationWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
     computationWidget->setLayout(computationVBoxLayout);
 
     // Signals + Slots
@@ -714,7 +711,6 @@ void MainWidget::resizeMainTabs(int index)
     mainTabWidget->resize(mainTabWidget->minimumSizeHint());
 
     QApplication::processEvents();
-
     resize(minimumSizeHint());
 }
 
@@ -937,6 +933,9 @@ void MainWidget::initPipelineControls(int selectedPipelineIndex)
         initImageOperationsListWidget(selectedPipelineIndex);
     else
         initImageOperationsListWidget(0);
+
+    QApplication::processEvents();
+    resizeMainTabs(mainTabWidget->currentIndex());
 }
 
 void MainWidget::setPipelineBlendFactorLineEditText(int pipelineIndex)
@@ -1034,6 +1033,9 @@ void MainWidget::onImageOperationsListWidgetCurrentRowChanged(int currentRow)
 
         currentImageOperationIndex[pipelineIndex] = currentRow;
     }
+
+    QApplication::processEvents();
+    resizeMainTabs(mainTabWidget->currentIndex());
 }
 
 void MainWidget::onDoubleParameterWidgetFocusIn(DoubleParameterWidget *widget)
