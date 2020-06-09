@@ -332,6 +332,7 @@ GeneratorCV::GeneratorCV()
 
     drawingPointer = false;
     pointerCanvasDrawn = false;
+    persistentDrawing = false;
     pointerRadius = 5;
     pointerThickness = -1;
     pointerColor = cv::Scalar(255, 255, 255);
@@ -599,15 +600,27 @@ void GeneratorCV::processMouse(int event, int x, int y, int flags)
         if (drawingPointer && !selectingPixel)
             drawPointer(x, y);
     }
+    else if (event == cv::EVENT_LBUTTONUP && drawingPointer && !selectingPixel && !persistentDrawing)
+    {
+        clearPointerCanvas();
+    }
 }
 
 void GeneratorCV::drawPointer(int x, int y)
 {
+    if (!persistentDrawing)
+        pointerCanvas = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
+
     cv::circle(pointerCanvas, cv::Point(x, y), pointerRadius, pointerColor, pointerThickness, cv::FILLED);
+
     cv::Mat dst = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
     pointerCanvas.copyTo(dst, mask);
     pointerCanvas = dst.clone();
+
     pointerCanvasDrawn = true;
+
+    drawPointerCanvas();
+    cv::imshow("Frame", outputImage);
 }
 
 void GeneratorCV::drawCenteredPointer()
@@ -635,6 +648,7 @@ void GeneratorCV::drawPointerCanvas()
 void GeneratorCV::clearPointerCanvas()
 {
     pointerCanvas = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
+
     pointerCanvasDrawn = false;
 }
 

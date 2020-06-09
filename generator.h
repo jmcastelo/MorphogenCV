@@ -111,6 +111,7 @@ public:
 
     bool selectingPixel;
     bool drawingPointer;
+    bool persistentDrawing;
 
     GeneratorCV();
     ~GeneratorCV();

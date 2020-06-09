@@ -260,11 +260,16 @@ void MainWidget::constructGeneralControls()
     pointerButtonsHBoxLayout2->addWidget(pickPointerColorPushButton);
     pointerButtonsHBoxLayout2->addWidget(drawCenteredPointerPushButton);
 
+    QCheckBox *persistentDrawingCheckBox = new QCheckBox("Persistent drawing");
+    persistentDrawingCheckBox->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    persistentDrawingCheckBox->setChecked(generator->persistentDrawing);
+
     QVBoxLayout *pointerVBoxLayout = new QVBoxLayout;
     pointerVBoxLayout->setAlignment(Qt::AlignHCenter);
     pointerVBoxLayout->addLayout(pointerButtonsHBoxLayout1);
     pointerVBoxLayout->addLayout(pointerFormLayout);
     pointerVBoxLayout->addLayout(pointerButtonsHBoxLayout2);
+    pointerVBoxLayout->addWidget(persistentDrawingCheckBox);
 
     QGroupBox *pointerGroupBox = new QGroupBox("Pointer");
     pointerGroupBox->setLayout(pointerVBoxLayout);
@@ -327,6 +332,7 @@ void MainWidget::constructGeneralControls()
     connect(pointerRadiusLineEdit, &CustomLineEdit::focusOut, [=](){ pointerRadiusLineEdit->setText(QString::number(generator->getPointerRadius())); });
     connect(pointerThicknessLineEdit, &CustomLineEdit::returnPressed, [=](){ generator->setPointerThickness(pointerThicknessLineEdit->text().toInt()); });
     connect(pointerThicknessLineEdit, &CustomLineEdit::focusOut, [=](){ pointerThicknessLineEdit->setText(QString::number(generator->getPointerThickness())); });
+    connect(persistentDrawingCheckBox, &QCheckBox::clicked, [=](bool checked){ generator->persistentDrawing = checked; });
     connect(aboutPushButton, &QPushButton::clicked, this, &MainWidget::about);
 }
 
