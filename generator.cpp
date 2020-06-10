@@ -461,7 +461,10 @@ void GeneratorCV::iterate()
     for (auto &pipeline: pipelines)
         pipeline->iterate();
 
-    blendImages();
+    if (!pipelines.empty())
+        blendImages();
+    else
+        outputPipeline->image = outputImage.clone();
 
     outputPipeline->iterate();
 
