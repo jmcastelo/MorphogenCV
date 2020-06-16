@@ -891,6 +891,7 @@ void MainWidget::initPipelineControls(int selectedPipelineIndex)
         // New pipeline select button
 
         QPushButton *pushButton = new QPushButton(QString("Pipeline %1").arg(pipelineIndex + 1));
+        pushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
         pushButton->setFixedSize(outputPipelinePushButton->size());
         pushButton->setObjectName("pipelineButton");
         pushButton->setCheckable(true);
@@ -952,7 +953,6 @@ void MainWidget::initPipelineControls(int selectedPipelineIndex)
     else
         initImageOperationsListWidget(0);
 
-    QApplication::processEvents();
     resizeMainTabs(mainTabWidget->currentIndex());
 }
 
@@ -1012,7 +1012,6 @@ void MainWidget::initImageOperationsListWidget(int pipelineIndex)
         imageOperationsListWidget->setFixedHeight(rowSize * 5 + 2 * imageOperationsListWidget->frameWidth());
     }
 
-    QApplication::processEvents();
     resizeMainTabs(mainTabWidget->currentIndex());
 }
 
@@ -1055,7 +1054,6 @@ void MainWidget::onImageOperationsListWidgetCurrentRowChanged(int currentRow)
         currentImageOperationIndex[pipelineIndex] = currentRow;
     }
 
-    QApplication::processEvents();
     resizeMainTabs(mainTabWidget->currentIndex());
 }
 
