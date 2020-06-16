@@ -337,6 +337,8 @@ GeneratorCV::GeneratorCV()
     pointerThickness = -1;
     pointerColor = cv::Scalar(255, 255, 255);
 
+    setPlainColor(0, 0, 0);
+
     framesPerSecond = 30;
 
     cv::namedWindow("Frame");
@@ -444,6 +446,26 @@ void GeneratorCV::drawSeedImage()
 
         cv::imshow("Frame", seedImage);
     }
+}
+
+void GeneratorCV::setPlainColor(int blue, int green, int red)
+{
+    plainColor = cv::Scalar(blue, green, red);
+}
+
+void GeneratorCV::drawPlainColorSeed()
+{
+    cv::Mat plainColorSeed(imageSize, imageSize, CV_8UC3, plainColor);
+
+    cv::Mat maskedSeed = cv::Mat::zeros(imageSize, imageSize, CV_8UC3);
+    plainColorSeed.copyTo(maskedSeed, mask);
+
+    for (auto pipeline: pipelines)
+        pipeline->image = maskedSeed.clone();
+
+    outputImage = maskedSeed.clone();
+
+    cv::imshow("Frame", maskedSeed);
 }
 
 void GeneratorCV::blendImages()

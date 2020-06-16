@@ -70,6 +70,8 @@ class GeneratorCV
 
     bool circularMask;
 
+    cv::Scalar plainColor;
+
     int histogramSize;
     cv::Mat blueHistogram;
     cv::Mat greenHistogram;
@@ -122,6 +124,9 @@ public:
 
     void drawSeedImage();
     void loadSeedImage(std::string filename);
+
+    void drawPlainColorSeed();
+    void setPlainColor(int blue, int green, int red);
 
     void iterate();
 

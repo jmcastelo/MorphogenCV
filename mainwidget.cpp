@@ -367,9 +367,21 @@ void MainWidget::constructImageManipulationControls()
     seedImageHBoxLayout->addWidget(drawSeedImagePushButton);
     seedImageHBoxLayout->addWidget(loadSeedImagePushButton);
 
+    QPushButton *drawPlainColorSeedPushButton = new QPushButton("Draw plain color");
+    drawPlainColorSeedPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    QPushButton *pickPlainColorPushButton = new QPushButton("Pick color");
+    pickPlainColorPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    QHBoxLayout *plainColorHBoxLayout = new QHBoxLayout;
+    plainColorHBoxLayout->setAlignment(Qt::AlignLeft);
+    plainColorHBoxLayout->addWidget(drawPlainColorSeedPushButton);
+    plainColorHBoxLayout->addWidget(pickPlainColorPushButton);
+
     QVBoxLayout *seedVBoxLayout = new QVBoxLayout;
     seedVBoxLayout->addLayout(randomSeedHBoxLayout);
     seedVBoxLayout->addLayout(seedImageHBoxLayout);
+    seedVBoxLayout->addLayout(plainColorHBoxLayout);
 
     QGroupBox *seedGroupBox = new QGroupBox("Seed");
     seedGroupBox->setLayout(seedVBoxLayout);
@@ -535,6 +547,12 @@ void MainWidget::constructImageManipulationControls()
         QString filename = QFileDialog::getOpenFileName(this, "Load image", "", "Images (*.bmp *.jpeg *.jpg *.png *.tiff *.tif)");
         if (!filename.isEmpty())
             generator->loadSeedImage(filename.toStdString());
+    });
+    connect(drawPlainColorSeedPushButton, &QPushButton::clicked, [=](){ generator->drawPlainColorSeed(); });
+    connect(pickPlainColorPushButton, &QPushButton::clicked, [=]()
+    {
+        QColor color = QColorDialog::getColor(Qt::black, this, "Pick plain color");
+        generator->setPlainColor(color.blue(), color.green(), color.red());
     });
     connect(outputPipelinePushButton, &QPushButton::clicked, [=](bool checked){ if (checked) initImageOperationsListWidget(pipelinesButtonGroup->checkedId()); });
     connect(addPipelinePushButton, &QPushButton::clicked, [=]()
@@ -993,6 +1011,9 @@ void MainWidget::initImageOperationsListWidget(int pipelineIndex)
 
         imageOperationsListWidget->setFixedHeight(rowSize * 5 + 2 * imageOperationsListWidget->frameWidth());
     }
+
+    QApplication::processEvents();
+    resizeMainTabs(mainTabWidget->currentIndex());
 }
 
 void MainWidget::onImageOperationsListWidgetCurrentRowChanged(int currentRow)
