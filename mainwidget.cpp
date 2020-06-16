@@ -891,7 +891,7 @@ void MainWidget::initPipelineControls(int selectedPipelineIndex)
         // New pipeline select button
 
         QPushButton *pushButton = new QPushButton(QString("Pipeline %1").arg(pipelineIndex + 1));
-        pushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+        pushButton->setFixedSize(outputPipelinePushButton->size());
         pushButton->setObjectName("pipelineButton");
         pushButton->setCheckable(true);
         pushButton->setChecked(pipelineIndex == selectedPipelineIndex);
