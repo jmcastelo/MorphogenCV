@@ -411,12 +411,13 @@ void MainWidget::constructImageManipulationControls()
     blendFactorsLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     blendFactorsLabel->hide();
 
-    equalizeBlendFactorsPushButton = new QPushButton("Equalize blend factors");
+    equalizeBlendFactorsPushButton = new QPushButton("Equalize factors");
     equalizeBlendFactorsPushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     equalizeBlendFactorsPushButton->hide();
 
     outputPipelinePushButton = new QPushButton("Output pipeline");
-    outputPipelinePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    outputPipelinePushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    outputPipelinePushButton->setFixedWidth(120);
     outputPipelinePushButton->setObjectName("pipelineButton");
     outputPipelinePushButton->setCheckable(true);
     outputPipelinePushButton->setChecked(true);
@@ -892,7 +893,7 @@ void MainWidget::initPipelineControls(int selectedPipelineIndex)
 
         QPushButton *pushButton = new QPushButton(QString("Pipeline %1").arg(pipelineIndex + 1));
         pushButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
-        pushButton->setFixedSize(outputPipelinePushButton->size());
+        pushButton->setFixedWidth(120);
         pushButton->setObjectName("pipelineButton");
         pushButton->setCheckable(true);
         pushButton->setChecked(pipelineIndex == selectedPipelineIndex);
